@@ -36,8 +36,9 @@ BUILD_OBJS +=
 BUILD_LD_SCRIPT = linker.ld
 include linker/Makefile
 
+BUILD_CFLAGS += -Wall -m32 -Os
 BUILD_CFLAGS += -I $(CURDIR)
-BUILD_CFLAGS += -Wno-main -nostdlib
+BUILD_CFLAGS += -Wno-main -nostdlib -fno-builtin
 
 BUILD_LDFLAGS += -T $(BUILD_LD_SCRIPT) -melf_i386 -n
 
@@ -53,12 +54,15 @@ export BUILD_LD_SCRIPT
 export BUILD_CFLAGS BUILD_LDFLAGS BUILD_CPPFLAGS
 
 # Targets.
-PHONY += all arch link grub-iso
+PHONY += all arch kernel link grub-iso
 
-all: arch link grub-iso
+all: arch kernel link grub-iso
 
 arch:
-	$(V)$(MAKE) -C arch/$(ARCH)
+	$(V)$(MAKE) -C arch/$(ARCH)/
+
+kernel:
+	$(V)$(MAKE) -C kernel/
 
 link:
 	$(V)$(LD) $(BUILD_LDFLAGS) -o target.elf objects/*.o

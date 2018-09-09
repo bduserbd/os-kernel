@@ -1,4 +1,4 @@
 .PHONY := all
 all:
-	$(V)$(MAKE) -C boot
+	$(V)$(MAKE) -C boot/
 
