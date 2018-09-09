@@ -1,4 +1,7 @@
 *.o
+*.elf
+*.bin
+*.iso
 .*.swp
 .*.swl
 .*.swo

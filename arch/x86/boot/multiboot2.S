@@ -22,15 +22,14 @@ header_end:
 	.text
 	.globl	_start
 _start:
-	movl	$(stack + STACK_SIZE), %esp
+	cli
 
-	pushl	$0
-	popf
+	movl	$(stack + STACK_SIZE), %esp
 
 	pushl	%ebx
 	pushl	%eax
 
-	/* Set segments & GDT. */
+	/* Set segments & GDT & IDT. */
 	lgdt	first_gdt_desc
 	movl	$0x10, %eax
 	movw	%ax, %ds
@@ -39,7 +38,22 @@ _start:
 	movw	%ax, %gs
 	movw	%ax, %ss
 
-	call	main
+	lidt	first_idt
+
+	pushl	$0
+	popf
+
+	/* Basic CPU reqiurements. */
+	call	k_cpu_valid
+
+	testl	%eax, %eax
+	jnz	die
+
+	/* Set paging. */
+	call	k_paging_init_boot
+
+	/* Main flow. */
+	call	k_main
 
 die:
 	hlt
@@ -60,4 +74,10 @@ first_gdt_desc:
 	.word	first_gdt_end-first_gdt-1
 	.long	first_gdt
 
+	.p2align 3
+first_idt:
+	.word	0
+	.long	0
+
 	.comm	stack, STACK_SIZE
+

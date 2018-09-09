@@ -1,7 +1,6 @@
-OBJS += multiboot2.o
-OBJS += main.o cpu.o paging.o
+OBJS += string.o
 
-CFLAGS += -I ../
+CFLAGS = -I ../
 
 .PHONY: all
 all:
