@@ -1,27 +1,27 @@
-#ifndef PAGING_H
-#define PAGING_H
+#ifndef K_PAGING_H
+#define K_PAGING_H
 
-/* Page Directory Entry. */
-#define PDE_P	(1 << 0)
-#define PDE_R	(1 << 1)
-#define PDE_U	(1 << 2)
-#define PDE_W	(1 << 3)
-#define PDE_D	(1 << 4)
-#define PDE_A	(1 << 5)
-#define PDE_S	(1 << 7)
+/* Page Directory Entry (4-KByte). */
+#define K_PDE_P		(1 << 0)
+#define K_PDE_RW	(1 << 1)
+#define K_PDE_US	(1 << 2)
+#define K_PDE_PWT	(1 << 3)
+#define K_PDE_PCD	(1 << 4)
+#define K_PDE_A		(1 << 5)
+#define K_PDE_PS	(1 << 7)
 
-typedef unsigned int	pde_t;
+typedef k_uint32_t	pde_t;
 
 /* Page Table Entry. */
-#define PTE_P	(1 << 0)
-#define PTE_R	(1 << 1)
-#define PTE_U	(1 << 2)
-#define PTE_W	(1 << 3)
-#define PTE_C	(1 << 4)
-#define PTE_A	(1 << 5)
-#define PTE_D	(1 << 6)
+#define K_PTE_P		(1 << 0)
+#define K_PTE_RW	(1 << 1)
+#define K_PTE_US	(1 << 2)
+#define K_PTE_PWT	(1 << 3)
+#define K_PTE_PCD	(1 << 4)
+#define K_PTE_A		(1 << 5)
+#define K_PTE_D		(1 << 6)
 
-typedef unsigned int	pte_t;
+typedef k_uint32_t	pte_t;
 
 #endif
 

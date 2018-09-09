@@ -24,9 +24,6 @@ header_end:
 _start:
 	movl	$(stack + STACK_SIZE), %esp
 
-	pushl	$0
-	popf
-
 	pushl	%ebx
 	pushl	%eax
 
@@ -39,7 +36,15 @@ _start:
 	movw	%ax, %gs
 	movw	%ax, %ss
 
-	call	main
+	pushl	$0
+	popf
+
+	call	k_cpu_valid
+
+	testl	%eax, %eax
+	jnz	die
+
+	call	k_main
 
 die:
 	hlt
