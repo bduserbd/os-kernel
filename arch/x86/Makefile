@@ -1,5 +1,5 @@
 OBJS += init.o
-OBJS += cpu.o
+OBJS += cpu.o mp.o
 
 CFLAGS += -I ../
 

@@ -36,7 +36,7 @@ BUILD_OBJS +=
 BUILD_LD_SCRIPT = linker.ld
 include linker/Makefile
 
-BUILD_CFLAGS += -Wall -m32 -Os
+BUILD_CFLAGS += -Wall -m32 -O2
 BUILD_CFLAGS += -I $(CURDIR)
 BUILD_CFLAGS += -Wno-main -nostdlib -fno-builtin -fno-strict-aliasing
 

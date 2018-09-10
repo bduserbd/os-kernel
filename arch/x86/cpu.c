@@ -1,5 +1,7 @@
 #include "include/cpu.h"
 
+struct k_cpu_x86 k_cpu;
+
 int k_cpu_eflag(k_uint32_t flags)
 {
         k_uint32_t a, b;
@@ -29,8 +31,6 @@ void k_cpu_cpuid(k_uint32_t function, k_uint32_t *eax, k_uint32_t *ebx,
                         : "=a" (*eax), "=c" (*ecx), "=d" (*edx), "=b" (*ebx)
                         : "a" (function));
 }
-
-struct k_cpu_x86 k_cpu;
 
 static void k_cpu_get_vendor(struct k_cpu_x86 *cpu)
 {
