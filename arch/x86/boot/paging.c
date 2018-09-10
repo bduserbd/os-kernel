@@ -1,34 +1,35 @@
 #include "include/paging.h"
 #include "include/cr0.h"
+#include "include/cpu.h"
 #include "kernel/include/string.h"
 
 extern __u8 __k_first_page_table[];
 
-static void k_paging_get_pages(k_uint8_t *ptr, k_uint32_t *pages, k_uint32_t *dirs)
+static void k_paging_get_pages_32bit(k_uint8_t *ptr, k_uint32_t *pages, k_uint32_t *tables)
 {
 	*pages = K_ALIGN_UP((k_uint32_t)ptr, 0x1000) / 0x1000;
-	*dirs = K_ALIGN_UP(*pages, 0x400) / 0x400;
+	*tables = K_ALIGN_UP(*pages, 0x400) / 0x400;
 }
 
-void k_paging_init_boot(void)
+void k_paging_32bit_init(void)
 {
 	k_uint32_t i, j;
 	k_uint32_t pages;
-	k_uint32_t dirs;
+	k_uint32_t tables;
 	k_pde_t *pde;
 	k_pte_t *pte;
 	k_uint8_t *ptr;
 
-	k_paging_get_pages(__k_first_page_table, &pages, &dirs);
+	k_paging_get_pages_32bit(__k_first_page_table, &pages, &tables);
 
-	k_paging_get_pages(__k_first_page_table + K_PD_SIZE + dirs * K_PT_SIZE, &pages, &dirs);
+	k_paging_get_pages_32bit(__k_first_page_table + K_PD_SIZE + tables * K_PT_SIZE, &pages, &tables);
 
 	ptr = 0;
 	pde = (k_pde_t *)__k_first_page_table;
 
 	k_memset(__k_first_page_table, 0, K_PD_SIZE);
 
-	for (i = 0; i < dirs; i++) {
+	for (i = 0; i < tables; i++) {
 		pde[i] = ((k_uint32_t)__k_first_page_table + (i + 1) * K_PD_SIZE) |
 			K_PDE_P | K_PDE_RW;
 
@@ -53,7 +54,7 @@ void k_paging_init_boot(void)
 
 	asm volatile("mov %0, %%cr0" : : "r" (cr0));
 
-	//*(unsigned char *)((k_uint32_t)__k_first_page_table + K_PD_SIZE + dirs * K_PT_SIZE - 1)= 0xaa;
-	//*(unsigned char *)((k_uint32_t)__k_first_page_table + K_PD_SIZE + dirs * K_PT_SIZE)= 0xaa;
+	//*(unsigned char *)((k_uint32_t)__k_first_page_table + K_PD_SIZE + tables * K_PT_SIZE - 1)= 0xaa;
+	//*(unsigned char *)((k_uint32_t)__k_first_page_table + K_PD_SIZE + tables * K_PT_SIZE)= 0xaa;
 }
 

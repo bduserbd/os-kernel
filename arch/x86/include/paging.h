@@ -3,6 +3,13 @@
 
 #include "include/types.h"
 
+/* Page Directory Pointer Table Entry. */
+#define K_PDPTE_P	(1 << 0)
+#define K_PDPTE_PWT	(1 << 3)
+#define K_PDPTE_PCD	(1 << 4)
+
+typedef k_uint64_t	k_pdpte_t;
+
 /* Page Directory Entry (4-KByte). */
 #define K_PDE_P		(1 << 0)
 #define K_PDE_RW	(1 << 1)

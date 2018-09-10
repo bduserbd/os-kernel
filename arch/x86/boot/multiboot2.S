@@ -50,7 +50,7 @@ _start:
 	jnz	die
 
 	/* Set paging. */
-	call	k_paging_init_boot
+	call	k_paging_32bit_init
 
 	/* Main flow. */
 	call	k_main
@@ -64,9 +64,9 @@ die:
 /* Basic GDT. */
 	.p2align 3
 first_gdt:
-	BL_GDT_ENTRY
-	BL_GDT_ENTRY base=0 limit=0xfffff type=0xb s=1 p=1 db=1 g=1
-	BL_GDT_ENTRY base=0 limit=0xfffff type=0x3 s=1 p=1 db=1 g=1
+	K_GDT_ENTRY
+	K_GDT_ENTRY base=0 limit=0xfffff type=0xb s=1 p=1 db=1 g=1
+	K_GDT_ENTRY base=0 limit=0xfffff type=0x3 s=1 p=1 db=1 g=1
 first_gdt_end:
 
 	.p2align 3
