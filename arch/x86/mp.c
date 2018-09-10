@@ -1,6 +1,6 @@
 #include "include/mp.h"
 
-static int k_mp_checksum(volatile void *data, int length)
+static k_error_t k_mp_checksum(volatile void *ptr, int length)
 {
 	int i;
 	k_uint8_t sum;
@@ -8,9 +8,12 @@ static int k_mp_checksum(volatile void *data, int length)
 	sum = 0;
 
 	for (i = 0; i < length; i++)
-		sum += *((k_uint8_t *)data + i);
+		sum += *((k_uint8_t *)ptr + i);
 
-	return !sum;
+	if (!sum)
+		return K_ERROR_NONE;
+	else
+		return K_ERROR_BAD_CHECKSUM;
 }
 
 static k_uint32_t k_mp_scan_address_range(k_uint32_t start, k_uint32_t range)
@@ -34,6 +37,7 @@ static k_uint32_t k_mp_scan_address_range(k_uint32_t start, k_uint32_t range)
 
 static volatile struct k_mp_floating_pointer *k_mp_get_floating_pointer(void)
 {
+	k_error_t error;
 	k_uint16_t ebda;
 	volatile struct k_mp_floating_pointer *ptr;
 
@@ -53,7 +57,8 @@ static volatile struct k_mp_floating_pointer *k_mp_get_floating_pointer(void)
 	if (ptr->configuration_type)
 		return NULL;
 
-	if (!k_mp_checksum(ptr, ptr->length * 0x10))
+	error = k_mp_checksum(ptr, ptr->length * 0x10);
+	if (error)
 		return NULL;
 
 	return ptr;

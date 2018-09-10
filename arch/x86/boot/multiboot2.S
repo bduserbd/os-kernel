@@ -49,6 +49,8 @@ _start:
 	testl	%eax, %eax
 	jnz	die
 
+	call foo
+
 	/* Set paging. */
 	call	k_paging_32bit_init
 

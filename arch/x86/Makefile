@@ -1,5 +1,6 @@
 OBJS += init.o
 OBJS += cpu.o mp.o
+OBJS += video.o
 
 CFLAGS += -I ../
 
