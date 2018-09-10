@@ -1,5 +1,7 @@
+#include "include/init.h"
+
 void k_main(void)
 {
-	*(unsigned char *)0xb8000 = 'A';
+	k_x86_init();
 }
 
