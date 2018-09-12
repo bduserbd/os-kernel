@@ -3,58 +3,78 @@
 #include "include/cpu.h"
 #include "kernel/include/string.h"
 
-extern __u8 __k_first_page_table[];
+void puts(const char *);
+void puthex(k_uint32_t);
 
-static void k_paging_get_pages_32bit(k_uint8_t *ptr, k_uint32_t *pages, k_uint32_t *tables)
-{
-	*pages = K_ALIGN_UP((k_uint32_t)ptr, 0x1000) / 0x1000;
-	*tables = K_ALIGN_UP(*pages, 0x400) / 0x400;
-}
+static k_pde_t *k_page_table = NULL;
 
-void k_paging_32bit_init(void)
+void k_paging_reserve_pages(k_uint32_t start, k_uint32_t range)
 {
-	k_uint32_t i, j;
-	k_uint32_t pages;
-	k_uint32_t tables;
+	k_uint32_t a, b;
 	k_pde_t *pde;
 	k_pte_t *pte;
-	k_uint8_t *ptr;
 
-	k_paging_get_pages_32bit(__k_first_page_table, &pages, &tables);
+	if (!k_page_table)
+		return;
 
-	k_paging_get_pages_32bit(__k_first_page_table + K_PD_SIZE + tables * K_PT_SIZE, &pages, &tables);
+	a = start & ~0xfff;
 
-	ptr = 0;
-	pde = (k_pde_t *)__k_first_page_table;
+	b = start + range;
+	if (b & 0xfff)
+		b &= ~0xfff;
+	else
+		b -= 0x1000;
 
-	k_memset(__k_first_page_table, 0, K_PD_SIZE);
+	pde = k_page_table;
 
-	for (i = 0; i < tables; i++) {
-		pde[i] = ((k_uint32_t)__k_first_page_table + (i + 1) * K_PD_SIZE) |
-			K_PDE_P | K_PDE_RW;
+	while (1) {
+		k_uint32_t table = (a >> 22) & 0x3ff;
+		k_uint32_t page = (a >> 12) & 0x3ff;
 
-		k_uint32_t to_map = K_MIN(pages, 0x400);
-		pte = (k_pte_t *)(pde[i] & ~0xfff);
+		if ((pde[table] & K_PTE_P) == 0) {
+			pde[table] = ((k_uint32_t)k_page_table + 0x1000 + table * 0x1000) |
+				K_PDE_P | K_PDE_RW;
 
-		k_memset(pte, 0, K_PT_SIZE);
-
-		for (j = 0; j < to_map; j++) {
-			pte[j] = (k_uint32_t)ptr | K_PTE_P | K_PTE_RW;
-			ptr += 0x1000;
+			k_memset((void *)(pde[table] & ~0xfff), 0, 0x1000);
 		}
 
-		pages -= to_map;
+		pte = (k_pte_t *)(pde[table] & ~0xfff);
+		pte[page] = (k_uint32_t)a | K_PTE_P | K_PTE_RW;
+
+		if (a == b)
+			break;
+
+		a += 0x1000;
 	}
+}
 
-	asm volatile("mov %0, %%cr3" : : "r" (__k_first_page_table));
+void k_paging_table_set_start(k_uint32_t start)
+{
+	if (!k_page_table) {
+		if (start & 0xfff)
+			return;
 
+		k_page_table = (void *)start;
+
+		k_memset(k_page_table, 0, 0x1000);
+
+		k_paging_reserve_pages(start, 0x1000 + 0x400 * 0x1000);
+	}
+}
+
+void k_paging_init(void)
+{
 	k_uint32_t cr0;
+
+	if (!k_page_table)
+		return;
+
+	asm volatile("mov %0, %%cr3" : : "r" (k_page_table));
+
 	asm volatile("mov %%cr0, %0" : "=r" (cr0));
+
 	cr0 |= K_CR0_PG;
 
 	asm volatile("mov %0, %%cr0" : : "r" (cr0));
-
-	//*(unsigned char *)((k_uint32_t)__k_first_page_table + K_PD_SIZE + tables * K_PT_SIZE - 1)= 0xaa;
-	//*(unsigned char *)((k_uint32_t)__k_first_page_table + K_PD_SIZE + tables * K_PT_SIZE)= 0xaa;
 }
 
