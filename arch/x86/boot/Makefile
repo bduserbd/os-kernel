@@ -1,5 +1,4 @@
 OBJS += multiboot2.o
-OBJS += idt.o
 OBJS += main.o cpu.o paging.o
 
 CFLAGS += -I ../

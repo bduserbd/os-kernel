@@ -13,7 +13,7 @@ void puts(const char *str)
         }
 }
 
-void puthex(k_uint64_t number)
+void puthex(k_uint32_t number)
 {
         char alpha[2] = "0";
         int was_not_zero = 0, bits;

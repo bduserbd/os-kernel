@@ -41,7 +41,6 @@ struct k_acpi_dsdt {
 	struct k_acpi_sdt	sdt;
 	__u8	aml[0];
 } __attribute__((packed));
-#endif
 
 void k_acpi_get_info(void);
 

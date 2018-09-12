@@ -3,11 +3,6 @@
 
 #include "include/types.h"
 
-/* Page Directory Pointer Table Entry. */
-#define K_PDPTE_P	(1 << 0)
-#define K_PDPTE_PWT	(1 << 3)
-#define K_PDPTE_PCD	(1 << 4)
-
 typedef k_uint64_t	k_pdpte_t;
 
 /* Page Directory Entry (4-KByte). */
@@ -21,8 +16,6 @@ typedef k_uint64_t	k_pdpte_t;
 
 typedef k_uint32_t	k_pde_t;
 
-#define K_PD_SIZE	sizeof(k_pde_t) * 0x400
-
 /* Page Table Entry. */
 #define K_PTE_P		(1 << 0)
 #define K_PTE_RW	(1 << 1)
@@ -33,8 +26,6 @@ typedef k_uint32_t	k_pde_t;
 #define K_PTE_D		(1 << 6)
 
 typedef k_uint32_t	k_pte_t;
-
-#define K_PT_SIZE	sizeof(k_pte_t) * 0x400
 
 #endif
 

@@ -1,5 +1,5 @@
 #include "include/gdt-descriptor.S"
-#include "include/grub/multiboot2.h"
+#include "kernel/include/grub/multiboot2.h"
 
 #define STACK_SIZE	0x1000
 
@@ -7,13 +7,13 @@
 	.section ".multiboot2", "a"
 
 header_start:
-	.long	MULTIBOOT2_HEADER_MAGIC
-	.long	MULTIBOOT2_ARCHITECTURE_I386
+	.long	K_MULTIBOOT2_HEADER_MAGIC
+	.long	K_MULTIBOOT2_ARCHITECTURE_I386
 	.long	header_end - header_start
-	.long	-(MULTIBOOT2_HEADER_MAGIC + MULTIBOOT2_ARCHITECTURE_I386 + (header_end - header_start))
+	.long	-(K_MULTIBOOT2_HEADER_MAGIC + K_MULTIBOOT2_ARCHITECTURE_I386 + (header_end - header_start))
 
 end_tag:
-	.word	MULTIBOOT2_TAG_TYPE_END
+	.word	K_MULTIBOOT2_HEADER_TAG_END
 	.word	0
 	.long	8
 
@@ -26,6 +26,7 @@ _start:
 
 	movl	$(stack + STACK_SIZE), %esp
 
+	/* Grub info. */
 	pushl	%ebx
 	pushl	%eax
 
@@ -48,11 +49,6 @@ _start:
 
 	testl	%eax, %eax
 	jnz	die
-
-	call foo
-
-	/* Set paging. */
-	call	k_paging_32bit_init
 
 	/* Main flow. */
 	call	k_main

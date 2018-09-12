@@ -22,13 +22,16 @@ static k_error_t k_acpi_checksum(volatile void *ptr, int length)
 
 static void k_acpi_parse_rsdt(volatile struct k_acpi_rsdt *rsdt)
 {
-#if 0
-	k_uint32_t i;
+	k_error_t error;
 
-	if (k_memcmp(rsdt->sdt.signature, K_ACPI_RSDT_SIGNATURE, 4) ||
-			k_acpi_checksum(rsdt, rsdt->sdt.length))
+	if (k_memcmp((void *)rsdt->sdt.signature, K_ACPI_RSDT_SIGNATURE, 4))
 		return;
-#endif
+
+	error = k_acpi_checksum(rsdt, rsdt->sdt.length);
+	if (error)
+		return;
+
+	puts("ACPI !!");
 }
 
 static k_error_t k_acpi_check_rsdp(volatile struct k_acpi_rsdp *rsdp)
