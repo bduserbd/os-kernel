@@ -10,8 +10,8 @@ void k_x86_init(void)
 
 	k_acpi_get_info();
 
-	*(unsigned char *)0xb8080 = 'O';
-	*(unsigned char *)0xb8082 = 'k';
-	*(unsigned char *)0xb8084 = '!';
+	//*(unsigned char *)0xb8080 = 'O';
+	//*(unsigned char *)0xb8082 = 'k';
+	//*(unsigned char *)0xb8084 = '!';
 }
 

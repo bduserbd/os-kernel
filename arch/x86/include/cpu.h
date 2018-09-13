@@ -22,6 +22,7 @@
 #define K_CPUID_FUNCTION_0x1_TSC	(1 << 4)
 #define K_CPUID_FUNCTION_0x1_MSR	(1 << 5)
 #define K_CPUID_FUNCTION_0x1_PAE	(1 << 6)
+#define K_CPUID_FUNCTION_0x1_APIC	(1 << 9)
 
 struct k_cpu_x86 {
 	char vendor[12];

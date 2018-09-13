@@ -26,11 +26,12 @@ k_error_t k_cpu_valid(void)
 	if (!k_cpu_is_intel(vendor))
 		return K_ERROR_FAILURE;
 
-	/* TSC & MSR support. */
+	/* Required features. */
 	k_cpu_cpuid(K_CPUID_FUNCTION_0x1, &eax, &ebx, &ecx, &edx);
 
-	if ((edx & K_CPUID_FUNCTION_0x1_TSC) == 0 || (edx & K_CPUID_FUNCTION_0x1_MSR) == 0)
-		return K_ERROR_NONE;
+	if ((edx & K_CPUID_FUNCTION_0x1_TSC) == 0 || (edx & K_CPUID_FUNCTION_0x1_MSR) == 0 ||
+			(edx & K_CPUID_FUNCTION_0x1_APIC) == 0)
+		return K_ERROR_FAILURE;
 
 	return K_ERROR_NONE;
 }
