@@ -6,6 +6,7 @@
 
 #define K_ACPI_RSDP_SIGNATURE	"RSD PTR "
 
+/* ACPI RSDP. */
 struct k_acpi_rsdp {
 	__u8	signature[8];
 	__u8	checksum;
@@ -18,6 +19,16 @@ struct k_acpi_rsdp {
 	__u8	reserved[3];
 } __attribute__((packed));
 
+/* ACPI Generic Address Structure. */
+struct k_acpi_gas {
+	__u8	address_space_id;
+	__u8	register_bit_width;
+	__u8	register_bit_offset;
+	__u8	access_size;
+	__u64	address;
+} __attribute__((packed));
+
+/* ACPI SDT. */
 struct k_acpi_sdt {
 	__u8	signature[4];
 	__u32	length;
@@ -30,6 +41,7 @@ struct k_acpi_sdt {
 	__u32	creator_revision;
 } __attribute__((packed));
 
+/* ACPI RSDT. */
 #define K_ACPI_RSDT_SIGNATURE	"RSDT"
 
 struct k_acpi_rsdt {
@@ -37,6 +49,7 @@ struct k_acpi_rsdt {
 	__u32	entries[0];
 } __attribute__((packed));
 
+/* ACPI MADT. */
 #define K_ACPI_MADT_SIGNATURE	"APIC"
 
 #define K_ACPI_MADT_FLAGS_PCAT_COMPAT	(1 << 0)
@@ -48,6 +61,13 @@ struct k_acpi_madt {
 	__u8	entries[0];
 } __attribute__((packed));
 
+/* ACPI MADT entries. */
+#define K_ACPI_MADT_LAPIC		0x0
+#define K_ACPI_MADT_IOAPIC		0x1
+#define K_ACPI_MADT_INTERRUPT_OVERRIDE	0x2
+#define K_ACPI_MADT_LAPIC_NMI		0x4
+
+/* ACPI Local APIC. */
 #define K_ACPI_LAPIC_FLAGS_ENABLED	(1 << 0)
 
 struct k_acpi_lapic {
@@ -58,6 +78,7 @@ struct k_acpi_lapic {
 	__u32	flags;
 } __attribute__((packed));
 
+/* ACPI I/O APIC. */
 struct k_acpi_ioapic {
 	__u8	type;
 	__u8	length;
@@ -67,6 +88,7 @@ struct k_acpi_ioapic {
 	__u32	global_irq_base;
 } __attribute__((packed));
 
+/* ACPI Interrupt Source Override. */
 struct k_acpi_interrupt_override {
 	__u8	type;
 	__u8	length;
@@ -76,12 +98,30 @@ struct k_acpi_interrupt_override {
 	__u16	flags;
 } __attribute__((packed));
 
+/* ACPI Local APIC NMI. */
 struct k_acpi_lapic_nmi {
 	__u8	type;
 	__u8	length;
 	__u8	acpi_processor_id;
 	__u16	flags;
 	__u8	lint;
+} __attribute__((packed));
+
+/* ACPI HPET. */
+#define K_ACPI_HPET_SIGNATURE	"HPET"
+
+struct k_acpi_hpet {
+	struct k_acpi_sdt sdt;
+	__u8	hardware_rev_id;
+	__u8	comparators : 5;
+	__u8	counter_size : 1;
+	__u8	reserved : 1;
+	__u8	legacy_replacement : 1;
+	__u16	pci_vendor_id;
+	struct k_acpi_gas base_address;
+	__u8	number;
+	__u16	clock_tick;
+	__u8	page_protection;
 } __attribute__((packed));
 
 void k_acpi_get_info(void);

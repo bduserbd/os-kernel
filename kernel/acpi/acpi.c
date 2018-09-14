@@ -20,15 +20,70 @@ static k_error_t k_acpi_checksum(void *ptr, int length)
 		return K_ERROR_BAD_CHECKSUM;
 }
 
+static void k_acpi_parse_lapic_nmi(struct k_acpi_lapic_nmi *lapic_nmi)
+{
+	puthex(lapic_nmi->acpi_processor_id);
+	puthex(lapic_nmi->flags);
+	puthex(lapic_nmi->lint);
+	puts("|");
+}
+
+static void k_acpi_parse_interrupt_override(struct k_acpi_interrupt_override *interrupt)
+{
+	puthex(interrupt->bus);
+	puthex(interrupt->source_irq);
+	puthex(interrupt->global_irq);
+	puthex(interrupt->flags);
+	puts("|");
+}
+
+static void k_acpi_parse_ioapic(struct k_acpi_ioapic *ioapic)
+{
+	puthex(ioapic->apic_id);
+	puthex(ioapic->ioapic_address);
+	puthex(ioapic->global_irq_base);
+	puts("|");
+}
+
+static void k_acpi_parse_lapic(struct k_acpi_lapic *lapic)
+{
+	puthex(lapic->acpi_processor_id);
+	puthex(lapic->apic_id);
+	puthex(lapic->flags);
+	puts("|");
+}
+
 static void k_acpi_parse_madt(struct k_acpi_madt *madt)
 {
+	k_error_t error;
 	k_uint8_t *type, length;
 
-	/* Checksum. */
-	type = &madt->entries[0];
-	length = *(k_uint8_t *)(type + 1);
+	error = k_acpi_checksum(madt, madt->sdt.length);
+	if (error)
+		return;
 
-	type += length; length = *(k_uint8_t *)(type + 1); puthex(*type); puthex(length); puts("|");
+	for (type = &madt->entries[0], length = *(k_uint8_t *)(type + 1);
+		type - (k_uint8_t *)madt < madt->sdt.length;
+		type += length, length = *(k_uint8_t *)(type + 1)) {
+		//puthex(*type); puthex(length); puts("|");
+		switch (*type) {
+		case K_ACPI_MADT_LAPIC:
+			//k_acpi_parse_lapic((struct k_acpi_lapic *)type);
+			break;
+
+		case K_ACPI_MADT_IOAPIC:
+			//k_acpi_parse_ioapic((struct k_acpi_ioapic *)type);
+			break;
+
+		case K_ACPI_MADT_INTERRUPT_OVERRIDE:
+			k_acpi_parse_interrupt_override((struct k_acpi_interrupt_override *)type);
+			break;
+
+		case K_ACPI_MADT_LAPIC_NMI:
+			//k_acpi_parse_lapic_nmi((struct k_acpi_lapic_nmi *)type);
+			break;
+		}
+	}
 }
 
 static void k_acpi_parse_rsdt(struct k_acpi_rsdt *rsdt)
