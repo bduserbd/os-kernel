@@ -76,7 +76,7 @@ static void k_acpi_parse_madt(struct k_acpi_madt *madt)
 			break;
 
 		case K_ACPI_MADT_INTERRUPT_OVERRIDE:
-			k_acpi_parse_interrupt_override((struct k_acpi_interrupt_override *)type);
+			//k_acpi_parse_interrupt_override((struct k_acpi_interrupt_override *)type);
 			break;
 
 		case K_ACPI_MADT_LAPIC_NMI:
@@ -84,6 +84,16 @@ static void k_acpi_parse_madt(struct k_acpi_madt *madt)
 			break;
 		}
 	}
+}
+
+static void k_acpi_parse_hpet(struct k_acpi_hpet *hpet)
+{
+	if (hpet->address.space_id != K_ACPI_ADDRESS_SPACE_ID_SYSTEM_MEMORY)
+		return;
+
+	puthex(hpet->address.address);
+	puthex(hpet->number);
+	puthex(hpet->id);
 }
 
 static void k_acpi_parse_rsdt(struct k_acpi_rsdt *rsdt)
@@ -104,7 +114,9 @@ static void k_acpi_parse_rsdt(struct k_acpi_rsdt *rsdt)
 		sdt = (void *)*(k_uint32_t *)&rsdt->entries[i];
 
 		if (!k_memcmp(sdt->signature, K_ACPI_MADT_SIGNATURE, 4))
-			k_acpi_parse_madt((void *)sdt);
+			k_acpi_parse_madt((struct k_acpi_madt *)sdt);
+		else if (!k_memcmp(sdt->signature, K_ACPI_HPET_SIGNATURE, 4))
+			k_acpi_parse_hpet((struct k_acpi_hpet *)sdt);
 	}
 }
 

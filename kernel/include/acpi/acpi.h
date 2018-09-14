@@ -20,8 +20,10 @@ struct k_acpi_rsdp {
 } __attribute__((packed));
 
 /* ACPI Generic Address Structure. */
+#define K_ACPI_ADDRESS_SPACE_ID_SYSTEM_MEMORY	0x0
+
 struct k_acpi_gas {
-	__u8	address_space_id;
+	__u8	space_id;
 	__u8	register_bit_width;
 	__u8	register_bit_offset;
 	__u8	access_size;
@@ -112,13 +114,8 @@ struct k_acpi_lapic_nmi {
 
 struct k_acpi_hpet {
 	struct k_acpi_sdt sdt;
-	__u8	hardware_rev_id;
-	__u8	comparators : 5;
-	__u8	counter_size : 1;
-	__u8	reserved : 1;
-	__u8	legacy_replacement : 1;
-	__u16	pci_vendor_id;
-	struct k_acpi_gas base_address;
+	__u32	id;
+	struct k_acpi_gas address;
 	__u8	number;
 	__u16	clock_tick;
 	__u8	page_protection;
