@@ -1,0 +1,63 @@
+/* Exception that push error code. */
+	.macro K_IDT_ERROR_CODE number
+
+	.global k_idt_int\number
+k_idt_int\number:
+	pushl	$\number	
+	jmp	1f
+
+	.endm
+
+K_IDT_ERROR_CODE 8
+K_IDT_ERROR_CODE 10
+K_IDT_ERROR_CODE 11
+K_IDT_ERROR_CODE 12
+K_IDT_ERROR_CODE 13
+K_IDT_ERROR_CODE 14
+K_IDT_ERROR_CODE 17
+K_IDT_ERROR_CODE 30
+
+/* Exception that push error code. */
+	.macro K_IDT_NO_ERROR_CODE number
+
+	.global k_idt_int\number
+k_idt_int\number:
+	pushl	$0
+	pushl	$\number	
+	jmp	1f
+
+	.endm
+
+K_IDT_NO_ERROR_CODE 0
+K_IDT_NO_ERROR_CODE 1
+K_IDT_NO_ERROR_CODE 2
+K_IDT_NO_ERROR_CODE 3
+K_IDT_NO_ERROR_CODE 4
+K_IDT_NO_ERROR_CODE 5
+K_IDT_NO_ERROR_CODE 6
+K_IDT_NO_ERROR_CODE 7
+K_IDT_NO_ERROR_CODE 9
+K_IDT_NO_ERROR_CODE 15
+K_IDT_NO_ERROR_CODE 16
+K_IDT_NO_ERROR_CODE 18
+K_IDT_NO_ERROR_CODE 19
+K_IDT_NO_ERROR_CODE 20
+K_IDT_NO_ERROR_CODE 21
+K_IDT_NO_ERROR_CODE 22
+K_IDT_NO_ERROR_CODE 23
+K_IDT_NO_ERROR_CODE 24
+K_IDT_NO_ERROR_CODE 25
+K_IDT_NO_ERROR_CODE 26
+K_IDT_NO_ERROR_CODE 27
+K_IDT_NO_ERROR_CODE 28
+K_IDT_NO_ERROR_CODE 29
+K_IDT_NO_ERROR_CODE 31
+
+1:
+	pusha
+	call k_int_handler
+	popa
+
+	addl	$0x8, %esp
+	iret
+

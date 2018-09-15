@@ -1,4 +1,5 @@
 #include "include/init.h"
+#include "include/idt.h"
 #include "kernel/include/grub/multiboot2.h"
 
 void puts(const char *);
@@ -50,6 +51,8 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 	if (eax != K_MULTIBOOT2_BOOTLOADER_MAGIC)
 		return;
 
+	k_idt_init();
+
 	page_table = K_ALIGN_UP(K_MAX((k_uint32_t)__k_end, ebx + *(k_uint32_t *)ebx), 0x1000);
 	k_paging_table_set_start(page_table);
 
@@ -60,6 +63,9 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 	k_paging_reserve_pages(ebx, *(k_uint32_t *)ebx);
 
 	k_scan_multiboot_tags(ebx);
+
+	// QEMU doesn't report APIC memory map.
+	k_paging_reserve_pages(0xfee00000, 0x1000);
 
 	k_paging_init();
 
