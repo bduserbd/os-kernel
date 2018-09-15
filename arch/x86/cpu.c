@@ -57,8 +57,6 @@ static void k_cpu_get_model(struct k_cpu_x86 *cpu)
 		cpu->model |= K_CPUID_EXT_MODEL(eax) << 4;
 
 	cpu->stepping = K_CPUID_STEPPING(eax);
-
-	puthex(ebx);
 }
 
 void k_cpu_get_id(struct k_cpu_x86 *cpu)

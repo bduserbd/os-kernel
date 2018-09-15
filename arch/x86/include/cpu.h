@@ -33,6 +33,8 @@ struct k_cpu_x86 {
 	k_uint8_t initial_apic_id;
 };
 
+extern struct k_cpu_x86 k_boot_cpu;
+
 void k_cpu_get_info(void);
 int k_cpu_eflag(k_uint32_t);
 void k_cpu_cpuid(k_uint32_t, k_uint32_t *, k_uint32_t *, k_uint32_t *, k_uint32_t *);

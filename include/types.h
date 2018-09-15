@@ -3,6 +3,9 @@
 
 #define NULL ((void *)0)
 
+#define true	1
+#define false	0
+
 /* Signed types */
 typedef signed char		s8;
 typedef signed short		s16;

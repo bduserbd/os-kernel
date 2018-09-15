@@ -4,6 +4,8 @@
 void puts(const char *);
 void puthex(k_uint64_t);
 
+struct k_acpi_info k_acpi;
+
 static k_error_t k_acpi_checksum(void *ptr, int length)
 {
 	int i;
@@ -62,6 +64,8 @@ static void k_acpi_parse_madt(struct k_acpi_madt *madt)
 	if (error)
 		return;
 
+	k_acpi.lapic_address = madt->lapic_address;
+
 	for (type = &madt->entries[0], length = *(k_uint8_t *)(type + 1);
 		type - (k_uint8_t *)madt < madt->sdt.length;
 		type += length, length = *(k_uint8_t *)(type + 1)) {
@@ -91,9 +95,33 @@ static void k_acpi_parse_hpet(struct k_acpi_hpet *hpet)
 	if (hpet->address.space_id != K_ACPI_ADDRESS_SPACE_ID_SYSTEM_MEMORY)
 		return;
 
-	puthex(hpet->address.address);
-	puthex(hpet->number);
-	puthex(hpet->id);
+	//puthex(hpet->address.address);
+	//puthex(hpet->number);
+	//puthex(hpet->id);
+}
+
+static void k_acpi_parse_xsdt(struct k_acpi_xsdt *xsdt)
+{
+	k_uint32_t i;
+	k_error_t error;
+	struct k_acpi_sdt *sdt;
+
+	if (k_memcmp((void *)xsdt->sdt.signature, K_ACPI_XSDT_SIGNATURE, 4))
+		return;
+
+	error = k_acpi_checksum(xsdt, xsdt->sdt.length);
+	if (error)
+		return;
+
+	for (i = 0; i < (xsdt->sdt.length - K_OFFSETOF(struct k_acpi_xsdt, entries)) /
+		sizeof(k_uint64_t); i++) {
+		sdt = (void *)*(k_uint32_t *)&xsdt->entries[i];
+
+		if (!k_memcmp(sdt->signature, K_ACPI_MADT_SIGNATURE, 4))
+			k_acpi_parse_madt((struct k_acpi_madt *)sdt);
+		else if (!k_memcmp(sdt->signature, K_ACPI_HPET_SIGNATURE, 4))
+			k_acpi_parse_hpet((struct k_acpi_hpet *)sdt);
+	}
 }
 
 static void k_acpi_parse_rsdt(struct k_acpi_rsdt *rsdt)
@@ -186,16 +214,20 @@ void k_acpi_get_info(void)
 	struct k_acpi_rsdp *rsdp;
 
 	rsdp = k_acpi_find_rsdp();
-	if (!rsdp)
+	if (!rsdp) {
+		k_acpi.found = false;
 		return;
+	}
 
 	if (rsdp->revision == 0x0)
 		k_acpi_parse_rsdt((struct k_acpi_rsdt *)rsdp->rsdt_address);
 	else {
-		//if (rsdp->xsdt_address)
-		//	k_acpi_parse_xsdt((struct k_acpi_xsdt *)rsdp->xsdt_address);
-		//else
-		//	k_acpi_parse_rsdt((struct k_acpi_rsdt *)rsdp->rsdt_address);
+		if (rsdp->xsdt_address)
+			k_acpi_parse_xsdt((struct k_acpi_xsdt *)(k_uint32_t)rsdp->xsdt_address);
+		else
+			k_acpi_parse_rsdt((struct k_acpi_rsdt *)rsdp->rsdt_address);
 	}
+
+	k_acpi.found = true;
 }
 
