@@ -1,5 +1,6 @@
 #include "include/cpu.h"
 #include "include/mp.h"
+#include "include/lapic.h"
 #include "kernel/include/acpi/acpi.h"
 
 void k_x86_init(void)
@@ -10,8 +11,10 @@ void k_x86_init(void)
 
 	k_acpi_get_info();
 
-	*(unsigned char *)0xb8080 = 'O';
-	*(unsigned char *)0xb8082 = 'k';
-	*(unsigned char *)0xb8084 = '!';
+	k_lapic_init();
+
+	//*(unsigned char *)0xb8080 = 'O';
+	//*(unsigned char *)0xb8082 = 'k';
+	//*(unsigned char *)0xb8084 = '!';
 }
 

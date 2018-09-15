@@ -28,7 +28,7 @@ struct k_mp_configuration_table {
 	__u32	oem_table_pointer;
 	__u16	oem_table_size;
 	__u16	entry_count;
-	__u32	address_of_local_apic;
+	__u32	lapic_address;
 	__u16	extended_table_length;
 	__u8	extended_table_checksum;
 	__u8	reserved;
@@ -44,8 +44,8 @@ enum {
 
 struct k_mp_process_entry {
 	__u8	entry_type;
-	__u8	local_apic_id;
-	__u8	local_apic_version;
+	__u8	lapic_id;
+	__u8	lapic_version;
 	__u8	cpu_flags;
 	__u32	cpu_signature;
 	__u32	feature_flags;
@@ -82,8 +82,8 @@ struct k_mp_local_interrupt_entry {
 	__u8	local_interrupt_flags;
 	__u8	source_bus_id;
 	__u8	source_bus_irq;
-	__u8	destination_local_apic_id;
-	__u8	destination_local_apic_intin;
+	__u8	destination_lapic_id;
+	__u8	destination_lapic_intin;
 } __attribute__((packed));
 
 void k_mp_get_info(void);

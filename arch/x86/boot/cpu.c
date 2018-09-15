@@ -12,7 +12,7 @@ static int k_cpu_is_intel(char vendor[12])
 k_error_t k_cpu_valid(void)
 {
 	char vendor[12];
-	k_uint32_t max_std_function;
+	k_uint32_t max_function;
 	k_uint32_t eax, ebx, ecx, edx;
 
 	/* EFLAGS. */
@@ -20,17 +20,21 @@ k_error_t k_cpu_valid(void)
 		return K_ERROR_FAILURE;
 
 	/* Vendor. */
-	k_cpu_cpuid(K_CPUID_FUNCTION_0x0, &max_std_function, (k_uint32_t *)&vendor[0],
+	k_cpu_cpuid(0x00000000, &max_function, (k_uint32_t *)&vendor[0],
 			(k_uint32_t *)&vendor[8], (k_uint32_t *)&vendor[4]);
 
 	if (!k_cpu_is_intel(vendor))
 		return K_ERROR_FAILURE;
 
-	/* TSC & MSR support. */
-	k_cpu_cpuid(K_CPUID_FUNCTION_0x1, &eax, &ebx, &ecx, &edx);
+	/* Required features. */
+	if (max_function >= 0x00000001) {
+		k_cpu_cpuid(0x00000001, &eax, &ebx, &ecx, &edx);
 
-	if ((edx & K_CPUID_FUNCTION_0x1_TSC) == 0 || (edx & K_CPUID_FUNCTION_0x1_MSR) == 0)
-		return K_ERROR_NONE;
+		if ((edx & K_CPUID_TSC) == 0 || (edx & K_CPUID_MSR) == 0 ||
+				(edx & K_CPUID_APIC) == 0)
+			return K_ERROR_FAILURE;
+	} else
+		return K_ERROR_FAILURE;
 
 	return K_ERROR_NONE;
 }
