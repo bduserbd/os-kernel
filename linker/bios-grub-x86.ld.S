@@ -12,6 +12,12 @@ SECTIONS {
 	.data	: { *(.data) }
 	.bss	: { *(.bss) }
 
+#ifdef K_CONFIG_SMP
+	__k_ap_start = .;
+	.ap_start : { *(.ap_start) }
+	__k_ap_end = .;
+#endif
+
 	__k_end = .;
 
 	/DISCARD/ : {

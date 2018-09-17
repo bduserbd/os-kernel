@@ -1,8 +1,6 @@
 #include "include/gdt-descriptor.S"
 #include "kernel/include/grub/multiboot2.h"
 
-#define STACK_SIZE	0x1000
-
 # The Multiboot2 header.
 	.section ".multiboot2", "a"
 
@@ -24,7 +22,7 @@ header_end:
 _start:
 	cli
 
-	movl	$(stack + STACK_SIZE), %esp
+	movl	$__k_stack_start, %esp
 
 	/* Grub info. */
 	pushl	%ebx
@@ -77,5 +75,15 @@ first_idt:
 	.word	0
 	.long	0
 
-	.comm	stack, STACK_SIZE
+	/* The kernel stack. */
+	.p2align 5
+	.globl	__k_stack_end
+__k_stack_end:
+	.skip	K_CONFIG_STACK_SIZE
+	.globl	__k_stack_start
+__k_stack_start:
+
+	/* Empty space for AP start. */
+	.section ".ap_start", "a"
+	.skip	0x200
 

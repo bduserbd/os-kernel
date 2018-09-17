@@ -1,7 +1,5 @@
 #include "include/cpu.h"
-
-void puts(const char *);
-void puthex(k_uint32_t);
+#include "include/video.h"
 
 struct k_cpu_x86 k_boot_cpu;
 
@@ -73,5 +71,12 @@ void k_cpu_get_info(void)
 	k_cpu_get_vendor(&k_boot_cpu);
 	k_cpu_get_model(&k_boot_cpu);
 	k_cpu_get_id(&k_boot_cpu);
+
+	k_puts("Family: ");
+	k_puthex(k_boot_cpu.family);
+	k_puts("Model: ");
+	k_puthex(k_boot_cpu.model);
+	k_puts("Family: ");
+	k_puthex(k_boot_cpu.stepping);
 }
 

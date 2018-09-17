@@ -4,11 +4,24 @@
 #include "include/error.h"
 #include "include/types.h"
 
+/* Local APIC ID. */
+#define K_LAPIC_ID	0x20
+#define K_LAPIC_ID_VALUE(id)	((id >> 24) & 0xff)
+
 /* Local APIC Version Register. */
 #define K_LAPIC_VERSION_REGISTER	0x30
 
 #define K_LAPIC_VERSION_REGISTER_VERSION(version) (version & 0xff)
 #define K_LAPIC_VERSION_REGISTER_MAX_LVT(version) ((version >> 16) & 0xff)
+
+/* Local APIC Task Priority Register. */
+#define K_LAPIC_TPR	0x80
+
+/* Local APIC Logical Destination Register.  */
+#define K_LAPIC_LDR	0xd0
+
+/* Local APIC Destination Format Register.*/
+#define K_LAPIC_DFR	0xe0
 
 /* Local APIC Spurious Interrupt Vector Register. */
 #define K_LAPIC_SVR	0xf0
@@ -40,6 +53,23 @@
 #define K_LAPIC_ICR_DELIVERY_MODE_INIT			(5 << 8)
 #define K_LAPIC_ICR_DELIVERY_MODE_START_UP		(6 << 8)
 
+#define K_LAPIC_ICR_DEST_MODE_PHYSICAL	(0 << 11)
+#define K_LAPIC_ICR_DEST_MODE_LOGICAL	(1 << 11)
+
+#define K_LAPIC_ICR_STATUS_IDLE		(0 << 12)
+#define K_LAPIC_ICR_STATUS_PENDING	(1 << 12)
+
+#define K_LAPIC_ICR_LEVEL_DEASSERT	(0 << 14)
+#define K_LAPIC_ICR_LEVEL_ASSERT	(1 << 14)
+
+#define K_LAPIC_ICR_TRIGGER_EDGE	(0 << 15)
+#define K_LAPIC_ICR_TRIGGER_LEVEL	(1 << 15)
+
+#define K_LAPIC_ICR_DEST_NO_SHORTHAND		(0 << 18)
+#define K_LAPIC_ICR_DEST_SELF			(1 << 18)
+#define K_LAPIC_ICR_DEST_ALL_INCLUDING_SELF	(2 << 18)
+#define K_LAPIC_ICR_DEST_ALL_EXCLUDING_SELF	(3 << 18)
+
 #define K_LAPIC_ICR2	0x310
 
 /* Local APIC LVT Timer Register. */
@@ -64,6 +94,10 @@
 #define K_LAPIC_DIV_BY_1	0xb
 
 void k_lapic_init(void);
+
+k_uint8_t k_lapic_id(void);
+void k_lapic_icr_init(k_uint8_t);
+void k_lapic_icr_start_up(k_uint8_t, k_uint8_t);
 
 #endif
 

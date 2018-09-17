@@ -5,6 +5,7 @@
 
 #define K_IDT_INTERRUPT_GATE_16BIT	0x6
 #define K_IDT_INTERRUPT_GATE_32BIT	0xe
+#define K_IDT_TRAP_GATE			0xf
 
 struct k_idt_register {
 	__u16	limit;

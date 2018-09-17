@@ -1,7 +1,5 @@
 #include "include/idt.h"
-
-void puts(const char *);
-void puthex(k_uint32_t);
+#include "include/video.h"
 
 extern void k_idt_int0(void);
 extern void k_idt_int1(void);
@@ -36,6 +34,9 @@ extern void k_idt_int29(void);
 extern void k_idt_int30(void);
 extern void k_idt_int31(void);
 
+extern void k_irq_handler(void);
+extern void k_spurious_int(void);
+
 void (*k_idt_int_arr[32])(void) = {
 	k_idt_int0, k_idt_int1, k_idt_int2, k_idt_int3,
 	k_idt_int4, k_idt_int5, k_idt_int6, k_idt_int7,
@@ -51,36 +52,54 @@ struct k_idt_interrupt_gate k_idt[256] __attribute__((aligned(0x8)));
 struct k_idt_register k_idt_reg __attribute__((aligned(0x8)));
 
 struct k_int_regs {
-	k_uint32_t edi;
-	k_uint32_t esi;
-	k_uint32_t ebp;
-	k_uint32_t esp;
-	k_uint32_t ebx;
-	k_uint32_t edx;
-	k_uint32_t ecx;
-	k_uint32_t eax;
-};
+	k_uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
+	k_uint32_t interrupt;
+	k_uint32_t error_code, eip, cs, eflags;
+} __attribute__((packed));
 
 void k_int_handler(struct k_int_regs regs)
 {
+	k_puts("EDI: "); k_puthex(regs.edi);
+	k_puts("ESI: "); k_puthex(regs.esi);
+	k_puts("EBP: "); k_puthex(regs.ebp);
+	k_puts("ESP: "); k_puthex(regs.esp);
+	k_puts("EBX: "); k_puthex(regs.ebx);
+	k_puts("EDX: "); k_puthex(regs.edx);
+	k_puts("ECX: "); k_puthex(regs.ecx);
+	k_puts("EAX: "); k_puthex(regs.eax);
+	k_puts("Interrupt: "); k_puthex(regs.interrupt);
+	k_puts("Error Code: "); k_puthex(regs.error_code);
+	k_puts("EIP: "); k_puthex(regs.eip);
+	k_puts("CS: "); k_puthex(regs.cs);
+	k_puts("EFLAGS: "); k_puthex(regs.eflags);
+
 	for (;;)
 		asm volatile("hlt");
+}
+
+static void k_idt_set_gate(int i, k_uint32_t offset, int type)
+{
+	k_idt[i].offset0 = (k_uint16_t)(offset & 0xffff);
+	k_idt[i].offset1 = (k_uint16_t)((offset >> 16) & 0xffff);
+	k_idt[i].segment_selector = 0x8;
+	k_idt[i].type = type;
+	k_idt[i].dpl = 0;
+	k_idt[i].p = 1;
 }
 
 void k_idt_init(void)
 {
 	int i;
 
-	for (i = 0; i < 32; i++) {
-		k_idt[i].offset0 = (k_uint32_t)k_idt_int_arr[i] & 0xffff;
-		k_idt[i].offset1 = ((k_uint32_t)k_idt_int_arr[i] >> 16) & 0xffff;
-		k_idt[i].segment_selector = 0x8;
-		k_idt[i].type = K_IDT_INTERRUPT_GATE_32BIT;
-		k_idt[i].dpl = 0;
-		k_idt[i].p = 1;
-	}
+	for (i = 0; i < 32; i++)
+		k_idt_set_gate(i , (k_uint32_t)k_idt_int_arr[i], K_IDT_INTERRUPT_GATE_32BIT);
 
-	k_idt_reg.limit = 32 * 8 - 1;
+	for (; i < 255; i++)
+		k_idt_set_gate(i , (k_uint32_t)k_irq_handler, K_IDT_TRAP_GATE);
+
+	k_idt_set_gate(0xff , (k_uint32_t)k_spurious_int, K_IDT_TRAP_GATE);
+
+	k_idt_reg.limit = 256 * 8 - 1;
 	k_idt_reg.address = (k_uint32_t)&k_idt;
 
 	asm volatile("lidt %0" : : "m" (k_idt_reg));

@@ -1,0 +1,24 @@
+FINAL_CFLAGS := $(BUILD_CFLAGS) $(CFLAGS)
+
+.PHONY: build
+build: $(TARGETS)
+
+define make_bin
+	$(eval A := $(patsubst %.S,%.o,$(1)))
+	$(eval B := $(patsubst %.S,%.elf,$(1)))
+	$(eval C := $(patsubst %.S,%.bin,$(1)))
+	$(eval D := $(subst /,-,$(CURDIR)))
+
+	$(V)$(CC) $(FINAL_CFLAGS) -c $(1) -o $(BUILD_OBJDIR)/$(D)-$(A)
+	$(V)echo '  LD ' $(CURDIR)/$(B)
+	$(V)$(LD) $(LDFLAGS) -o $(BUILD_OBJDIR)/$(D)-$(B) $(BUILD_OBJDIR)/$(D)-$(A) 
+	$(V)echo '  OBJCOPY ' $(CURDIR)/$(C)
+	$(V)$(OBJCOPY) $(BUILD_OBJCOPYFLAGS) $(BUILD_OBJDIR)/$(D)-$(B) $(BUILD_OBJDIR)/$(D)-$(C)
+
+	$(V)ln -s $(BUILD_OBJDIR)/$(D)-$(C) $(BUILD_OBJDIR)/$(OUTPUT)
+endef
+
+%.o: %.S
+	$(V)echo '  AS ' $(CURDIR)/$@
+	$(call make_bin,$^)
+

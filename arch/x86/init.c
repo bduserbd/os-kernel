@@ -3,18 +3,20 @@
 #include "include/lapic.h"
 #include "kernel/include/acpi/acpi.h"
 
+#ifdef K_CONFIG_SMP
+#include "include/smp.h"
+#endif
+
 void k_x86_init(void)
 {
 	k_cpu_get_info();
-
 	k_mp_get_info();
-
 	k_acpi_get_info();
 
 	k_lapic_init();
 
-	//*(unsigned char *)0xb8080 = 'O';
-	//*(unsigned char *)0xb8082 = 'k';
-	//*(unsigned char *)0xb8084 = '!';
+#ifdef K_CONFIG_SMP
+	k_smp_init();
+#endif
 }
 

@@ -1,9 +1,6 @@
 #include "include/acpi/acpi.h"
 #include "include/string.h"
 
-void puts(const char *);
-void puthex(k_uint64_t);
-
 struct k_acpi_info k_acpi;
 
 static k_error_t k_acpi_checksum(void *ptr, int length)
@@ -24,39 +21,35 @@ static k_error_t k_acpi_checksum(void *ptr, int length)
 
 static void k_acpi_parse_lapic_nmi(struct k_acpi_lapic_nmi *lapic_nmi)
 {
-	puthex(lapic_nmi->acpi_processor_id);
-	puthex(lapic_nmi->flags);
-	puthex(lapic_nmi->lint);
-	puts("|");
+
 }
 
 static void k_acpi_parse_interrupt_override(struct k_acpi_interrupt_override *interrupt)
 {
-	puthex(interrupt->bus);
-	puthex(interrupt->source_irq);
-	puthex(interrupt->global_irq);
-	puthex(interrupt->flags);
-	puts("|");
+
 }
 
 static void k_acpi_parse_ioapic(struct k_acpi_ioapic *ioapic)
 {
-	puthex(ioapic->apic_id);
-	puthex(ioapic->ioapic_address);
-	puthex(ioapic->global_irq_base);
-	puts("|");
+
 }
 
-static void k_acpi_parse_lapic(struct k_acpi_lapic *lapic)
+static k_error_t k_acpi_parse_lapic(int index, struct k_acpi_lapic *lapic)
 {
-	puthex(lapic->acpi_processor_id);
-	puthex(lapic->apic_id);
-	puthex(lapic->flags);
-	puts("|");
+	if ((lapic->flags & K_ACPI_LAPIC_FLAGS_ENABLED) == 0)
+		return K_ERROR_INVALID_DEVICE;
+
+	k_acpi.ids[index].valid = true;
+	k_acpi.ids[index].processor = lapic->acpi_processor_id;
+	k_acpi.ids[index].lapic = lapic->apic_id;
+
+	return K_ERROR_NONE;
 }
 
 static void k_acpi_parse_madt(struct k_acpi_madt *madt)
 {
+	int i;
+	int lapic_count = 0;
 	k_error_t error;
 	k_uint8_t *type, length;
 
@@ -64,15 +57,22 @@ static void k_acpi_parse_madt(struct k_acpi_madt *madt)
 	if (error)
 		return;
 
+	for (i = 0; i < K_CONFIG_CPUS; i++)
+		k_acpi.ids[i].valid = false;
+
 	k_acpi.lapic_address = madt->lapic_address;
 
 	for (type = &madt->entries[0], length = *(k_uint8_t *)(type + 1);
 		type - (k_uint8_t *)madt < madt->sdt.length;
 		type += length, length = *(k_uint8_t *)(type + 1)) {
-		//puthex(*type); puthex(length); puts("|");
 		switch (*type) {
 		case K_ACPI_MADT_LAPIC:
-			//k_acpi_parse_lapic((struct k_acpi_lapic *)type);
+			if (lapic_count < K_CONFIG_CPUS) {
+				error = k_acpi_parse_lapic(lapic_count, (struct k_acpi_lapic *)type);
+				if (!error)
+					lapic_count++;
+			}
+
 			break;
 
 		case K_ACPI_MADT_IOAPIC:
@@ -156,7 +156,7 @@ static k_error_t k_acpi_check_rsdp(struct k_acpi_rsdp *rsdp)
 	if (error)
 		return error;
 
-	if (rsdp->revision == 0x2) {
+	if (rsdp->revision != 0x0) {
 		error = k_acpi_checksum(rsdp, rsdp->length);
 		if (error)
 			return error;

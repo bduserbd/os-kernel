@@ -1,7 +1,7 @@
 /* Exception that push error code. */
 	.macro K_IDT_ERROR_CODE number
 
-	.global k_idt_int\number
+	.globl	k_idt_int\number
 k_idt_int\number:
 	pushl	$\number	
 	jmp	1f
@@ -20,7 +20,7 @@ K_IDT_ERROR_CODE 30
 /* Exception that push error code. */
 	.macro K_IDT_NO_ERROR_CODE number
 
-	.global k_idt_int\number
+	.globl	k_idt_int\number
 k_idt_int\number:
 	pushl	$0
 	pushl	$\number	
@@ -59,5 +59,13 @@ K_IDT_NO_ERROR_CODE 31
 	popa
 
 	addl	$0x8, %esp
+	iret
+
+	.globl	k_irq_handler
+k_irq_handler:
+	iret
+
+	.globl	k_spurious_int
+k_spurious_int:
 	iret
 
