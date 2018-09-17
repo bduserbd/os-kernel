@@ -6,8 +6,10 @@ build: $(TARGETS)
 %.o:%.S
 	$(V)echo '  AS ' $(CURDIR)/$@
 	$(V)$(CC) $(FINAL_CFLAGS) -c $^ -o $(BUILD_OBJDIR)/$(subst /,-,$(CURDIR))-$(notdir $@)
+	$(V)echo $(subst /,-,$(CURDIR))-$(notdir $@) >> $(BUILD_OBJDIR)/objects.txt
 
 %.o:%.c
 	$(V)echo '  CC ' $(CURDIR)/$@
 	$(V)$(CC) $(FINAL_CFLAGS) -c $^ -o $(BUILD_OBJDIR)/$(subst /,-,$(CURDIR))-$(notdir $@)
+	$(V)echo $(subst /,-,$(CURDIR))-$(notdir $@) >> $(BUILD_OBJDIR)/objects.txt
 
