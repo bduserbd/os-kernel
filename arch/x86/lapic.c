@@ -28,6 +28,8 @@ k_uint8_t k_lapic_id(void)
 	return K_LAPIC_ID_VALUE(k_lapic_read(K_LAPIC_ID));
 }
 
+#ifdef K_CONFIG_SMP
+
 void k_lapic_icr_init(k_uint8_t lapic_id)
 {
 	k_lapic_write(K_LAPIC_ICR2, lapic_id << 24);
@@ -51,6 +53,8 @@ void k_lapic_icr_start_up(k_uint8_t lapic_id, k_uint8_t page)
 	// TODO ..
 	for (int i = 0; i < 100000000; i++) asm volatile("nop");
 }
+
+#endif
 
 void k_lapic_init(void)
 {

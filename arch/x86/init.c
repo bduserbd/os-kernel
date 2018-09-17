@@ -1,8 +1,11 @@
 #include "include/cpu.h"
 #include "include/mp.h"
 #include "include/lapic.h"
-#include "include/smp.h"
 #include "kernel/include/acpi/acpi.h"
+
+#ifdef K_CONFIG_SMP
+#include "include/smp.h"
+#endif
 
 void k_x86_init(void)
 {
@@ -11,6 +14,9 @@ void k_x86_init(void)
 	k_acpi_get_info();
 
 	k_lapic_init();
+
+#ifdef K_CONFIG_SMP
 	k_smp_init();
+#endif
 }
 
