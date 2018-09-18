@@ -68,7 +68,7 @@ static void k_acpi_parse_madt(struct k_acpi_madt *madt)
 		switch (*type) {
 		case K_ACPI_MADT_LAPIC:
 			if (lapic_count < K_CONFIG_CPUS) {
-				error = k_acpi_parse_lapic(lapic_count, (struct k_acpi_lapic *)type);
+				error = k_acpi_parse_lapic(lapic_count, (void *)type);
 				if (!error)
 					lapic_count++;
 			}
