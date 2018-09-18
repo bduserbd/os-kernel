@@ -1,6 +1,7 @@
 OBJS += init.o
 OBJS += cpu.o mp.o lapic.o
 OBJS += idt.o interrupt.o
+OBJS += smbios.o
 OBJS += video.o
 
 CFLAGS += -I ../
