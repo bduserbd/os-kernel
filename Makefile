@@ -61,7 +61,7 @@ PHONY += all clean prep
 PHONY += arch kernel
 PHONY += link grub-iso
 
-all: clean prep arch kernel link grub-iso
+all: clean prep arch kernel link $(FIRMWARE_TARGET)
 
 arch:
 	$(V)$(MAKE) -C arch/$(ARCH)/
@@ -72,25 +72,32 @@ kernel:
 link:
 	$(V)$(LD) $(BUILD_LDFLAGS) -o target.elf	\
 		$(addprefix $(BUILD_OBJDIR)/,$(shell cat $(BUILD_OBJDIR)/objects.txt))
-	$(V)if [ "$(ARCH)" = "x86" ] && [ "$(K_CONFIG_CPUS)" != 1 ]; then			\
+	$(V)if [ "$(ARCH)" = "x86" ] && [ "$(CPUS)" != 1 ]; then			\
 		$(OBJCOPY) target.elf --update-section .ap_start=$(BUILD_OBJDIR)/$(AP_BIN);	\
 	fi;
 
 GRUB_BOOT_MENU = "			\n\
+insmod efi_gop				\n\
 set timeout=0				\n\
 set default=0				\n\
 menuentry \"my os\" {			\n\
 	multiboot2 /boot/kernel		\n\
 }"
 
-grub-iso:
+bios-grub-iso:
 	$(V)mkdir -p iso/boot/grub
-	$(V)echo $(GRUB_BOOT_MENU) > grub.cfg
-	$(V)cp grub.cfg iso/boot/grub
+	$(V)echo $(GRUB_BOOT_MENU) > iso/boot/grub/grub.cfg
 	$(V)cp target.elf iso/boot/kernel
-	$(V)grub-mkrescue -o target.iso iso
-	$(V)rm grub.cfg
+	$(V)grub-mkrescue -o target.iso iso/
 	$(V)rm -rf iso/
+
+uefi-grub:
+	$(V)mkdir -p boot/grub/i386-efi
+	$(V)echo $(GRUB_BOOT_MENU) > boot/grub/grub.cfg
+	$(V)cp target.elf boot/kernel
+	$(V)cp /usr/lib/grub/i386-efi/* boot/grub/i386-efi
+	$(V)grub-mkstandalone -O i386-efi -o BOOTIA32.EFI	\
+		boot/
 
 prep:
 	$(V)$(MAKE) -C linker/
