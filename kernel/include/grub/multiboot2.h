@@ -3,6 +3,11 @@
 
 #ifndef __ASSEMBLER__
 #include "kernel/include/types.h"
+
+#ifdef K_CONFIG_UEFI
+#include "kernel/include/uefi/uefi.h"
+#endif
+
 #endif
 
 #define K_MULTIBOOT2_HEADER_MAGIC	0xe85250d6
@@ -60,19 +65,19 @@ struct k_multiboot2_tag_mmap {
 struct k_multiboot2_tag_framebuffer {
 	k_uint32_t type;
 	k_uint32_t size;
-	k_uint64_t framebuffer_addr;
-	k_uint32_t framebuffer_pitch;
-	k_uint32_t framebuffer_width;
-	k_uint32_t framebuffer_height;
-	k_uint8_t framebuffer_bpp;
+	k_uint64_t addr;
+	k_uint32_t pitch;
+	k_uint32_t width;
+	k_uint32_t height;
+	k_uint8_t bpp;
 	k_uint8_t framebuffer_type;
-	k_uint8_t reserved;
-	k_uint8_t framebuffer_red_field_position;
-	k_uint8_t framebuffer_red_mask_size;
-	k_uint8_t framebuffer_green_field_position;
-	k_uint8_t framebuffer_green_mask_size;
-	k_uint8_t framebuffer_blue_field_position;
-	k_uint8_t framebuffer_blue_mask_size;
+	k_uint16_t reserved;
+	k_uint8_t red_field_position;
+	k_uint8_t red_mask_size;
+	k_uint8_t green_field_position;
+	k_uint8_t green_mask_size;
+	k_uint8_t blue_field_position;
+	k_uint8_t blue_mask_size;
 } __attribute__((packed));
 
 struct k_multiboot2_tag_efi_mmap {
@@ -80,6 +85,7 @@ struct k_multiboot2_tag_efi_mmap {
 	k_uint32_t size;
 	k_uint32_t descr_size;
 	k_uint32_t descr_vers;
+	struct k_efi_memory_descriptor efi_mmap[0];
 } __attribute__((packed));
 
 #endif

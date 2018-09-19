@@ -2,4 +2,5 @@
 all:
 	$(V)$(MAKE) -C utils/
 	$(V)$(MAKE) -C acpi/
+	$(V)$(MAKE) -C fb/
 

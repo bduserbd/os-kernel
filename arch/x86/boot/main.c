@@ -13,13 +13,11 @@ void k_paging_table_set_start(k_uint32_t);
 void k_paging_reserve_pages(k_uint32_t, k_uint32_t);
 
 #ifdef K_CONFIG_BIOS
-void k_reserve_reserved_pages(struct k_multiboot2_tag *tag)
+void k_reserve_reserved_pages(struct k_multiboot2_tag_mmap *mmap)
 {
 	k_uint32_t i;
-	struct k_multiboot2_tag_mmap *mmap;
 	struct k_multiboot2_mmap_entry *entry;
 
-	mmap = (void *)tag;
 	if (mmap->entry_size != sizeof(*entry))
 		return;
 
@@ -29,6 +27,16 @@ void k_reserve_reserved_pages(struct k_multiboot2_tag *tag)
 				entry->type == K_MULTIBOOT2_MEMORY_ACPI_RECLAIMABLE)
 			if (entry->addr + entry->len > (1 << 20))
 				k_paging_reserve_pages(entry->addr & 0xffffffff, entry->len & 0xffffffff);
+}
+#endif
+
+#ifdef K_CONFIG_UEFI
+void k_set_gop_framebuffer(struct k_multiboot2_tag_framebuffer *fb)
+{
+	if (fb->framebuffer_type != K_MULTIBOOT2_FRAMEBUFFER_TYPE_RGB)
+		return;
+
+	while (1) ;
 }
 #endif
 
@@ -42,12 +50,13 @@ void k_scan_multiboot_tags(k_uint32_t ebx)
 		switch (tag->type) {
 #ifdef K_CONFIG_BIOS
 		case K_MULTIBOOT2_TAG_TYPE_MMAP:
-			k_reserve_reserved_pages(tag);
+			k_reserve_reserved_pages((void *)tag);
 			break;
 #endif
 
 #ifdef K_CONFIG_UEFI
 		case K_MULTIBOOT2_TAG_TYPE_FRAMEBUFFER:
+			k_set_gop_framebuffer((void *)tag);
 			break;
 
 		case K_MULTIBOOT2_TAG_TYPE_EFI_MMAP:
@@ -84,6 +93,6 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 
 	k_paging_init();
 
-	//k_x86_init();
+	k_x86_init();
 }
 
