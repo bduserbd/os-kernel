@@ -1,7 +1,7 @@
 #ifndef K_MSR_H
 #define K_MSR_H
 
-#include "include/types.h"
+#include "kernel/include/types.h"
 
 #define K_MSR_IA32_APIC_BASE		0x1b
 #define K_MSR_IA32_APIC_BASE_BSP	(1 << 8)	

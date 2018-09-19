@@ -1,7 +1,7 @@
 #ifndef K_IO_H
 #define K_IO_H
 
-#include "include/types.h"
+#include "kernel/include/types.h"
 
 static inline void k_outb(k_uint8_t v, k_uint16_t port)
 {

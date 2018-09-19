@@ -1,8 +1,8 @@
 #ifndef K_LAPIC_H
 #define K_LAPIC_H
 
-#include "include/error.h"
-#include "include/types.h"
+#include "kernel/include/error.h"
+#include "kernel/include/types.h"
 
 /* Local APIC ID. */
 #define K_LAPIC_ID	0x20

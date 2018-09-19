@@ -56,13 +56,13 @@ _start:
 	popf
 
 	/* Basic CPU reqiurements. */
-	#call	k_cpu_valid
+	call	k_cpu_valid
 
-	#testl	%eax, %eax
-	#jnz	die
+	testl	%eax, %eax
+	jnz	die
 
 	/* Main flow. */
-	#call	k_main
+	call	k_main
 
 die:
 	hlt

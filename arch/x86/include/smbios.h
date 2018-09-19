@@ -1,8 +1,8 @@
 #ifndef K_SMBIOS_H
 #define K_SMBIOS_H
 
-#include "include/types.h"
-#include "include/error.h"
+#include "kernel/include/types.h"
+#include "kernel/include/error.h"
 
 /* SMBIOS 2.1 */
 #define K_SMBIOS_SIGNATURE	"_SM_"

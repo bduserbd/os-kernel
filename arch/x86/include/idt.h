@@ -1,7 +1,7 @@
 #ifndef K_IDT_H
 #define K_IDT_H
 
-#include "include/types.h"
+#include "kernel/include/types.h"
 
 #define K_IDT_INTERRUPT_GATE_16BIT	0x6
 #define K_IDT_INTERRUPT_GATE_32BIT	0xe

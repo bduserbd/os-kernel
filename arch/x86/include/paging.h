@@ -1,7 +1,7 @@
 #ifndef K_PAGING_H
 #define K_PAGING_H
 
-#include "include/types.h"
+#include "kernel/include/types.h"
 
 typedef k_uint64_t	k_pdpte_t;
 

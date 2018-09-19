@@ -12,6 +12,7 @@ void k_paging_init(void);
 void k_paging_table_set_start(k_uint32_t);
 void k_paging_reserve_pages(k_uint32_t, k_uint32_t);
 
+#ifdef K_CONFIG_BIOS
 void k_reserve_reserved_pages(struct k_multiboot2_tag *tag)
 {
 	k_uint32_t i;
@@ -29,6 +30,7 @@ void k_reserve_reserved_pages(struct k_multiboot2_tag *tag)
 			if (entry->addr + entry->len > (1 << 20))
 				k_paging_reserve_pages(entry->addr & 0xffffffff, entry->len & 0xffffffff);
 }
+#endif
 
 void k_scan_multiboot_tags(k_uint32_t ebx)
 {
@@ -37,8 +39,21 @@ void k_scan_multiboot_tags(k_uint32_t ebx)
 	tag = (struct k_multiboot2_tag *)(ebx + 8);
 
 	while (tag->type != K_MULTIBOOT2_TAG_TYPE_END) {
-		if (tag->type == K_MULTIBOOT2_TAG_TYPE_MMAP)
+		switch (tag->type) {
+#ifdef K_CONFIG_BIOS
+		case K_MULTIBOOT2_TAG_TYPE_MMAP:
 			k_reserve_reserved_pages(tag);
+			break;
+#endif
+
+#ifdef K_CONFIG_UEFI
+		case K_MULTIBOOT2_TAG_TYPE_FRAMEBUFFER:
+			break;
+
+		case K_MULTIBOOT2_TAG_TYPE_EFI_MMAP:
+			break;
+#endif
+		}
 
 		tag = (struct k_multiboot2_tag *)((k_uint8_t *)tag + ((tag->size + 0x7) & ~0x7));
 	}
@@ -69,6 +84,6 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 
 	k_paging_init();
 
-	k_x86_init();
+	//k_x86_init();
 }
 

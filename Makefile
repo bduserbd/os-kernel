@@ -42,6 +42,7 @@ BUILD_CFLAGS += -Wall -m32 -O2
 BUILD_CFLAGS += -I $(CURDIR)
 BUILD_CFLAGS += -Wno-main -nostdlib -fno-builtin -fno-strict-aliasing
 BUILD_CFLAGS += $(BUILD_CPPFLAGS)
+BUILD_CFLAGS += -g
 
 BUILD_LDFLAGS += -T $(BUILD_LD_SCRIPT) -melf_i386 -n
 
@@ -77,7 +78,6 @@ link:
 	fi;
 
 GRUB_BOOT_MENU = "			\n\
-insmod efi_gop				\n\
 set timeout=0				\n\
 set default=0				\n\
 menuentry \"my os\" {			\n\
@@ -91,9 +91,17 @@ bios-grub-iso:
 	$(V)grub-mkrescue -o target.iso iso/
 	$(V)rm -rf iso/
 
+GRUB_UEFI_BOOT_MENU = "			\n\
+insmod efi_gop				\n\
+set timeout=0				\n\
+set default=0				\n\
+menuentry \"my os\" {			\n\
+	multiboot2 /boot/kernel		\n\
+}"
+
 uefi-grub:
 	$(V)mkdir -p boot/grub/i386-efi
-	$(V)echo $(GRUB_BOOT_MENU) > boot/grub/grub.cfg
+	$(V)echo $(GRUB_UEFI_BOOT_MENU) > boot/grub/grub.cfg
 	$(V)cp target.elf boot/kernel
 	$(V)cp /usr/lib/grub/i386-efi/* boot/grub/i386-efi
 	$(V)grub-mkstandalone -O i386-efi -o BOOTIA32.EFI	\

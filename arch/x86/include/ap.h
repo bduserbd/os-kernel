@@ -1,7 +1,7 @@
 #ifndef K_AP_H
 #define K_AP_H
 
-#include "include/types.h"
+#include "kernel/include/types.h"
 
 struct k_ap_start_info {
 	k_uint32_t entry;

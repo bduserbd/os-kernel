@@ -1,8 +1,8 @@
 #ifndef K_ACPI_TABLES_H
 #define K_ACPI_TABLES_H
 
-#include "include/error.h"
-#include "include/types.h"
+#include "kernel/include/error.h"
+#include "kernel/include/types.h"
 
 #define K_ACPI_RSDP_SIGNATURE	"RSD PTR "
 

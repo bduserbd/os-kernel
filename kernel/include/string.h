@@ -1,7 +1,7 @@
 #ifndef K_STRING_H
 #define K_STRING_H
 
-#include "include/types.h"
+#include "kernel/include/types.h"
 
 void *k_memset(void *, int, k_size_t);
 void *k_memcpy(void *, const void *, k_size_t);

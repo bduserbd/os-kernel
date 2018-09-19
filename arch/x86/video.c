@@ -1,4 +1,4 @@
-#include "include/types.h"
+#include "include/video.h"
 
 static unsigned char *vid = (unsigned char *)0xb8000;
 

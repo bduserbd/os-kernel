@@ -1,8 +1,8 @@
 #ifndef K_MP_H
 #define K_MP_H
 
-#include "include/error.h"
-#include "include/types.h"
+#include "kernel/include/error.h"
+#include "kernel/include/types.h"
 
 #define K_SMP_SIGNATURE	0x5f504d5f
 
