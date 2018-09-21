@@ -1,5 +1,6 @@
 #include "include/init.h"
 #include "include/idt.h"
+#include "kernel/include/mm/buddy.h"
 #include "kernel/include/grub/multiboot2.h"
 
 void puts(const char *);
@@ -48,6 +49,9 @@ void k_scan_multiboot_tags(k_uint32_t ebx)
 
 	while (tag->type != K_MULTIBOOT2_TAG_TYPE_END) {
 		switch (tag->type) {
+		case K_MULTIBOOT2_TAG_TYPE_BASIC_MEMINFO:
+			break;
+
 #ifdef K_CONFIG_BIOS
 		case K_MULTIBOOT2_TAG_TYPE_MMAP:
 			k_reserve_reserved_pages((void *)tag);
@@ -70,7 +74,7 @@ void k_scan_multiboot_tags(k_uint32_t ebx)
 
 void k_main(k_uint32_t eax, k_uint32_t ebx)
 {
-	k_uint32_t page_table;
+	k_uint32_t page_table, heap;
 
 	if (eax != K_MULTIBOOT2_BOOTLOADER_MAGIC)
 		return;
@@ -93,6 +97,7 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 
 	k_paging_init();
 
-	k_x86_init();
+	heap = page_table + 0x1000 + 0x400 * 0x1000;
+	k_x86_init(heap);
 }
 

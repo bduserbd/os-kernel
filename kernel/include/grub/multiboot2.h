@@ -16,6 +16,7 @@
 
 #define K_MULTIBOOT2_TAG_TYPE_END		0
 
+#define K_MULTIBOOT2_TAG_TYPE_BASIC_MEMINFO	4
 #define K_MULTIBOOT2_TAG_TYPE_MMAP		6
 #ifdef K_CONFIG_UEFI
 #define K_MULTIBOOT2_TAG_TYPE_FRAMEBUFFER	8
@@ -39,6 +40,13 @@
 struct k_multiboot2_tag {
 	k_uint32_t type;
 	k_uint32_t size;
+} __attribute__((packed));
+
+struct k_multiboot2_tag_basic_meminfo {
+	k_uint32_t type;
+	k_uint32_t size;
+	k_uint32_t mem_lower;
+	k_uint32_t mem_upper;
 } __attribute__((packed));
 
 struct k_multiboot2_mmap_entry {
