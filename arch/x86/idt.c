@@ -73,6 +73,14 @@ void k_int_handler(struct k_int_regs regs)
 	k_puts("CS: "); k_puthex(regs.cs);
 	k_puts("EFLAGS: "); k_puthex(regs.eflags);
 
+	if (regs.interrupt == 0xe) {
+		k_uint32_t cr2;
+
+		asm volatile("mov %%cr2,%0" : "=r" (cr2));
+
+		k_puts("CR2: "); k_puthex(regs.eip);
+	}
+
 	for (;;)
 		asm volatile("hlt");
 }

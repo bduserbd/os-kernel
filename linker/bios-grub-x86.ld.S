@@ -19,10 +19,5 @@ SECTIONS {
 #endif
 
 	__k_end = .;
-
-	/DISCARD/ : {
-		*(.comment)
-		*(.eh_frame)
-	}
 }
 

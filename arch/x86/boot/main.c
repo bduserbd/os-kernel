@@ -1,5 +1,6 @@
 #include "include/init.h"
 #include "include/idt.h"
+#include "kernel/include/mm/buddy.h"
 #include "kernel/include/grub/multiboot2.h"
 
 void puts(const char *);
@@ -12,13 +13,12 @@ void k_paging_init(void);
 void k_paging_table_set_start(k_uint32_t);
 void k_paging_reserve_pages(k_uint32_t, k_uint32_t);
 
-void k_reserve_reserved_pages(struct k_multiboot2_tag *tag)
+#ifdef K_CONFIG_BIOS
+void k_reserve_reserved_pages(struct k_multiboot2_tag_mmap *mmap)
 {
 	k_uint32_t i;
-	struct k_multiboot2_tag_mmap *mmap;
 	struct k_multiboot2_mmap_entry *entry;
 
-	mmap = (void *)tag;
 	if (mmap->entry_size != sizeof(*entry))
 		return;
 
@@ -29,6 +29,17 @@ void k_reserve_reserved_pages(struct k_multiboot2_tag *tag)
 			if (entry->addr + entry->len > (1 << 20))
 				k_paging_reserve_pages(entry->addr & 0xffffffff, entry->len & 0xffffffff);
 }
+#endif
+
+#ifdef K_CONFIG_UEFI
+void k_set_gop_framebuffer(struct k_multiboot2_tag_framebuffer *fb)
+{
+	if (fb->framebuffer_type != K_MULTIBOOT2_FRAMEBUFFER_TYPE_RGB)
+		return;
+
+	while (1) ;
+}
+#endif
 
 void k_scan_multiboot_tags(k_uint32_t ebx)
 {
@@ -37,8 +48,25 @@ void k_scan_multiboot_tags(k_uint32_t ebx)
 	tag = (struct k_multiboot2_tag *)(ebx + 8);
 
 	while (tag->type != K_MULTIBOOT2_TAG_TYPE_END) {
-		if (tag->type == K_MULTIBOOT2_TAG_TYPE_MMAP)
-			k_reserve_reserved_pages(tag);
+		switch (tag->type) {
+		case K_MULTIBOOT2_TAG_TYPE_BASIC_MEMINFO:
+			break;
+
+#ifdef K_CONFIG_BIOS
+		case K_MULTIBOOT2_TAG_TYPE_MMAP:
+			k_reserve_reserved_pages((void *)tag);
+			break;
+#endif
+
+#ifdef K_CONFIG_UEFI
+		case K_MULTIBOOT2_TAG_TYPE_FRAMEBUFFER:
+			k_set_gop_framebuffer((void *)tag);
+			break;
+
+		case K_MULTIBOOT2_TAG_TYPE_EFI_MMAP:
+			break;
+#endif
+		}
 
 		tag = (struct k_multiboot2_tag *)((k_uint8_t *)tag + ((tag->size + 0x7) & ~0x7));
 	}
@@ -46,7 +74,7 @@ void k_scan_multiboot_tags(k_uint32_t ebx)
 
 void k_main(k_uint32_t eax, k_uint32_t ebx)
 {
-	k_uint32_t page_table;
+	k_uint32_t page_table, heap;
 
 	if (eax != K_MULTIBOOT2_BOOTLOADER_MAGIC)
 		return;
@@ -69,6 +97,7 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 
 	k_paging_init();
 
-	k_x86_init();
+	heap = page_table + 0x1000 + 0x400 * 0x1000;
+	k_x86_init(heap);
 }
 

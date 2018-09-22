@@ -2,17 +2,29 @@
 #define K_MULTIBOOT2_H
 
 #ifndef __ASSEMBLER__
-#include "include/types.h"
+#include "kernel/include/types.h"
+
+#ifdef K_CONFIG_UEFI
+#include "kernel/include/uefi/uefi.h"
+#endif
+
 #endif
 
 #define K_MULTIBOOT2_HEADER_MAGIC	0xe85250d6
 
 #define K_MULTIBOOT2_BOOTLOADER_MAGIC	0x36d76289
 
-#define K_MULTIBOOT2_TAG_TYPE_END	0
-#define K_MULTIBOOT2_TAG_TYPE_MMAP	6
+#define K_MULTIBOOT2_TAG_TYPE_END		0
 
-#define K_MULTIBOOT2_HEADER_TAG_END	0
+#define K_MULTIBOOT2_TAG_TYPE_BASIC_MEMINFO	4
+#define K_MULTIBOOT2_TAG_TYPE_MMAP		6
+#ifdef K_CONFIG_UEFI
+#define K_MULTIBOOT2_TAG_TYPE_FRAMEBUFFER	8
+#define K_MULTIBOOT2_TAG_TYPE_EFI_MMAP		17
+#endif
+
+#define K_MULTIBOOT2_HEADER_TAG_END		0
+#define K_MULTIBOOT2_HEADER_TAG_FRAMEBUFFER	5
 
 #define K_MULTIBOOT2_ARCHITECTURE_I386		0
 #define K_MULTIBOOT2_ARCHITECTURE_MIPS32	4
@@ -30,6 +42,13 @@ struct k_multiboot2_tag {
 	k_uint32_t size;
 } __attribute__((packed));
 
+struct k_multiboot2_tag_basic_meminfo {
+	k_uint32_t type;
+	k_uint32_t size;
+	k_uint32_t mem_lower;
+	k_uint32_t mem_upper;
+} __attribute__((packed));
+
 struct k_multiboot2_mmap_entry {
 	k_uint64_t addr;
 	k_uint64_t len;
@@ -44,6 +63,40 @@ struct k_multiboot2_tag_mmap {
 	k_uint32_t entry_version;
 	struct k_multiboot2_mmap_entry entries[0];
 } __attribute__((packed));
+
+#ifdef K_CONFIG_UEFI
+
+#define K_MULTIBOOT2_FRAMEBUFFER_TYPE_INDEXED	0
+#define K_MULTIBOOT2_FRAMEBUFFER_TYPE_RGB	1
+#define K_MULTIBOOT2_FRAMEBUFFER_TYPE_EGA_TEXT	2
+
+struct k_multiboot2_tag_framebuffer {
+	k_uint32_t type;
+	k_uint32_t size;
+	k_uint64_t addr;
+	k_uint32_t pitch;
+	k_uint32_t width;
+	k_uint32_t height;
+	k_uint8_t bpp;
+	k_uint8_t framebuffer_type;
+	k_uint16_t reserved;
+	k_uint8_t red_field_position;
+	k_uint8_t red_mask_size;
+	k_uint8_t green_field_position;
+	k_uint8_t green_mask_size;
+	k_uint8_t blue_field_position;
+	k_uint8_t blue_mask_size;
+} __attribute__((packed));
+
+struct k_multiboot2_tag_efi_mmap {
+	k_uint32_t type;
+	k_uint32_t size;
+	k_uint32_t descr_size;
+	k_uint32_t descr_vers;
+	struct k_efi_memory_descriptor efi_mmap[0];
+} __attribute__((packed));
+
+#endif
 
 #endif
 

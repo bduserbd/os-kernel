@@ -1,8 +1,8 @@
 #ifndef K_CPU_H
 #define K_CPU_H
 
-#include "include/error.h"
-#include "include/types.h"
+#include "kernel/include/error.h"
+#include "kernel/include/types.h"
 
 /* CPUID 0x00000001 */
 /* EAX */
