@@ -1,6 +1,5 @@
 #include "include/mm/buddy.h"
 #include "include/string.h"
-#include "arch/x86/include/video.h"
 
 static struct k_buddy_node *k_group = NULL;
 static struct k_buddy_node *k_node = NULL;
