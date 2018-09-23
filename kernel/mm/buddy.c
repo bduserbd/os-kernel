@@ -48,7 +48,7 @@ static struct k_buddy_node *k_buddy_address_to_node(void *ptr)
 			(unsigned long)k_heap + (1 << K_BUDDY_MAX_BLOCK_LOG2) < a)
 		return NULL;
 
-	return &k_node[(a - (unsigned long)k_heap) >> K_BUDDY_TOTAL_GROUPS];
+	return &k_node[(a - (unsigned long)k_heap) >> K_BUDDY_MIN_BLOCK_LOG2];
 }
 
 void k_buddy_free(void *ptr)
