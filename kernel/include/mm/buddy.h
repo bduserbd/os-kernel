@@ -21,9 +21,9 @@
 	(sizeof(struct k_buddy_node) * K_BUDDY_TOTAL_GROUPS)
 
 enum {
-	K_BUDDY_NODE_HEAD = 1,
 	K_BUDDY_NODE_USED,
 	K_BUDDY_NODE_SPLIT,
+	K_BUDDY_NODE_HEAD,
 };
 
 struct k_buddy_node {
@@ -34,6 +34,7 @@ struct k_buddy_node {
 
 void k_buddy_init(k_uint32_t);
 void *k_buddy_alloc(k_size_t);
+void k_buddy_free(void *);
 
 #endif
 
