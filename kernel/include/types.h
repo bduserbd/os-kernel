@@ -51,7 +51,7 @@ typedef s32	k_ssize_t;
 #define K_OFFSETOF(st, m)	((k_size_t)&(((st *)0)->m))
 
 #define K_ALIGN_UP(n, align)	\
-	((n + (typeof(n))align - 1) & ~((typeof(n))align - 1))
+	(((n) + (typeof(n))(align) - 1) & ~((typeof(n))(align) - 1))
 
 #define K_MIN(a, b)	((a) > (b) ? (b) : (a))
 #define K_MAX(a, b)	((a) > (b) ? (a) : (b))
