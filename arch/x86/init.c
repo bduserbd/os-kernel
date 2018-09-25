@@ -1,3 +1,4 @@
+#include "include/init.h"
 #include "include/cpu.h"
 #include "include/mp.h"
 #include "include/lapic.h"
@@ -10,7 +11,11 @@
 #include "include/smp.h"
 #endif
 
+#ifdef K_CONFIG_BIOS
 void k_x86_init(k_uint32_t heap)
+#elif K_CONFIG_UEFI
+void k_x86_init(k_uint32_t heap, struct k_fb_info *fb)
+#endif
 {
 	k_cpu_get_info();
 	k_mp_get_info();
@@ -25,18 +30,8 @@ void k_x86_init(k_uint32_t heap)
 
 	k_buddy_init(heap);
 
-	void *a;
-
-	a = k_buddy_alloc(0x500); k_puthex((k_uint32_t)a); k_buddy_free(a); 
-	a = k_buddy_alloc(0x6000); k_puthex((k_uint32_t)a); k_buddy_free(a); 
-	a = k_buddy_alloc(0x500); k_puthex((k_uint32_t)a); k_buddy_free(a); 
-	a = k_buddy_alloc(0x70000); k_puthex((k_uint32_t)a); k_buddy_free(a); 
-	a = k_buddy_alloc(0x500); k_puthex((k_uint32_t)a); k_buddy_free(a); 
-	a = k_buddy_alloc(0x800000); k_puthex((k_uint32_t)a); k_buddy_free(a); 
-	a = k_buddy_alloc(0x500); k_puthex((k_uint32_t)a); k_buddy_free(a); 
-	a = k_buddy_alloc(0x70000); k_puthex((k_uint32_t)a); k_buddy_free(a); 
-	a = k_buddy_alloc(0x6000); k_puthex((k_uint32_t)a); k_buddy_free(a); 
-	a = k_buddy_alloc(0x6000); k_puthex((k_uint32_t)a); k_buddy_free(a); 
-	a = k_buddy_alloc(0x70000); k_puthex((k_uint32_t)a); k_buddy_free(a); 
+#ifdef K_CONFIG_UEFI
+	k_fb_set(fb);
+#endif
 }
 

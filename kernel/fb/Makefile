@@ -1,4 +1,5 @@
 OBJS += fb.o
+OBJS += font.o
 
 CFLAGS = -I ../
 
