@@ -1,5 +1,5 @@
 OBJS += fb.o
-OBJS += font.o
+OBJS += shell.o font.o
 
 CFLAGS = -I ../
 

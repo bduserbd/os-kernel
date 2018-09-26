@@ -54,11 +54,8 @@ k_error_t k_get_fb_info(void *tag, void *data)
 
 	fb->framebuffer = fbtag->addr;
 
-	if (fbtag->bpp != 24)
-		return K_ERROR_FAILURE;
-
-	fb->bits_per_pixel = 32;
-	fb->bytes_per_pixel = 4;
+	fb->bits_per_pixel = fbtag->bpp;
+	fb->bytes_per_pixel = fb->bits_per_pixel >> 3;
 
 	fb->red.position = fbtag->red_field_position;
 	fb->red.mask = (1 << fbtag->red_mask_size) - 1;
@@ -71,6 +68,8 @@ k_error_t k_get_fb_info(void *tag, void *data)
 
 	fb->reserved.position = 24;
 	fb->reserved.mask = 0xff;
+
+	k_paging_reserve_pages(fb->framebuffer, fb->height * fb->pitch);
 
 	return K_ERROR_NONE;
 }
