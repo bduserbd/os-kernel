@@ -1,5 +1,4 @@
 #include "include/smbios.h"
-#include "include/video.h"
 #include "kernel/include/string.h"
 
 static struct k_smbios_info {

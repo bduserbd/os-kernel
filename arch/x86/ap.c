@@ -1,5 +1,5 @@
 #include "include/ap.h"
-#include "include/video.h"
+#include "kernel/include/video/print.h"
 
 void k_ap_main(k_uint32_t processor)
 {

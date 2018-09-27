@@ -1,5 +1,5 @@
 #include "include/idt.h"
-#include "include/video.h"
+#include "kernel/include/video/print.h"
 
 extern void k_idt_int0(void);
 extern void k_idt_int1(void);

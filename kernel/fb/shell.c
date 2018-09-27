@@ -79,7 +79,7 @@ void k_shell_scroll(void)
 	k_uint32_t pos, end_pos;
 
 	a.column = 0;
-	b.line = 0;
+	a.line = 0;
 
 	b.column = k_shell.cols - 1;
 	b.line = k_shell.rows - 1;

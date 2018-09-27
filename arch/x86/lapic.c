@@ -3,7 +3,7 @@
 #include "include/ap.h"
 #include "include/io.h"
 #include "include/msr.h"
-#include "include/video.h"
+#include "kernel/include/video/print.h"
 #include "kernel/include/acpi/acpi.h"
 
 static struct k_lapic_info {

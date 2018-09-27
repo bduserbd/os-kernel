@@ -14,6 +14,8 @@ struct k_fb_color_mask {
 #define K_FB_INVALID_POS	(k_uint32_t)~0
 
 struct k_fb_info {
+	int graphics;
+
 	/* Screen size. */
 	k_uint32_t width;
 	k_uint32_t height;

@@ -2,9 +2,7 @@
 #include "include/idt.h"
 #include "kernel/include/mm/buddy.h"
 #include "kernel/include/grub/multiboot2.h"
-
-void puts(const char *);
-void puthex(k_uint32_t);
+#include "kernel/include/fb/shell.h"
 
 extern __u8 __k_start[];
 extern __u8 __k_end[];
@@ -14,6 +12,7 @@ void k_paging_table_set_start(k_uint32_t);
 void k_paging_reserve_pages(k_uint32_t, k_uint32_t);
 
 #ifdef K_CONFIG_BIOS
+
 static k_error_t k_reserve_reserved_pages(void *tag, void *data)
 {
 	k_uint32_t i;
@@ -23,7 +22,7 @@ static k_error_t k_reserve_reserved_pages(void *tag, void *data)
 	mmaptag = tag;
 
 	if (mmaptag->entry_size != sizeof(*entry))
-		return;
+		return K_ERROR_NOT_FOUND;
 
 	entry = &mmaptag->entries[0];
 	for (i = 0; i < mmaptag->size / mmaptag->entry_size; i++, entry++)
@@ -34,9 +33,33 @@ static k_error_t k_reserve_reserved_pages(void *tag, void *data)
 
 	return K_ERROR_NONE;
 }
+
+#elif K_CONFIG_UEFI
+
+static k_error_t k_get_old_acpi(void *tag, void *data)
+{
+	struct k_multiboot2_tag_old_acpi *oldacpi;
+
+	oldacpi = tag;
+
+	*(void **)data = &oldacpi->rsdp[0];
+
+	return K_ERROR_NONE;
+}
+
+static k_error_t k_get_new_acpi(void *tag, void *data)
+{
+	struct k_multiboot2_tag_old_acpi *newacpi;
+
+	newacpi = tag;
+
+	*(void **)data = &newacpi->rsdp[0];
+
+	return K_ERROR_NONE;
+}
+
 #endif
 
-#ifdef K_CONFIG_UEFI
 k_error_t k_get_fb_info(void *tag, void *data)
 {
 	struct k_fb_info *fb;
@@ -45,35 +68,46 @@ k_error_t k_get_fb_info(void *tag, void *data)
 	fbtag = tag;
 	fb = data;
 
-	if (fbtag->framebuffer_type != K_MULTIBOOT2_FRAMEBUFFER_TYPE_RGB)
+	switch (fbtag->framebuffer_type) {
+	case K_MULTIBOOT2_FRAMEBUFFER_TYPE_RGB:
+		fb->width = fbtag->width;
+		fb->height = fbtag->height;
+
+		fb->pitch = fbtag->pitch;
+
+		fb->framebuffer = fbtag->addr;
+
+		fb->bits_per_pixel = fbtag->bpp;
+		fb->bytes_per_pixel = fb->bits_per_pixel >> 3;
+
+		fb->red.position = fbtag->red_field_position;
+		fb->red.mask = (1 << fbtag->red_mask_size) - 1;
+
+		fb->green.position = fbtag->green_field_position;
+		fb->green.mask = (1 << fbtag->green_mask_size) - 1;
+
+		fb->blue.position = fbtag->blue_field_position;
+		fb->blue.mask = (1 << fbtag->blue_mask_size) - 1;
+
+		fb->reserved.position = 24;
+		fb->reserved.mask = 0xff;
+
+		k_paging_reserve_pages(fb->framebuffer, fb->height * fb->pitch);
+
+		break;
+
+	case K_MULTIBOOT2_FRAMEBUFFER_TYPE_EGA_TEXT:
+		fb->width = fbtag->width;
+		fb->height = fbtag->height;
+
+		break;
+
+	default:
 		return K_ERROR_NOT_FOUND;
-
-	fb->width = fbtag->width;
-	fb->height = fbtag->height;
-	fb->pitch = fbtag->pitch;
-
-	fb->framebuffer = fbtag->addr;
-
-	fb->bits_per_pixel = fbtag->bpp;
-	fb->bytes_per_pixel = fb->bits_per_pixel >> 3;
-
-	fb->red.position = fbtag->red_field_position;
-	fb->red.mask = (1 << fbtag->red_mask_size) - 1;
-
-	fb->green.position = fbtag->green_field_position;
-	fb->green.mask = (1 << fbtag->green_mask_size) - 1;
-
-	fb->blue.position = fbtag->blue_field_position;
-	fb->blue.mask = (1 << fbtag->blue_mask_size) - 1;
-
-	fb->reserved.position = 24;
-	fb->reserved.mask = 0xff;
-
-	k_paging_reserve_pages(fb->framebuffer, fb->height * fb->pitch);
+	}
 
 	return K_ERROR_NONE;
 }
-#endif
 
 k_error_t k_scan_multiboot_tags(k_uint32_t ebx, int type, k_error_t (*callback)
 		(void *, void *), void *data)
@@ -94,10 +128,10 @@ k_error_t k_scan_multiboot_tags(k_uint32_t ebx, int type, k_error_t (*callback)
 
 void k_main(k_uint32_t eax, k_uint32_t ebx)
 {
+	k_error_t error;
 	k_uint32_t page_table, heap;
-#ifdef K_CONFIG_UEFI
 	struct k_fb_info fb;
-#endif
+	void *rsdp = NULL;
 
 	if (eax != K_MULTIBOOT2_BOOTLOADER_MAGIC)
 		return;
@@ -116,8 +150,13 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 #ifdef K_CONFIG_BIOS
 	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_MMAP, k_reserve_reserved_pages, NULL);
 #elif K_CONFIG_UEFI
-	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_FRAMEBUFFER, k_get_fb_info, &fb);
+	//error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_ACPI_OLD, k_get_old_acpi, &rsdp);
+	//if (error)
+		k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_ACPI_NEW, k_get_new_acpi, &rsdp);
+
 #endif
+
+	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_FRAMEBUFFER, k_get_fb_info, &fb);
 
 	// QEMU doesn't report APIC BIOS e820 memory map.
 	k_paging_reserve_pages(0xfee00000, 0x1000);
@@ -126,10 +165,6 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 
 	heap = page_table + 0x1000 + 0x400 * 0x1000;
 
-#ifdef K_CONFIG_BIOS
-	k_x86_init(heap);
-#elif K_CONFIG_UEFI
-	k_x86_init(heap, &fb);
-#endif
+	k_x86_init(heap, &fb, rsdp);
 }
 
