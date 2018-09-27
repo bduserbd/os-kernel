@@ -1,7 +1,7 @@
 #ifndef K_FONT_H
 #define K_FONT_H
 
-#include "include/types.h"
+#include "kernel/include/types.h"
 
 /* Character dimensions in pixels */
 #define K_FONT_CHARACTER_WIDTH		8

@@ -16,6 +16,22 @@ static struct {
 	void *double_buffer;
 } k_fb;
 
+k_uint32_t k_fb_width(void)
+{
+	if (k_fb.set)
+		return k_fb.info.width;
+	else
+		return K_FB_INVALID_POS;
+}
+
+k_uint32_t k_fb_height(void)
+{
+	if (k_fb.set)
+		return k_fb.info.height;
+	else
+		return K_FB_INVALID_POS;
+}
+
 k_fb_color_t k_fb_prepare_color(k_uint8_t r, k_uint8_t g, k_uint8_t b, k_uint8_t reserved)
 {
 	if (!k_fb.set)
@@ -26,8 +42,6 @@ k_fb_color_t k_fb_prepare_color(k_uint8_t r, k_uint8_t g, k_uint8_t b, k_uint8_t
 		((b & k_fb.info.blue.mask) << k_fb.info.blue.position) |
 		((reserved & k_fb.info.reserved.mask) << k_fb.info.reserved.position);
 }
-
-#define K_FB_INVALID_POS	(k_uint32_t)~0
 
 static void k_fb_reset_dirty_area(void)
 {
@@ -191,7 +205,7 @@ void k_fb_update_framebuffer(void)
 	k_fb_reset_dirty_area();
 }
 
-void k_fb_set(struct k_fb_info *fb)
+void k_fb_set_info(struct k_fb_info *fb)
 {
 	k_memcpy(&k_fb.info, fb, sizeof(struct k_fb_info));
 
@@ -204,9 +218,11 @@ void k_fb_set(struct k_fb_info *fb)
 
 	k_fb.set = true;
 
+#if 0
 	k_fb_blit_glyph('O', 0, 0);
 	k_fb_blit_glyph('k', 8, 0);
 
 	k_fb_update_framebuffer();
+#endif
 }
 

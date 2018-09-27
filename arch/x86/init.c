@@ -7,10 +7,6 @@
 #include "kernel/include/acpi/acpi.h"
 #include "kernel/include/mm/buddy.h"
 
-#ifdef K_CONFIG_SMP
-#include "include/smp.h"
-#endif
-
 #ifdef K_CONFIG_BIOS
 void k_x86_init(k_uint32_t heap)
 #elif K_CONFIG_UEFI
@@ -31,7 +27,10 @@ void k_x86_init(k_uint32_t heap, struct k_fb_info *fb)
 	k_buddy_init(heap);
 
 #ifdef K_CONFIG_UEFI
-	k_fb_set(fb);
+	k_fb_set_info(fb);
+	k_shell_init();
+	k_shell_puts("Hello\nAAAAAA\nBBBBBB");
+	k_shell_puts("CCCC");
 #endif
 }
 
