@@ -1,4 +1,5 @@
 OBJS += string.o
+OBJS += divmod64.o
 
 CFLAGS = -I ../
 

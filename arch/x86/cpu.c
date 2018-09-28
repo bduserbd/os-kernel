@@ -72,8 +72,10 @@ void k_cpu_get_info(void)
 	k_cpu_get_model(&k_boot_cpu);
 	k_cpu_get_id(&k_boot_cpu);
 
+#if 0
 	k_puts("Family: "); k_puthex(k_boot_cpu.family); k_puts("\n");
 	k_puts("Model: "); k_puthex(k_boot_cpu.model); k_puts("\n");
 	k_puts("Family: "); k_puthex(k_boot_cpu.stepping); k_puts("\n");
+#endif
 }
 

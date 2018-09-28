@@ -1,4 +1,5 @@
 #include "kernel/include/video/print.h"
+#include "kernel/include/divmod64.h"
 
 static void (*k_print_callback)(const char *) = NULL;
 
@@ -32,7 +33,7 @@ void k_putchar(char c)
 	s[1] = '\0';							\
 									\
         if (number == 0) {						\
-		k_puts(s);					\
+		k_puts(s);						\
                 return;							\
         }								\
 									\
@@ -48,19 +49,75 @@ void k_putchar(char c)
                 if (digit < 0xA)					\
                         s[0] = '0' + digit;				\
                 else							\
-                        s[0] = 'a' + digit - 0xA;			\
+                        s[0] = (big ? 'A' : 'a') + digit - 0xA;		\
 									\
-                k_puts(s);					\
+                k_puts(s);						\
         }
 
-void k_puthex(k_uint32_t number)
+void k_puthex(k_uint32_t number, int big)
 {
 	K_PRINT_HEX
 }
 
-void k_puthex64(k_uint64_t number)
+void k_puthex64(k_uint64_t number, int big)
 {
 	K_PRINT_HEX
+}
+
+void k_putn(k_uint32_t number, int decimal)
+{
+	int i;
+	char s[2];
+	k_int8_t reverse[10] = { 0 };
+
+	if (!number)
+		k_putchar('0');
+
+	if (decimal)
+		if (number & (1 << 31)) {
+			number = 1 + (number ^ 0xffffffff);
+			k_putchar('-');
+		}
+
+	for (i = 0; number; i++) {
+		reverse[i] = number % 10;
+		number /= 10;
+	}
+
+	s[1] = 0;
+	for (i--; i >= 0; i--) {
+		s[0] = '0' + reverse[i];
+		k_puts(s);
+	}
+}
+
+void k_putn64(k_uint64_t number, int decimal)
+{
+	int i;
+	char s[2];
+	k_uint64_t q, r;
+	k_uint64_t reverse[20] = { 0 };
+
+	if (!number)
+		k_putchar('0');
+
+	if (decimal)
+		if (number & (1ULL << 63)) {
+			number = 1 + (number ^ 0xffffffffffffffffULL);
+			k_putchar('-');
+		}
+
+	for (i = 0; number; i++) {
+		k_divmod64(number, 10, &q, &r);
+		reverse[i] = r;
+		number = q;
+	}
+
+	s[1] = 0;
+	for (i--; i >= 0; i--) {
+		s[0] = '0' + reverse[i];
+		k_puts(s);
+	}
 }
 
 #define  K_PRINTF_FORMAT_DECIMAL	(1 << 0)
@@ -228,7 +285,25 @@ int k_vprintf(const char *fmt, va_list ap)
 			default:
 				break;
 			}
+
+			if (flags & K_PRINTF_FORMAT_DECIMAL)
+				k_putn64(v, 1);
+			else if (flags & K_PRINTF_FORMAT_UNSIGNED)
+				k_putn64(v, 0);
+			else if (flags & K_PRINTF_FORMAT_OCTAL) {
+
+			} else if (flags & K_PRINTF_FORMAT_HEX_SMALL)
+				k_puthex64(v, 0);
+			else if (flags & K_PRINTF_FORMAT_HEX_BIG)
+				k_puthex64(v, 1);
+			else if (flags & K_PRINTF_FORMAT_CHAR)
+				k_putchar((char)v);
+			else if (flags & K_PRINTF_FORMAT_POINTER) {
+
+			}
 		}
+
+		fmt++;
 	}
 
 	return n;

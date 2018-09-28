@@ -59,6 +59,7 @@ struct k_int_regs {
 
 void k_int_handler(struct k_int_regs regs)
 {
+#if 0
 	k_puts("EDI: "); k_puthex(regs.edi);
 	k_puts("ESI: "); k_puthex(regs.esi);
 	k_puts("EBP: "); k_puthex(regs.ebp);
@@ -80,7 +81,7 @@ void k_int_handler(struct k_int_regs regs)
 
 		k_puts("CR2: "); k_puthex(regs.eip);
 	}
-
+#endif
 	for (;;)
 		asm volatile("hlt");
 }
