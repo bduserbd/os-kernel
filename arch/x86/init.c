@@ -21,9 +21,6 @@ void k_x86_init(k_uint32_t heap, struct k_fb_info *fb, void *rsdp)
 	k_print_set_output_callback(k_shell_puts);
 #endif
 
-	k_printf("Hello %x %x %X yay\n", 0x11223344, 0xaabbccdd, 0xaabbccdd);
-	k_printf("%u fsdkf;lsdkf;l %llu\n", -48, (long long)-2);
-
 	k_cpu_get_info();
 	k_mp_get_info();
 	k_acpi_get_info(rsdp);

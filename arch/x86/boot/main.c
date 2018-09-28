@@ -25,7 +25,8 @@ static k_error_t k_reserve_reserved_pages(void *tag, void *data)
 		return K_ERROR_NOT_FOUND;
 
 	entry = &mmaptag->entries[0];
-	for (i = 0; i < mmaptag->size / mmaptag->entry_size; i++, entry++)
+	for (i = 0; i < (mmaptag->size - sizeof(struct k_multiboot2_tag_mmap)) /
+			mmaptag->entry_size; i++, entry++)
 		if (entry->type == K_MULTIBOOT2_MEMORY_RESERVED ||
 				entry->type == K_MULTIBOOT2_MEMORY_ACPI_RECLAIMABLE)
 			if (entry->addr + entry->len > (1 << 20))
@@ -59,6 +60,30 @@ static k_error_t k_get_new_acpi(void *tag, void *data)
 	newacpi = tag;
 
 	*(void **)data = &newacpi->rsdp[0];
+
+	return K_ERROR_NONE;
+}
+
+static k_error_t k_reserve_reserved_pages(void *tag, void *data)
+{
+	int i;
+	struct k_multiboot2_tag_efi_mmap *mmaptag;
+	struct k_efi_memory_descriptor *entry;
+
+	mmaptag = tag;
+
+	if (mmaptag->descr_size != sizeof(*entry))
+		return K_ERROR_NOT_FOUND;
+
+	entry = &mmaptag->efi_mmap[0];
+	for (i = 0; i < (mmaptag->size - sizeof(struct k_multiboot2_tag_efi_mmap)) /
+			mmaptag->descr_size; i++, entry++) {
+		if (entry->type == K_EFI_RESERVED_MEMORY_TYPE ||
+				entry->type == K_EFI_ACPI_RECLAIM_MEMORY ||
+				entry->type == K_EFI_ACPI_MEMORY_NVS)
+			k_paging_reserve_pages(entry->physical_start, entry->number_of_pages << 12);
+
+	}
 
 	return K_ERROR_NONE;
 }
@@ -145,6 +170,7 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 	page_table = K_ALIGN_UP(K_MAX((k_uint32_t)__k_end, ebx + *(k_uint32_t *)ebx), 0x1000);
 	k_paging_table_set_start(page_table);
 
+	/* TODO: Make this only for BIOS. */
 	k_paging_reserve_pages(0x0, 1 << 20);
 
 	k_paging_reserve_pages((k_uint32_t)__k_start, __k_end - __k_start);
@@ -159,6 +185,8 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 	error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_ACPI_OLD, k_get_old_acpi, &rsdp);
 	if (error)
 		k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_ACPI_NEW, k_get_new_acpi, &rsdp);
+
+	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_EFI_MMAP, k_reserve_reserved_pages, NULL);
 #endif
 
 	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_FRAMEBUFFER, k_get_fb_info, &fb);

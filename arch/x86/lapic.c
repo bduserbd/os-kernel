@@ -65,8 +65,7 @@ void k_lapic_init(void)
 
 	/* Basic info. */
 	k_lapic.address = k_acpi.lapic_address;
-	//k_puts("Local APIC: ");
-	//k_puthex(k_lapic.address);
+	k_printf("Local APIC: %x\n", k_lapic.address);
 
 	version = k_lapic_read(K_LAPIC_VERSION_REGISTER);
 	k_lapic.version = K_LAPIC_VERSION_REGISTER_VERSION(version);

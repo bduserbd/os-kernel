@@ -20,13 +20,13 @@ typedef enum {
 	K_EFI_BOOT_SERVICES_DATA,
 	K_EFI_RUNTIME_SERVICES_CODE,
 	K_EFI_RUNTIME_SERVICES_DATA,
-	K_EFI_CONVENTIONAMEMORY,
+	K_EFI_CONVENTIONAL_MEMORY,
 	K_EFI_UNUSABLE_MEMORY,
 	K_EFI_ACPI_RECLAIM_MEMORY,
 	K_EFI_ACPI_MEMORY_NVS,
 	K_EFI_MEMORY_MAPPED_IO,
 	K_EFI_MEMORY_MAPPED_IO_PORT_SPACE,
-	K_EFI_PACODE,
+	K_EFI_PAL_CODE,
 	K_EFI_PERSISTENT_MEMORY,
 	K_EFI_MAX_MEMORY_TYPE,
 } k_efi_memory_type_t;
@@ -48,10 +48,12 @@ typedef enum {
 /* EFI Memory Descriptor. */
 struct k_efi_memory_descriptor {
 	k_efi_uint32_t type;
+	k_uint8_t reserved0[4];
 	k_efi_physical_address_t physical_start;
 	k_efi_virtual_address_t virtual_start;
 	k_efi_uint64_t number_of_pages;
 	k_efi_uint64_t attribute;
+	k_uint8_t reserved1[8];
 } __attribute__((packed));
 
 #endif
