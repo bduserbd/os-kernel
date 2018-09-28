@@ -3,6 +3,7 @@
 
 #ifndef __ASSEMBLER__
 #include "kernel/include/types.h"
+#include "kernel/include/acpi/acpi.h"
 
 #ifdef K_CONFIG_UEFI
 #include "kernel/include/uefi/uefi.h"

@@ -39,10 +39,15 @@ static k_error_t k_reserve_reserved_pages(void *tag, void *data)
 static k_error_t k_get_old_acpi(void *tag, void *data)
 {
 	struct k_multiboot2_tag_old_acpi *oldacpi;
+	struct k_acpi_rsdp *rsdp;
 
 	oldacpi = tag;
 
-	*(void **)data = &oldacpi->rsdp[0];
+	rsdp = &oldacpi->rsdp[0];
+	if (!rsdp->length)
+		return K_ERROR_NOT_FOUND;
+
+	*(void **)data = rsdp;
 
 	return K_ERROR_NONE;
 }
@@ -128,7 +133,6 @@ k_error_t k_scan_multiboot_tags(k_uint32_t ebx, int type, k_error_t (*callback)
 
 void k_main(k_uint32_t eax, k_uint32_t ebx)
 {
-	k_error_t error;
 	k_uint32_t page_table, heap;
 	struct k_fb_info fb;
 	void *rsdp = NULL;
@@ -150,10 +154,11 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 #ifdef K_CONFIG_BIOS
 	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_MMAP, k_reserve_reserved_pages, NULL);
 #elif K_CONFIG_UEFI
-	//error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_ACPI_OLD, k_get_old_acpi, &rsdp);
-	//if (error)
-		k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_ACPI_NEW, k_get_new_acpi, &rsdp);
+	k_error_t error;
 
+	error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_ACPI_OLD, k_get_old_acpi, &rsdp);
+	if (error)
+		k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_ACPI_NEW, k_get_new_acpi, &rsdp);
 #endif
 
 	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_FRAMEBUFFER, k_get_fb_info, &fb);

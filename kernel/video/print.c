@@ -1,4 +1,4 @@
-#include "include/types.h"
+#include "kernel/include/video/print.h"
 
 static void (*k_print_callback)(const char *) = NULL;
 
@@ -11,6 +11,16 @@ void k_puts(const char *str)
 {
 	if (k_print_callback)
 		k_print_callback(str);
+}
+
+void k_putchar(char c)
+{
+	char s[2];
+
+	s[0] = c;
+	s[1] = 0;
+
+	k_puts(s);
 }
 
 #define K_PRINT_HEX							\
@@ -48,8 +58,192 @@ void k_puthex(k_uint32_t number)
 	K_PRINT_HEX
 }
 
-void k_puthhex64(k_uint64_t number)
+void k_puthex64(k_uint64_t number)
 {
 	K_PRINT_HEX
+}
+
+#define  K_PRINTF_FORMAT_DECIMAL	(1 << 0)
+#define  K_PRINTF_FORMAT_UNSIGNED	(1 << 1)
+#define  K_PRINTF_FORMAT_OCTAL		(1 << 2)
+#define  K_PRINTF_FORMAT_HEX_SMALL	(1 << 3)
+#define  K_PRINTF_FORMAT_HEX_BIG	(1 << 4)
+#define  K_PRINTF_FORMAT_CHAR		(1 << 5)
+#define  K_PRINTF_FORMAT_STRING		(1 << 6)
+#define  K_PRINTF_FORMAT_POINTER	(1 << 7)
+
+int k_vprintf(const char *fmt, va_list ap)
+{
+	int n;
+	int length_modifier;
+	unsigned int flags;
+
+	n = 0;
+
+	while (*fmt) {
+		if (*fmt != '%') {
+			n++;
+			k_putchar(*fmt);
+
+			fmt++;
+
+			continue;
+		}
+
+		fmt++;
+		if (*fmt == '%') {
+			n++;
+			k_putchar(*fmt);
+
+			fmt++;
+
+			continue;
+		}
+
+		flags = 0;
+		length_modifier = 0;
+
+#if 0
+		if (c == '#') {
+
+		} else if (c == '0') {
+			fmt++;
+		}
+#endif
+
+		switch (*fmt) {
+		case 'h':
+			fmt++;
+
+			if (*fmt == 'h') {
+				length_modifier = sizeof(k_uint8_t);
+				fmt++;
+			} else
+				length_modifier = sizeof(k_uint16_t);
+
+			break;
+
+		case 'l':
+			fmt++;
+
+			if (*fmt == 'l') {
+				length_modifier = sizeof(unsigned long long int);
+				fmt++;
+			} else
+				length_modifier = sizeof(unsigned long int);
+
+			break;
+
+		default:
+			break;
+		}
+
+		switch (*fmt) {
+		case 'd':
+		case 'i':
+			flags |= K_PRINTF_FORMAT_DECIMAL;
+
+			if (!length_modifier)
+				length_modifier = sizeof(int);
+
+			break;
+
+		case 'u':
+			flags |= K_PRINTF_FORMAT_UNSIGNED;
+
+			if (!length_modifier)
+				length_modifier = sizeof(unsigned int);
+
+			break;
+
+		case 'o':
+			flags |= K_PRINTF_FORMAT_OCTAL;
+
+			if (!length_modifier)
+				length_modifier = sizeof(unsigned int);
+
+			break;
+
+		case 'x':
+			flags |= K_PRINTF_FORMAT_HEX_SMALL;
+
+			if (!length_modifier)
+				length_modifier = sizeof(unsigned int);
+
+			break;
+
+		case 'X':
+			flags |= K_PRINTF_FORMAT_HEX_BIG;
+
+			if (!length_modifier)
+				length_modifier = sizeof(unsigned int);
+
+			break;
+
+		case 'c':
+			flags |= K_PRINTF_FORMAT_CHAR;
+
+			if (!length_modifier)
+				length_modifier = sizeof(char);
+
+			break;
+
+		case 's':
+			flags |= K_PRINTF_FORMAT_STRING;
+			break;
+
+		case 'p':
+			flags |= K_PRINTF_FORMAT_POINTER;
+			break;
+
+		default:
+			break;
+		}
+
+		if (length_modifier > 0 && flags == 0)
+			return -1;
+
+		if (flags & K_PRINTF_FORMAT_STRING) {
+
+		} else {
+			k_uint64_t v = 0;
+
+			switch(length_modifier) {
+			case sizeof(k_uint8_t):
+				v = (k_uint8_t)va_arg(ap, k_uint32_t);
+				break;
+
+			case sizeof(k_uint16_t):
+				v = (k_uint16_t)va_arg(ap, k_uint32_t);
+				break;
+
+			case sizeof(k_uint32_t):
+				v = va_arg(ap, k_uint32_t);
+				break;
+
+			case sizeof(k_uint64_t):
+				v = va_arg(ap, k_uint64_t);
+				break;
+
+			default:
+				break;
+			}
+		}
+	}
+
+	return n;
+}
+
+int k_printf(const char *fmt, ...)
+{
+	int n;
+	va_list ap;
+
+	va_start(ap, fmt);
+	n = k_vprintf(fmt, ap);
+
+	va_end(ap);
+
+	return n;
 }
 
