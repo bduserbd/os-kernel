@@ -3,6 +3,7 @@
 
 #ifndef __ASSEMBLER__
 #include "kernel/include/types.h"
+#include "kernel/include/acpi/acpi.h"
 
 #ifdef K_CONFIG_UEFI
 #include "kernel/include/uefi/uefi.h"
@@ -18,8 +19,10 @@
 
 #define K_MULTIBOOT2_TAG_TYPE_BASIC_MEMINFO	4
 #define K_MULTIBOOT2_TAG_TYPE_MMAP		6
-#ifdef K_CONFIG_UEFI
 #define K_MULTIBOOT2_TAG_TYPE_FRAMEBUFFER	8
+#define K_MULTIBOOT2_TAG_TYPE_ACPI_OLD		14
+#define K_MULTIBOOT2_TAG_TYPE_ACPI_NEW		15
+#ifdef K_CONFIG_UEFI
 #define K_MULTIBOOT2_TAG_TYPE_EFI_MMAP		17
 #endif
 
@@ -28,6 +31,10 @@
 
 #define K_MULTIBOOT2_ARCHITECTURE_I386		0
 #define K_MULTIBOOT2_ARCHITECTURE_MIPS32	4
+
+#define K_MULTIBOOT2_FRAMEBUFFER_TYPE_INDEXED	0
+#define K_MULTIBOOT2_FRAMEBUFFER_TYPE_RGB	1
+#define K_MULTIBOOT2_FRAMEBUFFER_TYPE_EGA_TEXT	2
 
 #define K_MULTIBOOT2_MEMORY_AVAILABLE		1
 #define K_MULTIBOOT2_MEMORY_RESERVED		2
@@ -64,12 +71,6 @@ struct k_multiboot2_tag_mmap {
 	struct k_multiboot2_mmap_entry entries[0];
 } __attribute__((packed));
 
-#ifdef K_CONFIG_UEFI
-
-#define K_MULTIBOOT2_FRAMEBUFFER_TYPE_INDEXED	0
-#define K_MULTIBOOT2_FRAMEBUFFER_TYPE_RGB	1
-#define K_MULTIBOOT2_FRAMEBUFFER_TYPE_EGA_TEXT	2
-
 struct k_multiboot2_tag_framebuffer {
 	k_uint32_t type;
 	k_uint32_t size;
@@ -88,6 +89,19 @@ struct k_multiboot2_tag_framebuffer {
 	k_uint8_t blue_mask_size;
 } __attribute__((packed));
 
+struct k_multiboot2_tag_old_acpi {
+	k_uint32_t type;
+	k_uint32_t size;
+	k_uint8_t rsdp[0];
+} __attribute__((packed));
+
+struct k_multiboot2_tag_new_acpi {
+	k_uint32_t type;
+	k_uint32_t size;
+	k_uint8_t rsdp[0];
+} __attribute__((packed));
+
+#ifdef K_CONFIG_UEFI
 struct k_multiboot2_tag_efi_mmap {
 	k_uint32_t type;
 	k_uint32_t size;
@@ -95,7 +109,6 @@ struct k_multiboot2_tag_efi_mmap {
 	k_uint32_t descr_vers;
 	struct k_efi_memory_descriptor efi_mmap[0];
 } __attribute__((packed));
-
 #endif
 
 #endif

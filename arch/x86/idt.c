@@ -1,5 +1,5 @@
 #include "include/idt.h"
-#include "include/video.h"
+#include "kernel/include/video/print.h"
 
 extern void k_idt_int0(void);
 extern void k_idt_int1(void);
@@ -59,26 +59,26 @@ struct k_int_regs {
 
 void k_int_handler(struct k_int_regs regs)
 {
-	k_puts("EDI: "); k_puthex(regs.edi);
-	k_puts("ESI: "); k_puthex(regs.esi);
-	k_puts("EBP: "); k_puthex(regs.ebp);
-	k_puts("ESP: "); k_puthex(regs.esp);
-	k_puts("EBX: "); k_puthex(regs.ebx);
-	k_puts("EDX: "); k_puthex(regs.edx);
-	k_puts("ECX: "); k_puthex(regs.ecx);
-	k_puts("EAX: "); k_puthex(regs.eax);
-	k_puts("Interrupt: "); k_puthex(regs.interrupt);
-	k_puts("Error Code: "); k_puthex(regs.error_code);
-	k_puts("EIP: "); k_puthex(regs.eip);
-	k_puts("CS: "); k_puthex(regs.cs);
-	k_puts("EFLAGS: "); k_puthex(regs.eflags);
+	k_printf("EDI: %x\n", regs.edi);
+	k_printf("ESI: %x\n", regs.esi);
+	k_printf("EBP: %x\n", regs.ebp);
+	k_printf("ESP: %x\n", regs.esp);
+	k_printf("EBX: %x\n", regs.ebx);
+	k_printf("EDX: %x\n", regs.edx);
+	k_printf("ECX: %x\n", regs.ecx);
+	k_printf("EAX: %x\n", regs.eax);
+	k_printf("Interrupt: %x\n", regs.interrupt);
+	k_printf("Error Code: %x\n", regs.error_code);
+	k_printf("EIP: %x\n", regs.eip);
+	k_printf("CS: %x\n", regs.cs);
+	k_printf("EFLAGS: %x\n", regs.eflags);
 
 	if (regs.interrupt == 0xe) {
 		k_uint32_t cr2;
 
 		asm volatile("mov %%cr2,%0" : "=r" (cr2));
 
-		k_puts("CR2: "); k_puthex(regs.eip);
+		k_printf("CR2: %x", regs.eip);
 	}
 
 	for (;;)

@@ -56,6 +56,9 @@ void k_buddy_free(void *ptr)
 	k_uint8_t order;
 	struct k_buddy_node *a, *b;
 
+	if (k_group || k_node || k_heap)
+		return;
+
 	a = k_buddy_address_to_node(ptr);
 	if (!a)
 		return;

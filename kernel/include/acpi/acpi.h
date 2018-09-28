@@ -19,7 +19,7 @@ struct k_acpi_info {
 
 extern struct k_acpi_info k_acpi;
 
-void k_acpi_get_info(void);
+void k_acpi_get_info(void *);
 
 #endif
 

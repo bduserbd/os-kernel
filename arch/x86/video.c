@@ -1,46 +1,46 @@
 #include "include/video.h"
 
-static unsigned char *vid = (unsigned char *)0xb8000;
+static unsigned char *k_text_video = (unsigned char *)0xb8000;
+static k_uint32_t k_text_rows = 0;
+static k_uint32_t k_text_cols = 0;
 
-void k_puts(const char *str)
+static void k_text_clean(void)
+{
+	int i, j;
+
+	for (i = 0; i < k_text_rows; i++)
+		for (j = 0; j < k_text_cols; j++)
+			k_text_video[2 * (k_text_cols * i + j)] = ' ';
+}
+
+void k_text_puts(const char *s)
 {
 	static int x = 0;
+	static int y = 0;
 
-	while (*str) {
-		vid[x] = *str;
-		str++;
-		x+=2;
+	while (*s) {
+		if (*s == '\n') {
+			y++;
+			x = 0;
+
+			if (y == k_text_rows) {
+				k_text_clean();
+				y = 0;
+			}
+		} else {
+			k_text_video[2 * (k_text_cols * y + x)] = *s;
+			x++;
+		}
+
+		s++;
 	}
 }
 
-void k_puthex(k_uint32_t number)
+void k_text_set_info(struct k_fb_info *fb)
 {
-	char alpha[2] = "0";
-	int was_not_zero = 0, bits;
-	k_uint8_t digit;
+	k_text_rows = fb->height;
+	k_text_cols = fb->width;
 
-	if (number == 0) {
-		k_puts(alpha);
-		k_puts(" ");
-		return;
-	}
-
-	for (bits = sizeof(number) * 8 - 4; bits >= 0; bits -= 4) {
-		digit = (number >> bits) & 0xf;
-
-		if (digit == 0) {
-			if (!was_not_zero)
-				continue;
-		} else
-			was_not_zero = 1;
-
-		if (digit < 0xA)
-			alpha[0] = '0' + digit;
-		else
-			alpha[0] = 'a' + (digit - 0xA);
-
-		k_puts(alpha);
-	}
-	k_puts(" ");
+	k_text_clean();
 }
 

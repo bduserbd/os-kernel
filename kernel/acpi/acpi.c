@@ -1,5 +1,6 @@
 #include "include/acpi/acpi.h"
 #include "include/string.h"
+#include "kernel/include/video/print.h"
 
 struct k_acpi_info k_acpi;
 
@@ -156,7 +157,7 @@ static k_error_t k_acpi_check_rsdp(struct k_acpi_rsdp *rsdp)
 	if (error)
 		return error;
 
-	if (rsdp->revision != 0x0) {
+	if (rsdp->revision == 2) {
 		error = k_acpi_checksum(rsdp, rsdp->length);
 		if (error)
 			return error;
@@ -209,11 +210,20 @@ static struct k_acpi_rsdp *k_acpi_find_rsdp(void)
 	return rsdp;
 }
 
-void k_acpi_get_info(void)
+void k_acpi_get_info(void *_rsdp)
 {
+	k_error_t error;
 	struct k_acpi_rsdp *rsdp;
 
-	rsdp = k_acpi_find_rsdp();
+	if (_rsdp) {
+		error = k_acpi_check_rsdp(_rsdp);
+		if (error)
+			rsdp = NULL;
+		else
+			rsdp = _rsdp;
+	} else
+		rsdp = k_acpi_find_rsdp();
+
 	if (!rsdp) {
 		k_acpi.found = false;
 		return;
