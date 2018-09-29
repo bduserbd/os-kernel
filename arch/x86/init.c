@@ -6,11 +6,13 @@
 #include "include/video.h"
 #include "kernel/include/acpi/acpi.h"
 #include "kernel/include/mm/buddy.h"
+#include "kernel/include/mm/mm.h"
 #include "kernel/include/video/print.h"
 
 void k_x86_init(k_uint32_t heap, struct k_fb_info *fb, void *rsdp)
 {
 	k_buddy_init(heap);
+	k_slab_init();
 
 #ifdef K_CONFIG_BIOS
 	k_text_set_info(fb);

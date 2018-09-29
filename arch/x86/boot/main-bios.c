@@ -1,8 +1,9 @@
 #include "include/init.h"
 #include "include/idt.h"
 #include "kernel/include/mm/buddy.h"
-#include "kernel/include/grub/multiboot2.h"
+#include "kernel/include/grub/multiboot.h"
 #include "kernel/include/fb/shell.h"
+#include "kernel/include/string.h"
 
 extern __u8 __k_start[];
 extern __u8 __k_end[];
@@ -11,8 +12,7 @@ void k_paging_init(void);
 void k_paging_table_set_start(k_uint32_t);
 void k_paging_reserve_pages(k_uint32_t, k_uint32_t);
 
-#ifdef K_CONFIG_BIOS
-
+#if 0
 static k_error_t k_reserve_reserved_pages(void *tag, void *data)
 {
 	k_uint32_t i;
@@ -35,60 +35,17 @@ static k_error_t k_reserve_reserved_pages(void *tag, void *data)
 	return K_ERROR_NONE;
 }
 
-#elif K_CONFIG_UEFI
-
-static k_error_t k_get_old_acpi(void *tag, void *data)
+k_error_t k_get_initramfs(void *tag, void *data)
 {
-	struct k_multiboot2_tag_old_acpi *oldacpi;
-	struct k_acpi_rsdp *rsdp;
+	struct k_multiboot2_tag_module *moduletag;
 
-	oldacpi = tag;
+	moduletag = tag;
 
-	rsdp = &oldacpi->rsdp[0];
-	if (!rsdp->length)
+	if (!k_memcmp("initrd", moduletag->cmdline, 5))
+		return K_ERROR_NONE;
+	else
 		return K_ERROR_NOT_FOUND;
-
-	*(void **)data = rsdp;
-
-	return K_ERROR_NONE;
 }
-
-static k_error_t k_get_new_acpi(void *tag, void *data)
-{
-	struct k_multiboot2_tag_old_acpi *newacpi;
-
-	newacpi = tag;
-
-	*(void **)data = &newacpi->rsdp[0];
-
-	return K_ERROR_NONE;
-}
-
-static k_error_t k_reserve_reserved_pages(void *tag, void *data)
-{
-	int i;
-	struct k_multiboot2_tag_efi_mmap *mmaptag;
-	struct k_efi_memory_descriptor *entry;
-
-	mmaptag = tag;
-
-	if (mmaptag->descr_size != sizeof(*entry))
-		return K_ERROR_NOT_FOUND;
-
-	entry = &mmaptag->efi_mmap[0];
-	for (i = 0; i < (mmaptag->size - sizeof(struct k_multiboot2_tag_efi_mmap)) /
-			mmaptag->descr_size; i++, entry++) {
-		if (entry->type == K_EFI_RESERVED_MEMORY_TYPE ||
-				entry->type == K_EFI_ACPI_RECLAIM_MEMORY ||
-				entry->type == K_EFI_ACPI_MEMORY_NVS)
-			k_paging_reserve_pages(entry->physical_start, entry->number_of_pages << 12);
-
-	}
-
-	return K_ERROR_NONE;
-}
-
-#endif
 
 k_error_t k_get_fb_info(void *tag, void *data)
 {
@@ -156,13 +113,17 @@ k_error_t k_scan_multiboot_tags(k_uint32_t ebx, int type, k_error_t (*callback)
 	return K_ERROR_NOT_FOUND;
 }
 
+#endif
+
 void k_main(k_uint32_t eax, k_uint32_t ebx)
 {
 	k_uint32_t page_table, heap;
+#if 0
 	struct k_fb_info fb;
 	void *rsdp = NULL;
+#endif
 
-	if (eax != K_MULTIBOOT2_BOOTLOADER_MAGIC)
+	if (eax != K_MULTIBOOT_BOOTLOADER_MAGIC)
 		return;
 
 	k_idt_init();
@@ -170,12 +131,12 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 	page_table = K_ALIGN_UP(K_MAX((k_uint32_t)__k_end, ebx + *(k_uint32_t *)ebx), 0x1000);
 	k_paging_table_set_start(page_table);
 
-	/* TODO: Make this only for BIOS. */
 	k_paging_reserve_pages(0x0, 1 << 20);
-
 	k_paging_reserve_pages((k_uint32_t)__k_start, __k_end - __k_start);
-
 	k_paging_reserve_pages(ebx, *(k_uint32_t *)ebx);
+
+#if 0
+	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_MODULE, k_get_initramfs, NULL);
 
 #ifdef K_CONFIG_BIOS
 	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_MMAP, k_reserve_reserved_pages, NULL);
@@ -199,5 +160,6 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 	heap = page_table + 0x1000 + 0x400 * 0x1000;
 
 	k_x86_init(heap, &fb, rsdp);
+#endif
 }
 

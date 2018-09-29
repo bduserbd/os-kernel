@@ -5,7 +5,11 @@ SECTIONS {
 
 	__k_start = .;
 
+#ifdef K_CONFIG_BIOS
+	.multiboot : { *(.multiboot) }
+#elif K_CONFIG_UEFI
 	.multiboot2 : { *(.multiboot2) }
+#endif
 
 	.text	: { *(.text) }
 	.rodata	: { *(.rodata) }

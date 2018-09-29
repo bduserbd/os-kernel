@@ -1,3 +1,4 @@
+OBJS += slab.o
 OBJS += buddy.o
 
 CFLAGS = -I ../
