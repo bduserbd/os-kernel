@@ -23,6 +23,16 @@
 #define K_MULTIBOOT_INFO_VBE_INFO		0x00000800
 #define K_MULTIBOOT_INFO_FRAMEBUFFER_INFO	0x00001000
 
+#define K_MULTIBOOT_MEMORY_AVAILABLE		1
+#define K_MULTIBOOT_MEMORY_RESERVED		2
+#define K_MULTIBOOT_MEMORY_ACPI_RECLAIMABLE	3
+#define K_MULTIBOOT_MEMORY_NVS			4
+#define K_MULTIBOOT_MEMORY_BADRAM		5
+
+#define K_MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED	0
+#define K_MULTIBOOT_FRAMEBUFFER_TYPE_RGB	1
+#define K_MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT	2
+
 #ifndef __ASSEMBLER__
 
 struct k_multiboot_aout_symbol_table {
@@ -37,6 +47,13 @@ struct k_multiboot_elf_section_header_table {
 	k_uint32_t size;
 	k_uint32_t addr;
 	k_uint32_t shndx;
+} __attribute__((packed));
+
+struct k_multiboot_mmap_entry {
+	k_uint32_t size;
+	k_uint64_t addr;
+	k_uint64_t len;
+	k_uint32_t type;
 } __attribute__((packed));
 
 struct k_multiboot_mod_list {

@@ -61,7 +61,7 @@ static k_error_t k_get_new_acpi(void *tag, void *data)
 	return K_ERROR_NONE;
 }
 
-static k_error_t k_reserve_reserved_pages(void *tag, void *data)
+static k_error_t k_reserve_reserved_pages_efi(void *tag, void *data)
 {
 	int i;
 	struct k_multiboot2_tag_efi_mmap *mmaptag;
@@ -87,14 +87,26 @@ static k_error_t k_reserve_reserved_pages(void *tag, void *data)
 
 k_error_t k_get_initramfs(void *tag, void *data)
 {
+	k_uint32_t *initramfs;
 	struct k_multiboot2_tag_module *moduletag;
 
 	moduletag = tag;
+	initramfs = data;
 
-	if (!k_memcmp("initrd", moduletag->cmdline, 5))
+#define INITRAMFS	"initramfs.img"
+
+	if (!k_strncmp(moduletag->cmdline, INITRAMFS, sizeof(INITRAMFS) - 1)) {
+		initramfs[0] = moduletag->mod_start;
+		initramfs[1] = moduletag->mod_end;
+
+		k_paging_reserve_pages(initramfs[0], initramfs[1] - initramfs[0]);
+
 		return K_ERROR_NONE;
-	else
+	} else {
+		initramfs[0] = initramfs[1] = 0x0;
+
 		return K_ERROR_NOT_FOUND;
+	}
 }
 
 k_error_t k_get_fb_info(void *tag, void *data)
@@ -166,7 +178,7 @@ k_error_t k_scan_multiboot_tags(k_uint32_t ebx, int type, k_error_t (*callback)
 void k_main(k_uint32_t eax, k_uint32_t ebx)
 {
 	k_error_t error;
-	k_uint32_t page_table, heap;
+	k_uint32_t page_table, heap, initramfs[2];
 	struct k_fb_info fb;
 	void *rsdp = NULL;
 
@@ -183,14 +195,15 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 	k_paging_reserve_pages((k_uint32_t)__k_start, __k_end - __k_start);
 	k_paging_reserve_pages(ebx, *(k_uint32_t *)ebx);
 
-	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_MODULE, k_get_initramfs, NULL);
 	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_MMAP, k_reserve_reserved_pages, NULL);
+	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_EFI_MMAP, k_reserve_reserved_pages_efi, NULL);
+
+	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_MODULE, k_get_initramfs, initramfs);
 
 	error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_ACPI_OLD, k_get_old_acpi, &rsdp);
 	if (error)
 		k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_ACPI_NEW, k_get_new_acpi, &rsdp);
 
-	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_EFI_MMAP, k_reserve_reserved_pages, NULL);
 	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_FRAMEBUFFER, k_get_fb_info, &fb);
 
 	// QEMU doesn't report APIC BIOS e820 memory map.

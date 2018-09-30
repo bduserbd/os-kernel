@@ -77,28 +77,29 @@ link:
 		$(OBJCOPY) target.elf --update-section .ap_start=$(BUILD_OBJDIR)/$(AP_BIN);	\
 	fi;
 
-GRUB_BOOT_MENU = "				\n\
-set timeout=0					\n\
-set default=0					\n\
-menuentry \"my os\" {				\n\
-	multiboot /boot/kernel			\n\
+GRUB_BOOT_MENU = "					\n\
+set timeout=0						\n\
+set default=0						\n\
+menuentry \"my os\" {					\n\
+	multiboot /boot/kernel				\n\
+	module /boot/initramfs.img initramfs.img	\n\
 }"
 
 bios-grub-iso:
 	$(V)mkdir -p iso/boot/grub
 	$(V)echo $(GRUB_BOOT_MENU) > iso/boot/grub/grub.cfg
 	$(V)cp target.elf iso/boot/kernel
-	$(V)cp output1 iso/boot/initramfs.img
+	$(V)cp output iso/boot/initramfs.img
 	$(V)grub-mkrescue -o target.iso iso/
-	#$(V)rm -rf iso/
+	$(V)rm -rf iso/
 
-GRUB_UEFI_BOOT_MENU = "			\n\
-insmod efi_gop				\n\
-set timeout=0				\n\
-set default=0				\n\
-menuentry \"my os\" {			\n\
-	multiboot2 /boot/kernel			\n\
-	module2 /boot/initramfs.img initramfs	\n\
+GRUB_UEFI_BOOT_MENU = "					\n\
+insmod efi_gop						\n\
+set timeout=0						\n\
+set default=0						\n\
+menuentry \"my os\" {					\n\
+	multiboot2 /boot/kernel				\n\
+	module2 /boot/initramfs.img initramfs.img	\n\
 }"
 
 uefi-grub:
