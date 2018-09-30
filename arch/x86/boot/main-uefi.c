@@ -97,7 +97,7 @@ k_error_t k_get_initramfs(void *tag, void *data)
 
 	if (!k_strncmp(moduletag->cmdline, INITRAMFS, sizeof(INITRAMFS) - 1)) {
 		initramfs[0] = moduletag->mod_start;
-		initramfs[1] = moduletag->mod_end;
+		initramfs[1] = moduletag->mod_end - initramfs[0];
 
 		k_paging_reserve_pages(initramfs[0], initramfs[1] - initramfs[0]);
 
@@ -213,6 +213,6 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 
 	heap = page_table + 0x1000 + 0x400 * 0x1000;
 
-	k_x86_init(heap, &fb, rsdp);
+	k_x86_init(heap, &fb, rsdp, initramfs[0], initramfs[1]);
 }
 
