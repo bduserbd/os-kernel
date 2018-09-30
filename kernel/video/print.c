@@ -260,9 +260,9 @@ int k_vprintf(const char *fmt, va_list ap)
 		if (length_modifier > 0 && flags == 0)
 			return -1;
 
-		if (flags & K_PRINTF_FORMAT_STRING) {
-
-		} else {
+		if (flags & K_PRINTF_FORMAT_STRING)
+			k_puts((const char *)va_arg(ap, k_uint32_t));
+		else {
 			k_uint64_t v = 0;
 
 			switch(length_modifier) {

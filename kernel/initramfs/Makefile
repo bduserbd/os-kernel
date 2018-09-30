@@ -1,5 +1,4 @@
-OBJS += slab.o
-OBJS += buddy.o
+OBJS += initramfs.o
 
 CFLAGS = -I ../
 

@@ -16,7 +16,7 @@
 #define K_MULTIBOOT2_BOOTLOADER_MAGIC	0x36d76289
 
 #define K_MULTIBOOT2_TAG_TYPE_END		0
-
+#define K_MULTIBOOT2_TAG_TYPE_MODULE		3
 #define K_MULTIBOOT2_TAG_TYPE_BASIC_MEMINFO	4
 #define K_MULTIBOOT2_TAG_TYPE_MMAP		6
 #define K_MULTIBOOT2_TAG_TYPE_FRAMEBUFFER	8
@@ -47,6 +47,14 @@
 struct k_multiboot2_tag {
 	k_uint32_t type;
 	k_uint32_t size;
+} __attribute__((packed));
+
+struct k_multiboot2_tag_module {
+	k_uint32_t type;
+	k_uint32_t size;
+	k_uint32_t mod_start;
+	k_uint32_t mod_end;
+	char cmdline[0];
 } __attribute__((packed));
 
 struct k_multiboot2_tag_basic_meminfo {

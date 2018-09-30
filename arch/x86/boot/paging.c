@@ -3,9 +3,6 @@
 #include "include/cpu.h"
 #include "kernel/include/string.h"
 
-void puts(const char *);
-void puthex(k_uint32_t);
-
 static k_pde_t *k_page_table = NULL;
 
 void k_paging_reserve_pages(k_uint32_t start, k_uint32_t range)
