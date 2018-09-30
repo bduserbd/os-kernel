@@ -2,10 +2,13 @@
 #define K_CPIO_H
 
 #include "kernel/include/types.h"
+#include "kernel/include/error.h"
 
 #define K_CPIO_NEWC_MAGIC	"070701"
 
-struct k_cpio_newc_header {
+#define K_CPIO_NEWC_TRAILER	"TRAILER!!!"
+
+struct k_cpio_newc {
 	char magic[6];
 	char ino[8];
 	char mode[8];
@@ -20,6 +23,7 @@ struct k_cpio_newc_header {
 	char rdevminor[8];
 	char namesize[8];
 	char check[8];
+	char filename[0];
 } __attribute__((packed));
 
 #endif
