@@ -11,5 +11,9 @@ struct k_cache {
 	unsigned int obj_size;
 };
 
+struct k_slab {
+	void *memory;
+};
+
 #endif
 

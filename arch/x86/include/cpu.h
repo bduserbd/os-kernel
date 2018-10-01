@@ -21,14 +21,38 @@
 #define K_CPUID_PAE	(1 << 6)
 #define K_CPUID_APIC	(1 << 9)
 
-struct k_cpu_x86 {
-	char vendor[12];
+/* CPUID 0x00000004 */
+/* EAX */
+#define K_CPUID_CACHE_TYPE_NULL		(0 << 0)
+#define K_CPUID_CACHE_TYPE_DATA		(1 << 0)
+#define K_CPUID_CACHE_TYPE_INSTRUCTION	(2 << 0)
+#define K_CPUID_CACHE_TYPE_UNIFIED	(3 << 0)
+#define K_CPUID_CACHE_TYPE(eax)		(eax & 0x1f)
 
-	k_uint32_t max_function;
+#define K_CPUID_CACHE_LEVEL(eax)	((eax >> 5) & 0x7)
+
+/* EBX */
+#define K_CPUID_CACHE_LINE_SIZE(ebx)	((ebx & 0xfff) + 1)
+#define K_CPUID_CACHE_PARTITIONS(ebx)	(((ebx >> 12) & 0x3ff) + 1)
+#define K_CPUID_CACHE_WAYS(ebx)		(((ebx >> 22) & 0x3ff) + 1)
+
+/* ECX */
+#define K_CPUID_CACHE_SETS(ecx)		(ecx + 1)
+
+struct k_cpu_x86 {
+	char vendor[13];
+	char processor_name[49];
+
+	k_uint32_t max_function, max_extended_function;
 
 	int family;
 	int model;
 	int stepping;
+
+	struct {
+		unsigned int line_size;
+		unsigned int size;
+	} cache[3];
 
 	k_uint8_t initial_apic_id;
 };
