@@ -27,11 +27,10 @@ int k_cpu_eflag(k_uint32_t flags)
 void k_cpu_cpuid(k_uint32_t function, k_uint32_t *eax, k_uint32_t *ebx,
 		k_uint32_t *ecx, k_uint32_t *edx)
 {
-	asm volatile(".ifnc %%ebx,%3 ; movl  %%ebx,%3 ; .endif  \n\t"
-			"cpuid                                     \n\t"
-			".ifnc %%ebx,%3 ; xchgl %%ebx,%3 ; .endif  \n\t"
-			: "=a" (*eax), "=c" (*ecx), "=d" (*edx), "=b" (*ebx)
-			: "a" (function));
+	asm volatile("cpuid"
+		: "=a" (*eax), "=c" (*ecx), "=d" (*edx), "=b" (*ebx)
+		: "a" (function), "c" (*ecx)
+		: "memory");
 }
 
 static void k_cpu_get_vendor(struct k_cpu_x86 *cpu)
@@ -92,9 +91,7 @@ void k_cpu_get_cache_info(struct k_cpu_x86 *cpu)
 {
 	k_uint32_t eax, ebx, ecx, edx;
 
-	if (cpu->max_extended_function >= 0x80000005) {
-
-	} else if (cpu->max_function >= 0x00000004) {
+	if (cpu->max_function >= 0x00000004) {
 		k_uint32_t count = 0;
 
 		while (1) {
@@ -104,7 +101,6 @@ void k_cpu_get_cache_info(struct k_cpu_x86 *cpu)
 				break;
 
 			k_uint32_t level = K_CPUID_CACHE_LEVEL(eax);
-
 			if (level <= 3) {
 				cpu->cache[level].line_size = K_CPUID_CACHE_LINE_SIZE(ebx);
 				cpu->cache[level].size += K_CPUID_CACHE_SETS(ecx) *
