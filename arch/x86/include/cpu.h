@@ -21,6 +21,48 @@
 #define K_CPUID_PAE	(1 << 6)
 #define K_CPUID_APIC	(1 << 9)
 
+/* CPUID 0x00000002 */
+enum {
+	K_CPUID2_TYPE_INVALID = 0,
+	K_CPUID2_TYPE_GENERAL,
+	K_CPUID2_TYPE_TLB,
+	K_CPUID2_TYPE_CACHE,
+	K_CPUID2_TYPE_DTLB,
+	K_CPUID2_TYPE_STLB,
+	K_CPUID2_TYPE_PREFETCH,
+};
+
+enum {
+	K_CPU_CACHE_TYPE_L1_DATA,
+	K_CPU_CACHE_TYPE_L1_INSTRUCTION,
+	K_CPU_CACHE_TYPE_L2,
+	K_CPU_CACHE_TYPE_L3,
+};
+
+#define K_CPUID2_CACHE_ENTRY(cache, size, way_associative, line_size)	\
+	{										\
+		.type = K_CPUID2_TYPE_CACHE,						\
+		{{									\
+			(cache),							\
+			(size),								\
+			(way_associative),						\
+			(line_size),							\
+		}},									\
+	}
+	
+struct k_cpuid2_descriptor {
+	int type;
+
+	union {
+		struct {
+			int type;
+			unsigned int size;
+			int way_associative;
+			unsigned int line_size;
+		} cache;
+	};
+};
+
 /* CPUID 0x00000004 */
 /* EAX */
 #define K_CPUID_CACHE_TYPE_NULL		(0 << 0)
@@ -61,7 +103,7 @@ extern struct k_cpu_x86 k_boot_cpu;
 
 void k_cpu_get_info(void);
 int k_cpu_eflag(k_uint32_t);
-void k_cpu_cpuid(k_uint32_t, k_uint32_t *, k_uint32_t *, k_uint32_t *, k_uint32_t *);
+void k_cpuid(k_uint32_t, k_uint32_t *, k_uint32_t *, k_uint32_t *, k_uint32_t *);
 
 #endif
 

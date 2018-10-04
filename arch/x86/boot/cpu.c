@@ -20,7 +20,7 @@ k_error_t k_cpu_valid(void)
 		return K_ERROR_FAILURE;
 
 	/* Vendor. */
-	k_cpu_cpuid(0x00000000, &max_function, (k_uint32_t *)&vendor[0],
+	k_cpuid(0x00000000, &max_function, (k_uint32_t *)&vendor[0],
 			(k_uint32_t *)&vendor[8], (k_uint32_t *)&vendor[4]);
 
 	if (!k_cpu_is_intel(vendor))
@@ -28,7 +28,7 @@ k_error_t k_cpu_valid(void)
 
 	/* Required features. */
 	if (max_function >= 0x00000001) {
-		k_cpu_cpuid(0x00000001, &eax, &ebx, &ecx, &edx);
+		k_cpuid(0x00000001, &eax, &ebx, &ecx, &edx);
 
 		if ((edx & K_CPUID_TSC) == 0 || (edx & K_CPUID_MSR) == 0 ||
 				(edx & K_CPUID_APIC) == 0)
