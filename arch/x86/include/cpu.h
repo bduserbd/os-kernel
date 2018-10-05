@@ -4,6 +4,15 @@
 #include "kernel/include/error.h"
 #include "kernel/include/types.h"
 
+/* Cache types. */
+enum {
+	K_CPU_CACHE_TYPE_L1_DATA,
+	K_CPU_CACHE_TYPE_L1_INSTRUCTION,
+	K_CPU_CACHE_TYPE_L2,
+	K_CPU_CACHE_TYPE_L3,
+	K_CPU_CACHE_MAX,
+};
+
 /* CPUID 0x00000001 */
 /* EAX */
 #define K_CPUID_BASE_FAMILY(eax)	((eax >> 8) & 0xf)
@@ -30,13 +39,6 @@ enum {
 	K_CPUID2_TYPE_DTLB,
 	K_CPUID2_TYPE_STLB,
 	K_CPUID2_TYPE_PREFETCH,
-};
-
-enum {
-	K_CPU_CACHE_TYPE_L1_DATA,
-	K_CPU_CACHE_TYPE_L1_INSTRUCTION,
-	K_CPU_CACHE_TYPE_L2,
-	K_CPU_CACHE_TYPE_L3,
 };
 
 #define K_CPUID2_CACHE_ENTRY(cache, size, way_associative, line_size)	\
@@ -92,9 +94,10 @@ struct k_cpu_x86 {
 	int stepping;
 
 	struct {
-		unsigned int line_size;
 		unsigned int size;
-	} cache[3];
+		int way_associative;
+		unsigned int line_size;
+	} cache[K_CPU_CACHE_MAX];
 
 	k_uint8_t initial_apic_id;
 };

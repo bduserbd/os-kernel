@@ -168,15 +168,31 @@ void k_cpu_get_cache_info(struct k_cpu_x86 *cpu)
 			if (K_CPUID_CACHE_TYPE(eax) == K_CPUID_CACHE_TYPE_NULL)
 				break;
 
+			int type;
 			k_uint32_t level = K_CPUID_CACHE_LEVEL(eax);
-			if (level <= 3) {
-				cpu->cache[level].line_size = K_CPUID_CACHE_LINE_SIZE(ebx);
-				cpu->cache[level].size += K_CPUID_CACHE_SETS(ecx) *
-							cpu->cache[level].line_size *
-							K_CPUID_CACHE_PARTITIONS(ebx) *
-							K_CPUID_CACHE_WAYS(ebx);
-			}
 
+			if (level == 1) {
+				if (K_CPUID_CACHE_TYPE(eax) == K_CPUID_CACHE_TYPE_DATA)
+					type = K_CPU_CACHE_TYPE_L1_DATA;
+				else if (K_CPUID_CACHE_TYPE(eax) == K_CPUID_CACHE_TYPE_INSTRUCTION)
+					type = K_CPU_CACHE_TYPE_L1_INSTRUCTION;
+				else
+					goto _out;
+			} else if (level == 2)
+				type = K_CPU_CACHE_TYPE_L2;
+			else if (level == 3)
+				type = K_CPU_CACHE_TYPE_L3;
+			else
+				goto _out;
+
+			cpu->cache[type].line_size = K_CPUID_CACHE_LINE_SIZE(ebx);
+			cpu->cache[type].way_associative = K_CPUID_CACHE_WAYS(ebx);
+			cpu->cache[type].size = K_CPUID_CACHE_SETS(ecx) *
+						cpu->cache[type].line_size *
+						K_CPUID_CACHE_PARTITIONS(ebx) *
+						cpu->cache[type].way_associative;
+
+_out:
 			count++;
 		}
 
@@ -190,11 +206,24 @@ void k_cpu_get_cache_info(struct k_cpu_x86 *cpu)
 
 		k_printf("%x %x %x %x\n", eax, ebx, ecx, edx);
 
-		if ((eax & (1 << 31)) == 0) {
-			for (i = 0; i < 3; i++) {
-				
-			}
-		}
+#define GET_CACHE_INFO(reg)										\
+	if ((reg & (1 << 31)) == 0) {									\
+		k_uint32_t times = reg == eax ? 3 : 4;							\
+		for (i = 0; i < times; i++) {								\
+			struct k_cpuid2_descriptor *entry =						\
+				&k_cpuid2_encoding_descriptors[(reg >> (24 - (i * 8))) & 0xff];		\
+			if (entry->type == K_CPUID2_TYPE_CACHE) {					\
+				cpu->cache[entry->cache.type].size = entry->cache.size;			\
+				cpu->cache[entry->cache.type].way_associative = entry->cache.way_associative;\
+				cpu->cache[entry->cache.type].line_size = entry->cache.line_size;	\
+			}										\
+		}											\
+	}
+
+		GET_CACHE_INFO(eax);
+		GET_CACHE_INFO(ebx);
+		GET_CACHE_INFO(ecx);
+		GET_CACHE_INFO(edx);
 	}
 }
 
@@ -211,12 +240,16 @@ void k_cpu_print_info(struct k_cpu_x86 *cpu)
 
 	k_printf("Processor name: %s\n", cpu->processor_name);
 
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < K_CPU_CACHE_MAX; i++) {
 		if (!cpu->cache[i].line_size || !cpu->cache[i].size)
 			continue;
 
-		k_printf("Cache L%d - Line size: %d Total size (bytes): %x\n", i,
-			cpu->cache[i].line_size, cpu->cache[i].size);
+		k_printf("Cache %s - Total size (bytes): %x Way associative: %d  Line size: %d\n",
+			i == K_CPU_CACHE_TYPE_L1_DATA ? "L1 (data)" :
+			i == K_CPU_CACHE_TYPE_L1_INSTRUCTION ? "L1 (instruction)" :
+			i == K_CPU_CACHE_TYPE_L2 ? "L2" :
+			i == K_CPU_CACHE_TYPE_L3 ? "L3" : "Unknown",
+			cpu->cache[i].size, cpu->cache[i].way_associative, cpu->cache[i].line_size);
 	}
 }
 
