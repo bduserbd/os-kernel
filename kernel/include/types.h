@@ -56,5 +56,8 @@ typedef s32	k_ssize_t;
 #define K_MIN(a, b)	((a) > (b) ? (b) : (a))
 #define K_MAX(a, b)	((a) > (b) ? (a) : (b))
 
+#define K_KB(n)	(n << 10)
+#define K_MB(n)	(n << 20)
+
 #endif
 

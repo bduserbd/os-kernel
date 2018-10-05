@@ -18,16 +18,23 @@ void k_text_puts(const char *s)
 	static int x = 0;
 	static int y = 0;
 
+#define END_OF_LINE()		\
+	y++;			\
+	x = 0;			\
+				\
+	if (y == k_text_rows) {	\
+		k_text_clean();	\
+		y = 0;		\
+	}
+
 	while (*s) {
 		if (*s == '\n') {
-			y++;
-			x = 0;
-
-			if (y == k_text_rows) {
-				k_text_clean();
-				y = 0;
-			}
+			END_OF_LINE();
 		} else {
+			if (x == k_text_cols) {
+				END_OF_LINE();
+			}
+
 			k_text_video[2 * (k_text_cols * y + x)] = *s;
 			x++;
 		}

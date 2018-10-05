@@ -4,9 +4,6 @@
 #include "kernel/include/string.h"
 #include "kernel/include/acpi/acpi.h"
 
-void puts(const char *);
-void puthex(k_uint32_t);
-
 extern __u8 __k_ap_start[];
 extern __u8 __k_ap_end[];
 
