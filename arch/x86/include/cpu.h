@@ -22,6 +22,7 @@ enum {
 #define K_CPUID_EXT_MODEL(eax)		((eax >> 16) & 0xf)
 
 /* EBX */
+#define K_CPUID_CLFLUSH_LINE_SIZE(ebx)	(((ebx >> 8) & 0xff) << 3)
 #define K_CPUID_INITIAL_APIC_ID(ebx)	((ebx >> 24) & 0xff)
 
 /* EDX */
@@ -29,6 +30,7 @@ enum {
 #define K_CPUID_MSR	(1 << 5)
 #define K_CPUID_PAE	(1 << 6)
 #define K_CPUID_APIC	(1 << 9)
+#define K_CPUID_CLFSH	(1 << 19)
 
 /* CPUID 0x00000002 */
 enum {
@@ -92,6 +94,8 @@ struct k_cpu_x86 {
 	int family;
 	int model;
 	int stepping;
+
+	unsigned int clflush_line_size;
 
 	struct {
 		unsigned int size;

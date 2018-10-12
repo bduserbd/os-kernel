@@ -44,26 +44,30 @@ static void k_cpu_get_model(struct k_cpu_x86 *cpu)
 	int base_family;
 	k_uint32_t eax, ebx, ecx, edx;
 
-	k_cpuid(0x00000001, &eax, &ebx, &ecx, &edx);
+	if (cpu->max_function >= 0x00000001) {
+		k_cpuid(0x00000001, &eax, &ebx, &ecx, &edx);
 
-	cpu->family = base_family = K_CPUID_BASE_FAMILY(eax);
-	if (cpu->family == 0xf)
-		cpu->family += K_CPUID_EXT_FAMILY(eax);
+		cpu->family = base_family = K_CPUID_BASE_FAMILY(eax);
+		if (cpu->family == 0xf)
+			cpu->family += K_CPUID_EXT_FAMILY(eax);
 
-	cpu->model = K_CPUID_BASE_MODEL(eax);
-	if (base_family == 0xf)
-		cpu->model |= K_CPUID_EXT_MODEL(eax) << 4;
+		cpu->model = K_CPUID_BASE_MODEL(eax);
+		if (base_family == 0xf)
+			cpu->model |= K_CPUID_EXT_MODEL(eax) << 4;
 
-	cpu->stepping = K_CPUID_STEPPING(eax);
+		cpu->stepping = K_CPUID_STEPPING(eax);
+	}
 }
 
 void k_cpu_get_id(struct k_cpu_x86 *cpu)
 {
 	k_uint32_t eax, ebx, ecx, edx;
 
-	k_cpuid(0x00000001, &eax, &ebx, &ecx, &edx);
+	if (cpu->max_function >= 0x00000001) {
+		k_cpuid(0x00000001, &eax, &ebx, &ecx, &edx);
 
-	cpu->initial_apic_id = K_CPUID_INITIAL_APIC_ID(ebx);
+		cpu->initial_apic_id = K_CPUID_INITIAL_APIC_ID(ebx);
+	}
 }
 
 void k_cpu_get_max_extended_function(struct k_cpu_x86 *cpu)
@@ -159,6 +163,13 @@ void k_cpu_get_cache_info(struct k_cpu_x86 *cpu)
 {
 	k_uint32_t eax, ebx, ecx, edx;
 
+	if (cpu->max_function >= 0x00000001) {
+		k_cpuid(0x00000001, &eax, &ebx, &ecx, &edx);
+
+		if (edx & K_CPUID_CLFSH)
+			cpu->clflush_line_size = K_CPUID_CLFLUSH_LINE_SIZE(ebx);
+	}
+
 	if (cpu->max_function >= 0x00000004) {
 		k_uint32_t count = 0;
 
@@ -203,8 +214,6 @@ _out:
 		k_uint32_t i;
 
 		k_cpuid(0x00000002, &eax, &ebx, &ecx, &edx);
-
-		k_printf("%x %x %x %x\n", eax, ebx, ecx, edx);
 
 #define GET_CACHE_INFO(reg)										\
 	if ((reg & (1 << 31)) == 0) {									\
@@ -251,6 +260,11 @@ void k_cpu_print_info(struct k_cpu_x86 *cpu)
 			i == K_CPU_CACHE_TYPE_L3 ? "L3" : "Unknown",
 			cpu->cache[i].size, cpu->cache[i].way_associative, cpu->cache[i].line_size);
 	}
+}
+
+unsigned int k_cpu_cache_line_size(void)
+{
+	return k_boot_cpu.cache[K_CPU_CACHE_TYPE_L1_DATA].line_size;
 }
 
 void k_cpu_get_info(void)
