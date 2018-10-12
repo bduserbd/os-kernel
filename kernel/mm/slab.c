@@ -33,21 +33,22 @@ static struct {
 
 static void k_cache_grow(struct k_cache *cache)
 {
-	unsigned int i, offset;
+	unsigned int i;
 	struct k_slab *slab;
-	void *buf;
+	void *buf, *memory;
 
 	buf = k_buddy_alloc(1 << cache->blocks_log2);
 	if (!buf)
 		return;
 
 	if (cache->colour == 0)
-		offset = K_ALIGN_UP(sizeof(struct k_slab) + cache->objects *
-				sizeof(k_cache_free_object_t), cache->alignment);
+		memory = (void *)K_ALIGN_UP((unsigned long)buf + sizeof(struct k_slab) +
+				cache->objects * sizeof(k_cache_free_object_t),
+				cache->alignment);
 	else {
-		offset = K_ALIGN_UP(sizeof(struct k_slab) + cache->objects *
-				sizeof(k_cache_free_object_t), cache->colour_off) +
-				cache->colour_next * cache->colour_off;
+		memory = (void *)K_ALIGN_UP((unsigned long)buf + sizeof(struct k_slab) +
+				cache->objects * sizeof(k_cache_free_object_t),
+				cache->colour_off) + cache->colour_next * cache->colour_off;
 
 		cache->colour_next++;
 		if (cache->colour_next > cache->colour)
@@ -56,7 +57,9 @@ static void k_cache_grow(struct k_cache *cache)
 
 	slab = buf;
 
-	slab->memory = (k_uint8_t *)buf + offset;
+	slab->memory = memory;
+
+	slab->active = 0;
 
 	slab->free = 0;
 	for (i = 0; i < cache->objects - 1; i++)
@@ -65,7 +68,7 @@ static void k_cache_grow(struct k_cache *cache)
 	slab->free_objects[i] = K_SLAB_OBJECT_LIST_END;
 
 	slab->next = cache->free_slabs;
-	cache->free_slabs = buf;
+	cache->free_slabs = slab;
 }
 
 unsigned int __attribute__((weak)) k_cpu_cache_line_size(void)
@@ -125,14 +128,63 @@ static void k_cache_init(struct k_cache *cache, unsigned int flags)
 	k_cache_grow(cache);
 }
 
-void k_cache_alloc(struct k_cache *cache)
+void *k_cache_alloc_object(struct k_cache *cache, struct k_slab *slab)
 {
+	unsigned int s;
+	void *ptr;
 
+	if (slab->free == K_SLAB_OBJECT_LIST_END)
+		return NULL;
+
+	s = K_ALIGN_UP(cache->object_size, cache->alignment);
+	ptr = (k_uint8_t *)slab->memory + s * slab->free;
+
+	slab->active++;
+	slab->free = slab->free_objects[slab->free];
+
+	return ptr;
+
+}
+
+void *k_cache_alloc(struct k_cache *cache)
+{
+	struct k_slab *slab;
+	void *ptr;
+
+	if (cache->partial_slabs) {
+		slab = cache->partial_slabs;
+
+		ptr = k_cache_alloc_object(cache, slab);
+		if (!ptr)
+			return NULL;
+
+		if (cache->objects == slab->active) {
+			slab->next = cache->full_slabs;
+			cache->full_slabs = slab;
+		}
+	} else {
+		slab = cache->free_slabs;
+
+		ptr = k_cache_alloc_object(cache, slab);
+		if (!ptr)
+			return NULL;
+
+		cache->free_slabs = slab->next;
+		cache->partial_slabs = slab;
+	}
+
+	return ptr;
 }
 
 void k_cache_init_malloc_cache(const char *name, unsigned int size)
 {
-	k_cache_alloc(&k_cache_boot);
+	struct k_cache *cache;
+
+	cache = k_cache_alloc(&k_cache_boot);
+	if (!cache)
+		return;
+
+	k_printf("%s - %x ", name, cache);
 }
 
 void k_slab_init(void)

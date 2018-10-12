@@ -39,6 +39,8 @@ struct k_cache {
 struct k_slab {
 	void *memory;
 
+	unsigned int active;
+
 	struct k_slab *next;
 
 	k_cache_free_object_t free;
