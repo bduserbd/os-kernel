@@ -3,17 +3,20 @@
 #include "include/mm/buddy.h"
 #include "include/video/print.h"
 
-static const int k_slab_max_objects = (sizeof(k_cache_free_object_t) << 8) - 1;
-
 static struct k_cache k_cache_boot = {
 	.name = "k_cache",
 	.object_size = sizeof(struct k_cache),
 };
 
+static struct k_cache *k_cache_cache = NULL;
+
 static struct {
 	const char *name;
-	unsigned int size;
+	unsigned int object_size;
 } k_malloc_info[] = {
+	{ NULL, 0 },
+	{ NULL, 0 },
+	{ NULL, 0 },
 	{ "k_malloc-8", 8 },
 	{ "k_malloc-16", 16 },
 	{ "k_malloc-32", 32 },
@@ -28,8 +31,9 @@ static struct {
 	{ "k_malloc-16384", 16384 },
 	{ "k_malloc-32768", 32768 },
 	{ "k_malloc-65536", 65536 },
-	{ NULL, 0 },
 };
+
+static struct k_cache *k_malloc_caches[K_MALLOC_MAX_SIZE_LOG2];
 
 static void k_cache_grow(struct k_cache *cache)
 {
@@ -76,7 +80,7 @@ unsigned int __attribute__((weak)) k_cpu_cache_line_size(void)
 	return 32;
 }
 
-static void k_cache_init(struct k_cache *cache, unsigned int flags)
+static void k_cache_init(struct k_cache *cache, unsigned int alignment, unsigned int flags)
 {
 	int i;
 	unsigned int size, s;
@@ -86,13 +90,23 @@ static void k_cache_init(struct k_cache *cache, unsigned int flags)
 		return;
 
 	cache->flags = flags;
-	if (cache->flags & K_SLAB_FLAGS_L1_ALIGNMENT)
-		cache->alignment = k_cpu_cache_line_size();
-	else
+
+	if (alignment) {
+		if (alignment & (alignment - 1))
+			return;
+
+		cache->alignment = alignment;
+	} else
 		cache->alignment = K_SLAB_MIN_ALIGNMENT;
 
-	s = K_ALIGN_UP(cache->object_size, cache->alignment) +
-		sizeof(k_cache_free_object_t);
+	if (cache->flags & K_SLAB_FLAGS_L1_ALIGNMENT) {
+		unsigned int l1_size = k_cpu_cache_line_size();
+
+		if (cache->alignment < l1_size)
+			cache->alignment = l1_size;
+	}
+
+	s = K_ALIGN_UP(cache->object_size, cache->alignment) + sizeof(k_cache_free_object_t);
 
 	for (i = K_BUDDY_MIN_BLOCK_LOG2; i <= K_BUDDY_MAX_BLOCK_LOG2; i++) {
 		size = 1 << i;
@@ -105,8 +119,8 @@ static void k_cache_init(struct k_cache *cache, unsigned int flags)
 			continue;
 
 		cache->objects = objects;
-		if (cache->objects > k_slab_max_objects)
-			cache->objects = k_slab_max_objects;
+		if (cache->objects > K_SLAB_MAX_OBJECTS)
+			cache->objects = K_SLAB_MAX_OBJECTS;
 
 		cache->blocks_log2 = i;
 
@@ -143,7 +157,6 @@ void *k_cache_alloc_object(struct k_cache *cache, struct k_slab *slab)
 	slab->free = slab->free_objects[slab->free];
 
 	return ptr;
-
 }
 
 void *k_cache_alloc(struct k_cache *cache)
@@ -176,24 +189,87 @@ void *k_cache_alloc(struct k_cache *cache)
 	return ptr;
 }
 
-void k_cache_init_malloc_cache(const char *name, unsigned int size)
+struct k_cache *k_cache_create_cache(const char *name, unsigned int object_size,
+		unsigned int alignment, unsigned int flags)
 {
 	struct k_cache *cache;
 
-	cache = k_cache_alloc(&k_cache_boot);
+	cache = k_cache_alloc(k_cache_cache);
+	if (!cache)
+		return NULL;
+
+	cache->name = name;
+	cache->object_size = object_size;
+	k_cache_init(cache, alignment, flags);
+
+	return cache;
+}
+
+static void k_cache_create_malloc_cache(int index, const char *name, unsigned int object_size)
+{
+	struct k_cache *cache;
+
+	cache = k_cache_create_cache(name, object_size, object_size, 0x0);
 	if (!cache)
 		return;
 
-	k_printf("%s - %x ", name, cache);
+	k_malloc_caches[index] = cache;
 }
 
 void k_slab_init(void)
 {
 	int i;
 
-	k_cache_init(&k_cache_boot, 0x0);
+	k_cache_cache = &k_cache_boot;
 
-	for (i = 0; k_malloc_info[i].name; i++)
-		k_cache_init_malloc_cache(k_malloc_info[i].name, k_malloc_info[i].size);
+	k_cache_init(k_cache_cache, 0x0, 0x0);
+
+	for (i = K_MALLOC_MIN_SIZE_LOG2; i <= K_MALLOC_MAX_SIZE_LOG2; i++)
+		k_cache_create_malloc_cache(i, k_malloc_info[i].name,
+				k_malloc_info[i].object_size);
+}
+
+static int k_malloc_cache_index(k_size_t size)
+{
+	if (size <= 8)
+		return 3;
+	else if (size <= 16)
+		return 4;
+	else if (size <= 32)
+		return 5;
+	else if (size <= 64)
+		return 6;
+	else if (size <= 128)
+		return 7;
+	else if (size <= 256)
+		return 8;
+	else if (size <= 512)
+		return 9;
+	else if (size <= 1024)
+		return 10;
+	else if (size <= 2048)
+		return 11;
+	else if (size <= 4096)
+		return 12;
+	else if (size <= 8192)
+		return 13;
+	else if (size <= 16384)
+		return 14;
+	else if (size <= 32768)
+		return 15;
+	else if (size <= 65536)
+		return 16;
+
+	return -1;
+}
+
+void *k_malloc(k_size_t size)
+{
+
+}
+
+void k_free(const void *ptr)
+{
+
 }
 
