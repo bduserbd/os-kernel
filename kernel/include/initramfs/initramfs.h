@@ -6,6 +6,9 @@
 
 #define K_INITRAMFS_MAGIC	0x53444f4d
 
+#define K_INITRAMFS_OBJECTS_DIR	"objects/"
+#define K_INITRAMFS_MODULES_DIR	(K_INITRAMFS_OBJECTS_DIR "modules/")
+
 struct k_initramfs_header {
 	k_uint32_t magic;
 	k_uint32_t length;
