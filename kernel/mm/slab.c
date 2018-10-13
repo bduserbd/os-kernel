@@ -88,6 +88,8 @@ static void k_cache_get_colour(struct k_cache *cache,
 	cache->colour_next = 0;
 }
 
+void *k_cache_alloc(struct k_cache *);
+
 static void k_cache_grow(struct k_cache *cache)
 {
 	unsigned int i;
@@ -99,7 +101,14 @@ static void k_cache_grow(struct k_cache *cache)
 		return;
 
 	if (cache->flags & K_SLAB_FLAGS_MANAGEMENT_OFF) {
-		k_printf("$");
+		if (!k_cache_management)
+			return;
+
+		slab = k_cache_alloc(k_cache_management);
+		if (!slab)
+			return;
+
+		memory = buf;
 	} else {
 		unsigned long management_end = (unsigned long)buf + sizeof(struct k_slab) +
 			cache->objects * sizeof(k_cache_free_object_t);
@@ -263,7 +272,7 @@ void k_slab_init(void)
 	if (!k_cache_management)
 		return;
 
-	for (i = K_MALLOC_MIN_SIZE_LOG2; i <= K_MALLOC_MIN_SIZE_LOG2 + 6; i++)
+	for (i = K_MALLOC_MIN_SIZE_LOG2; i <= K_MALLOC_MAX_SIZE_LOG2; i++)
 		k_cache_malloc_create(i, k_malloc_info[i].name, k_malloc_info[i].object_size);
 }
 
