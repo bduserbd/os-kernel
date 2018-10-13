@@ -30,9 +30,13 @@ export CC LD AS OBJCOPY
 
 # Common build options.
 BUILD := -f $(CURDIR)/Makefile.build
+BUILD_MODULE := -f $(CURDIR)/Makefile.module
 BUILD_BIN := -f $(CURDIR)/Makefile.bin.build
 
+BUILD_TOOLS := $(CURDIR)/tools
+
 BUILD_OBJDIR := $(CURDIR)/objects
+BUILD_MODULES_OBJDIR := $(BUILD_OBJDIR)/modules
 
 BUILD_OBJS +=
 
@@ -52,17 +56,17 @@ BUILD_OBJCOPYFLAGS += -R .rel.eh_frame -R .note.GNU-stack
 
 BUILD_CPPFLAGS +=
 
-export BUILD BUILD_BIN
-export BUILD_OBJDIR BUILD_OBJS
+export BUILD BUILD_MODULE BUILD_BIN
+export BUILD_OBJDIR BUILD_MODULES_OBJDIR BUILD_OBJS
 export BUILD_LD_SCRIPT
 export BUILD_CFLAGS BUILD_LDFLAGS BUILD_OBJCOPYFLAGS BUILD_CPPFLAGS
 
 # Targets.
 PHONY += all clean prep
-PHONY += arch kernel
-PHONY += link grub-iso
+PHONY += arch kernel modules
+PHONY += link initramfs grub-iso
 
-all: clean prep arch kernel link $(FIRMWARE_TARGET)
+all: clean prep arch kernel modules link initramfs $(FIRMWARE_TARGET)
 
 arch:
 	$(V)$(MAKE) -C arch/$(ARCH)/
@@ -70,12 +74,20 @@ arch:
 kernel:
 	$(V)$(MAKE) -C kernel/
 
+modules:
+	$(V)$(MAKE) -C modules/
+
 link:
 	$(V)$(LD) $(BUILD_LDFLAGS) -o target.elf	\
 		$(addprefix $(BUILD_OBJDIR)/,$(shell cat $(BUILD_OBJDIR)/objects.txt))
 	$(V)if [ "$(ARCH)" = "x86" ] && [ "$(CPUS)" != 1 ]; then			\
 		$(OBJCOPY) target.elf --update-section .ap_start=$(BUILD_OBJDIR)/$(AP_BIN);	\
 	fi;
+
+initramfs:
+	$(V)$(patsubst $(CURDIR)/%,%,find $(BUILD_MODULES_OBJDIR))	\
+		| cpio -o -H newc > real-initramfs.img
+	$(V)$(BUILD_TOOLS)/initramfs.py real-initramfs.img initramfs.img
 
 GRUB_BOOT_MENU = "					\n\
 set timeout=0						\n\
@@ -89,7 +101,7 @@ bios-grub-iso:
 	$(V)mkdir -p iso/boot/grub
 	$(V)echo $(GRUB_BOOT_MENU) > iso/boot/grub/grub.cfg
 	$(V)cp target.elf iso/boot/kernel
-	$(V)cp output iso/boot/initramfs.img
+	$(V)cp initramfs.img iso/boot/initramfs.img
 	$(V)grub-mkrescue -o target.iso iso/
 	$(V)rm -rf iso/
 
@@ -106,7 +118,7 @@ uefi-grub:
 	$(V)mkdir -p boot/grub/i386-efi
 	$(V)echo $(GRUB_UEFI_BOOT_MENU) > boot/grub/grub.cfg
 	$(V)cp target.elf boot/kernel
-	$(V)cp output boot/initramfs.img
+	$(V)cp initramfs.img boot/initramfs.img
 	$(V)cp /usr/lib/grub/i386-efi/* boot/grub/i386-efi
 	$(V)grub-mkstandalone -O i386-efi -o BOOTIA32.EFI	\
 		boot/
@@ -114,6 +126,7 @@ uefi-grub:
 prep:
 	$(V)$(MAKE) -C linker/
 	$(V)mkdir -p $(BUILD_OBJDIR)
+	$(V)mkdir -p $(BUILD_MODULES_OBJDIR)
 	$(V)touch $(BUILD_OBJDIR)/objects.txt
 
 clean:

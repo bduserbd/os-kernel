@@ -1,0 +1,9 @@
+FINAL_CFLAGS := $(BUILD_CFLAGS) $(CFLAGS)
+
+.PHONY: build
+build: $(TARGET)
+
+%.o:%.c
+	$(V)echo '  CC ' $(CURDIR)/$@
+	$(V)$(CC) $(FINAL_CFLAGS) -c $^ -o $(BUILD_MODULES_OBJDIR)/$@
+
