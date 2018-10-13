@@ -14,7 +14,6 @@ void k_x86_init(k_uint32_t heap, struct k_fb_info *fb, void *rsdp,
 		k_uint32_t initramfs_start, k_uint32_t initramfs_length)
 {
 	k_buddy_init(heap);
-	k_slab_init();
 
 #ifdef K_CONFIG_BIOS
 	k_text_set_info(fb);
@@ -26,6 +25,20 @@ void k_x86_init(k_uint32_t heap, struct k_fb_info *fb, void *rsdp,
 #endif
 
 	k_cpu_get_info();
+
+	k_slab_init();
+
+	k_printf("%x ", k_malloc(4));
+	k_printf("%x ", k_malloc(7));
+	k_printf("%x ", k_malloc(12));
+	k_printf("%x ", k_malloc(12));
+	k_printf("%x ", k_malloc(40));
+	k_printf("%x ", k_malloc(512));
+	k_printf("%x ", k_malloc(516));
+	k_printf("%x ", k_malloc(780));
+	k_printf("%x ", k_malloc(16));
+	k_printf("\n");
+
 	k_mp_get_info();
 	k_acpi_get_info(rsdp);
 	k_smbios_get_info();
