@@ -13,10 +13,6 @@ export V
 # Flags.
 MAKEFLAGS += --no-print-directory
 
-# Architecture.
-SYSTEM_ARCH = $(shell uname -p | sed -e s/i.86/x86/ -e s/x86_64/x86/)
-ARCH ?= $(SYSTEM_ARCH)
-
 # Include configuration.
 include Makefile.config
 

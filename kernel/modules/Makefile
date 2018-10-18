@@ -1,4 +1,5 @@
 OBJS += loader.o
+OBJS += elf.o
 
 CFLAGS = -I ../
 

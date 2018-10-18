@@ -1,5 +1,6 @@
 #include "include/initramfs/initramfs.h"
 #include "include/fs/cpio/cpio.h"
+#include "include/modules/loader.h"
 #include "include/string.h"
 #include "include/video/print.h"
 
@@ -43,13 +44,21 @@ static void k_cpio_newc_scan_files(struct k_cpio_newc *cpio)
 		if (error)
 			return;
 
-		k_printf("%s %x %x | ", cpio->filename, namesize, filesize);
 		if (!k_strncmp(cpio->filename, K_CPIO_NEWC_TRAILER, 10))
 			break;
 
+		if (filesize) {
+			k_printf("%s %x %x | ", cpio->filename, namesize, filesize);
+
+			if (!k_strncmp(cpio->filename, K_INITRAMFS_MODULES_DIR,
+						sizeof(K_INITRAMFS_MODULES_DIR) - 1))
+				k_loader((k_uint8_t *)cpio + K_ALIGN_UP(sizeof(struct k_cpio_newc) +
+							namesize, 0x4), filesize);
+		}
+
 		cpio = (struct k_cpio_newc *)((char *)cpio +
 				K_ALIGN_UP(sizeof(struct k_cpio_newc) +
-				namesize + filesize, 0x4));
+					namesize + filesize, 0x4));
 	}
 }
 

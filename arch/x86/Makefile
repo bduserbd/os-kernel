@@ -2,6 +2,7 @@ OBJS += init.o
 OBJS += cpu.o mp.o lapic.o
 OBJS += idt.o interrupt.o
 OBJS += smbios.o
+OBJS += elf.o
 
 ifeq ($(FIRMWARE),BIOS)
   OBJS += video.o
