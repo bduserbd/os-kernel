@@ -16,9 +16,17 @@ SECTIONS {
 	.data	: { *(.data) }
 	.bss	: { *(.bss) }
 
+	.k_strtab	: { *(.k_strtab) }
+
+	.k_symtab	: {
+		__k_symtab_start = .;
+		*(.k_symtab)
+		__k_symtab_end = .;
+	}
+
 #ifdef K_CONFIG_SMP
 	__k_ap_start = .;
-	.ap_start : { *(.ap_start) }
+	.ap_start	: { *(.ap_start) }
 	__k_ap_end = .;
 #endif
 

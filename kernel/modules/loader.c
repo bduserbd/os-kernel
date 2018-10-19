@@ -1,5 +1,6 @@
 #include "include/modules/loader.h"
 #include "include/modules/module.h"
+#include "include/modules/export-symbol.h"
 #include "include/elf/elf-loader.h"
 #include "include/mm/mm.h"
 #include "include/string.h"
@@ -77,5 +78,47 @@ _exit:
 		k_free(mod);
 
 	return error;
+}
+
+#define K_SYMBOL_TABLE_ENTRIES	31
+
+struct k_export_symbol *k_symbol_table[K_SYMBOL_TABLE_ENTRIES];
+
+static int k_loader_symbol_hash(const char *str)
+{
+	k_uint8_t c;
+	unsigned long hash = 5381;
+
+	while ((c = *str++))
+		hash = ((hash << 5) + hash) + c;
+
+	return hash % K_SYMBOL_TABLE_ENTRIES;
+}
+
+struct k_export_symbol *k_loader_get_symbol(const char *name)
+{
+	int entry;
+	struct k_export_symbol *symbol;
+
+	entry = k_loader_symbol_hash(name);
+
+	for (symbol = k_symbol_table[entry]; symbol; symbol = symbol->next)
+		if (!k_strcmp(symbol->name, name))
+			return symbol;
+
+	return NULL;
+}
+
+void k_loader_init(void)
+{
+	int i;
+	int entry;
+
+	for (i = 0; i < __k_symtab_end - __k_symtab_start; i++) {
+		entry = k_loader_symbol_hash(__k_symtab_start[i].name);
+
+		__k_symtab_start[i].next = k_symbol_table[entry];
+		k_symbol_table[i] = &__k_symtab_start[i];
+	}
 }
 

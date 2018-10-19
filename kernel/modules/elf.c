@@ -117,6 +117,17 @@ _exit:
 	return error;
 }
 
+static void *k_elf_section_by_index(struct k_module *mod, Elf(Section) index)
+{
+	int i;
+
+	for (i = 0; i < mod->count; i++)
+		if (mod->segments[i].index == index)
+			return mod->segments[i].ptr;
+
+	return NULL;
+}
+
 static k_error_t k_elf_resolve_symbol(Elf(Sym) *symbol, const char *name,
 		struct k_module *mod)
 {
@@ -125,13 +136,27 @@ static k_error_t k_elf_resolve_symbol(Elf(Sym) *symbol, const char *name,
 
 	switch (ELF_ST_TYPE(symbol->st_info)) {
 	case STT_FUNC:
+		symbol->st_value += (unsigned long)k_elf_section_by_index(mod, symbol->st_shndx);
+
+		if (!k_strcmp(name, "k_module_init"))
+			mod->init = (void (*)(void))symbol->st_value;
+		else if (!k_strcmp(name, "k_module_uninit"))
+			mod->uninit = (void (*)(void))symbol->st_value;
+
 		break;
 
 	case STT_NOTYPE:
 	case STT_OBJECT:
+		if (symbol->st_name && symbol->st_shndx == SHN_UNDEF) {
+
+		} else
+			symbol->st_value += (unsigned long)k_elf_section_by_index(mod,
+					symbol->st_shndx);
+
 		break;
 
 	case STT_SECTION:
+		symbol->st_value += (unsigned long)k_elf_section_by_index(mod, symbol->st_shndx);
 		break;
 
 	case STT_FILE:

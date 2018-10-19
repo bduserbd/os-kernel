@@ -1,5 +1,6 @@
-#include "kernel/include/video/print.h"
-#include "kernel/include/divmod64.h"
+#include "include/video/print.h"
+#include "include/divmod64.h"
+#include "include/modules/export-symbol.h"
 
 static void (*k_print_callback)(const char *) = NULL;
 
@@ -321,4 +322,5 @@ int k_printf(const char *fmt, ...)
 
 	return n;
 }
+K_EXPORT_FUNC(k_printf);
 
