@@ -28,6 +28,7 @@ void k_x86_init(k_uint32_t heap, struct k_fb_info *fb, void *rsdp,
 
 	k_slab_init();
 
+#if 0
 	k_printf("%x ", k_malloc(4));
 	k_printf("%x ", k_malloc(7));
 	k_printf("%x ", k_malloc(12));
@@ -38,6 +39,7 @@ void k_x86_init(k_uint32_t heap, struct k_fb_info *fb, void *rsdp,
 	k_printf("%x ", k_malloc(780));
 	k_printf("%x ", k_malloc(16));
 	k_printf("\n");
+#endif
 
 	k_mp_get_info();
 	k_acpi_get_info(rsdp);

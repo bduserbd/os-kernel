@@ -1,5 +1,5 @@
-#ifndef BL_ELF_H
-#define BL_ELF_H
+#ifndef K_ELF_H
+#define K_ELF_H
 
 /* 32-bit ELF types */
 typedef unsigned short		Elf32_Half;

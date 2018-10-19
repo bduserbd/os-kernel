@@ -83,3 +83,29 @@ int k_strncmp(const char *s1, const char *s2, k_size_t n)
 	return *s1 - *s2;
 }
 
+char *k_strcpy(char *dest, const char *src)
+{
+	char *res;
+
+	if (!dest || !src)
+		return NULL;
+
+	res = dest;
+	while ((*dest++ = *src++)) ;
+
+	return res;
+}
+
+char *k_strncpy(char *dest, const char *src, k_size_t n)
+{
+	char *res;
+
+	if (!dest || !src)
+		return NULL;
+
+	res = dest;
+	while ((*dest++ = *src++) && --n) ;
+
+	return res;
+}
+
