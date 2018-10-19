@@ -64,7 +64,13 @@ k_error_t k_loader(const k_uint8_t *buf, k_size_t size)
 	if (error)
 		goto _exit;
 
+	error = k_elf_load_symbols(elf, mod);
+	if (error)
+		goto _exit;
+
 	k_printf("%s", mod_name);
+
+	return K_ERROR_NONE;
 
 _exit:
 	if (mod)

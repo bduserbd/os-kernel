@@ -1,4 +1,7 @@
 #include "include/elf/elf-loader.h"
+#include "include/modules/module.h"
+#include "include/mm/mm.h"
+#include "include/mm/buddy.h"
 #include "include/string.h"
 #include "include/video/print.h"
 
@@ -48,10 +51,12 @@ void *k_elf_section_by_name(Elf(Ehdr) *elf, const char *name)
 
 k_error_t k_elf_load_image(Elf(Ehdr) *elf, struct k_module *mod)
 {
-	int i;
+	int i, j;
 	int count;
-	k_size_t image_size;
 	const Elf(Shdr) *section;
+	k_size_t image_size;
+	k_uint8_t *image_ptr;
+	k_error_t error;
 
 	image_size = 0x0;
 
@@ -66,9 +71,109 @@ k_error_t k_elf_load_image(Elf(Ehdr) *elf, struct k_module *mod)
 		count++;
 
 		image_size = K_ALIGN_UP(image_size, section[i].sh_addralign) +
-				section[i].sh_size;
+			section[i].sh_size;
+	}
+
+	mod->segments = k_malloc(count * sizeof(struct k_segment));
+	if (!mod->segments) {
+		error = K_ERROR_MEMORY_ALLOCATION_FAILED;
+		goto _exit;
+	}
+
+	image_ptr = k_buddy_alloc(image_size);
+	if (!image_ptr) {
+		error = K_ERROR_MEMORY_ALLOCATION_FAILED;
+		goto _exit;
+	}
+
+	for (i = 0, j = 0; i < elf->e_shnum; i++) {
+		if ((section[i].sh_flags & SHF_ALLOC) == 0 || !section[i].sh_size)
+			continue;
+
+		image_ptr = (k_uint8_t *)K_ALIGN_UP((unsigned long)image_ptr,
+				section[i].sh_addralign);
+
+		if (section[i].sh_type == SHT_PROGBITS)
+			k_memcpy(image_ptr, (k_uint8_t *)elf + section[i].sh_offset,
+					section[i].sh_size);
+		else if (section[i].sh_type == SHT_NOBITS)
+			k_memcpy(image_ptr, 0, section[i].sh_size);
+
+		mod->segments[j].ptr = image_ptr;
+		mod->segments[j].size = section[i].sh_size;
+
+		mod->segments[j].index = i;
+		j++;
+
+		image_ptr += section[i].sh_size;
 	}
 
 	return K_ERROR_NONE;
+
+_exit:
+	if (mod->segments)
+		k_free(mod->segments);
+
+	return error;
+}
+
+static k_error_t k_elf_resolve_symbol(Elf(Sym) *symbol, const char *name,
+		struct k_module *mod)
+{
+	if (name[0])
+		k_printf("%s ", name);
+
+	switch (ELF_ST_TYPE(symbol->st_info)) {
+	case STT_FUNC:
+		break;
+
+	case STT_NOTYPE:
+	case STT_OBJECT:
+		break;
+
+	case STT_SECTION:
+		break;
+
+	case STT_FILE:
+		symbol->st_value = 0;
+		break;
+
+	default:
+		return K_ERROR_INVALID_MODULE_ELF;
+	}
+
+	return K_ERROR_NONE;
+}
+
+k_error_t k_elf_load_symbols(Elf(Ehdr) *elf, struct k_module *mod)
+{
+	int i, j;
+	const Elf(Shdr) *section, *strtab;
+	Elf(Sym) *symbol;
+	const char *strings;
+	k_error_t error;
+
+	section = (const Elf(Shdr) *)((k_uint8_t *)elf + elf->e_shoff);
+
+	for (i = 0; i < elf->e_shnum; i++) {
+		if (section[i].sh_type != SHT_SYMTAB)
+			continue;
+
+		symbol = (Elf(Sym) *)((k_uint8_t *)elf + section[i].sh_offset);
+		strtab = (const Elf(Shdr) *)((k_uint8_t *)elf + elf->e_shoff + section[i].sh_link *
+				elf->e_shentsize);
+		strings = (const char *)elf + strtab->sh_offset;
+
+		for (j = 0; j < section[i].sh_size / section[i].sh_entsize; j++) {
+			error = k_elf_resolve_symbol(&symbol[j], strings + symbol[j].st_name, mod);
+			if (error)
+				goto _exit;
+		}
+	}
+
+	error = K_ERROR_NONE;
+
+_exit:
+	return error;
 }
 

@@ -153,6 +153,14 @@ typedef struct {
 #define ELF32_ST_TYPE(val)		((val) & 0xf)
 #define ELF32_ST_INFO(bind, type)	(((bind) << 4) + ((type) & 0xf))
 
+#ifdef K_BITS_32
+
+#define ELF_ST_BIND	ELF32_ST_BIND
+#define ELF_ST_TYPE	ELF32_ST_TYPE
+#define ELF_ST_INFO	ELF32_ST_INFO
+
+#endif
+
 /* Symbol bind types */
 #define STB_LOCAL	0
 #define STB_GLOBAL	1
