@@ -212,6 +212,14 @@ typedef struct {
 #define ELF32_R_TYPE(val)		((val) & 0xff)
 #define ELF32_R_INFO(sym, type)		(((sym) << 8) + ((type) & 0xff))
 
+#ifdef K_BITS_32
+
+#define ELF_R_SYM	ELF32_R_SYM
+#define ELF_R_TYPE	ELF32_R_TYPE
+#define ELF_R_INFO	ELF32_R_INFO
+
+#endif
+
 /* i386 relocation types */
 #define R_386_NONE	0
 #define R_386_32	1

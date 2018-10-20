@@ -1,4 +1,5 @@
 #include "include/elf/elf-loader.h"
+#include "include/modules/loader.h"
 #include "include/modules/module.h"
 #include "include/mm/mm.h"
 #include "include/mm/buddy.h"
@@ -74,7 +75,9 @@ k_error_t k_elf_load_image(Elf(Ehdr) *elf, struct k_module *mod)
 			section[i].sh_size;
 	}
 
-	mod->segments = k_malloc(count * sizeof(struct k_segment));
+	mod->count = count;
+
+	mod->segments = k_malloc(mod->count * sizeof(struct k_segment));
 	if (!mod->segments) {
 		error = K_ERROR_MEMORY_ALLOCATION_FAILED;
 		goto _exit;
@@ -131,9 +134,6 @@ static void *k_elf_section_by_index(struct k_module *mod, Elf(Section) index)
 static k_error_t k_elf_resolve_symbol(Elf(Sym) *symbol, const char *name,
 		struct k_module *mod)
 {
-	if (name[0])
-		k_printf("%s ", name);
-
 	switch (ELF_ST_TYPE(symbol->st_info)) {
 	case STT_FUNC:
 		symbol->st_value += (unsigned long)k_elf_section_by_index(mod, symbol->st_shndx);
@@ -148,7 +148,17 @@ static k_error_t k_elf_resolve_symbol(Elf(Sym) *symbol, const char *name,
 	case STT_NOTYPE:
 	case STT_OBJECT:
 		if (symbol->st_name && symbol->st_shndx == SHN_UNDEF) {
+			struct k_export_symbol *exsymbol;
 
+			exsymbol = k_loader_get_symbol(name);
+			if (!exsymbol)
+				return K_ERROR_UNEXPORTED_SYMBOL;
+
+			symbol->st_value = (unsigned long)exsymbol->address;
+
+			if (exsymbol->type == K_EXPORT_TYPE_FUNC)
+				symbol->st_info = ELF_ST_INFO(ELF_ST_TYPE(symbol->st_info),
+							STT_FUNC);
 		} else
 			symbol->st_value += (unsigned long)k_elf_section_by_index(mod,
 					symbol->st_shndx);
@@ -200,5 +210,51 @@ k_error_t k_elf_load_symbols(Elf(Ehdr) *elf, struct k_module *mod)
 
 _exit:
 	return error;
+}
+
+k_error_t k_elf_arch_relocate_section(k_uint8_t *, const Elf(Rel) *, const Elf(Sym) *);
+
+static k_error_t k_elf_relocate_section(Elf(Ehdr) *elf, const Elf(Shdr) *rel_section,
+		const Elf(Shdr) *sym_section, struct k_module *mod)
+{
+	int i;
+	k_uint8_t *applied_section;
+	const Elf(Rel) *rel;
+	const Elf(Sym) *symbol;
+	k_error_t error;
+
+	applied_section = k_elf_section_by_index(mod, rel_section->sh_info);
+	if (!applied_section)
+		return K_ERROR_NONE;
+
+	rel = (const Elf(Rel) *)((k_uint8_t *)elf + rel_section->sh_offset);
+	symbol = (const Elf(Sym) *)((k_uint8_t *)elf + sym_section->sh_offset);
+
+	for (i = 0; i < rel_section->sh_size / rel_section->sh_entsize; i++) {
+		error = k_elf_arch_relocate_section(applied_section, &rel[i], symbol);
+		if (error)
+			return error;
+	}
+
+	return K_ERROR_NONE;
+}
+
+k_error_t k_elf_relocate_symbols(Elf(Ehdr) *elf, struct k_module *mod)
+{
+	int i;
+	const Elf(Shdr) *section;
+	k_error_t error;
+
+	section = (const Elf(Shdr) *)((k_uint8_t *)elf + elf->e_shoff);
+
+	for (i = 0; i < elf->e_shnum; i++)
+		if (section[i].sh_type == SHT_REL) {
+			error = k_elf_relocate_section(elf, &section[i],
+					&section[section[i].sh_link], mod);
+			if (error)
+				return error;
+		}
+
+	return K_ERROR_NONE;
 }
 

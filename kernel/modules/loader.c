@@ -1,6 +1,5 @@
 #include "include/modules/loader.h"
 #include "include/modules/module.h"
-#include "include/modules/export-symbol.h"
 #include "include/elf/elf-loader.h"
 #include "include/mm/mm.h"
 #include "include/string.h"
@@ -69,6 +68,16 @@ k_error_t k_loader(const k_uint8_t *buf, k_size_t size)
 	if (error)
 		goto _exit;
 
+	error = k_elf_relocate_symbols(elf, mod);
+	if (error)
+		goto _exit;
+
+	if (!mod->init || !mod->uninit) {
+		error = K_ERROR_INVALID_MODULE_ELF;
+		goto _exit;
+	} else
+		mod->init();
+
 	k_printf("%s", mod_name);
 
 	return K_ERROR_NONE;
@@ -118,7 +127,7 @@ void k_loader_init(void)
 		entry = k_loader_symbol_hash(__k_symtab_start[i].name);
 
 		__k_symtab_start[i].next = k_symbol_table[entry];
-		k_symbol_table[i] = &__k_symtab_start[i];
+		k_symbol_table[entry] = &__k_symtab_start[i];
 	}
 }
 
