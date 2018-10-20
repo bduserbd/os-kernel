@@ -1,8 +1,8 @@
 #include "include/lapic.h"
 #include "include/cpu.h"
 #include "include/ap.h"
-#include "include/io.h"
 #include "include/msr.h"
+#include "kernel/include/io/io.h"
 #include "kernel/include/video/print.h"
 #include "kernel/include/acpi/acpi.h"
 
