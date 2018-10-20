@@ -8,6 +8,7 @@
 #include "kernel/include/mm/buddy.h"
 #include "kernel/include/mm/mm.h"
 #include "kernel/include/video/print.h"
+#include "kernel/include/modules/loader.h"
 #include "kernel/include/initramfs/initramfs.h"
 
 void k_x86_init(k_uint32_t heap, struct k_fb_info *fb, void *rsdp,
@@ -28,6 +29,7 @@ void k_x86_init(k_uint32_t heap, struct k_fb_info *fb, void *rsdp,
 
 	k_slab_init();
 
+#if 0
 	k_printf("%x ", k_malloc(4));
 	k_printf("%x ", k_malloc(7));
 	k_printf("%x ", k_malloc(12));
@@ -38,6 +40,7 @@ void k_x86_init(k_uint32_t heap, struct k_fb_info *fb, void *rsdp,
 	k_printf("%x ", k_malloc(780));
 	k_printf("%x ", k_malloc(16));
 	k_printf("\n");
+#endif
 
 	k_mp_get_info();
 	k_acpi_get_info(rsdp);
@@ -49,6 +52,7 @@ void k_x86_init(k_uint32_t heap, struct k_fb_info *fb, void *rsdp,
 	k_smp_init();
 #endif
 
+	k_loader_init();
 	k_initramfs_get_info(initramfs_start, initramfs_length);
 }
 

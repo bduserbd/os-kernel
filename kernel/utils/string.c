@@ -1,4 +1,5 @@
 #include "include/string.h"
+#include "include/modules/export-symbol.h"
 
 void *k_memset(void *s, int c, k_size_t n)
 {
@@ -14,6 +15,7 @@ void *k_memset(void *s, int c, k_size_t n)
 
 	return s;
 }
+K_EXPORT_FUNC(k_memset);
 
 void *k_memcpy(void *dest, const void *src, k_size_t n)
 {
@@ -39,6 +41,7 @@ void *k_memcpy(void *dest, const void *src, k_size_t n)
 
 	return dest;
 }
+K_EXPORT_FUNC(k_memcpy);
 
 int k_memcmp(const void *m1, const void *m2, k_size_t n)
 {
@@ -54,6 +57,7 @@ int k_memcmp(const void *m1, const void *m2, k_size_t n)
 
 	return 0;
 }
+K_EXPORT_FUNC(k_memcmp);
 
 int k_strcmp(const char *s1, const char *s2)
 {
@@ -68,6 +72,7 @@ int k_strcmp(const char *s1, const char *s2)
 
 	return *s1 - *s2;
 }
+K_EXPORT_FUNC(k_strcmp);
 
 int k_strncmp(const char *s1, const char *s2, k_size_t n)
 {
@@ -82,4 +87,33 @@ int k_strncmp(const char *s1, const char *s2, k_size_t n)
 
 	return *s1 - *s2;
 }
+K_EXPORT_FUNC(k_strncmp);
+
+char *k_strcpy(char *dest, const char *src)
+{
+	char *res;
+
+	if (!dest || !src)
+		return NULL;
+
+	res = dest;
+	while ((*dest++ = *src++)) ;
+
+	return res;
+}
+K_EXPORT_FUNC(k_strcpy);
+
+char *k_strncpy(char *dest, const char *src, k_size_t n)
+{
+	char *res;
+
+	if (!dest || !src)
+		return NULL;
+
+	res = dest;
+	while ((*dest++ = *src++) && --n) ;
+
+	return res;
+}
+K_EXPORT_FUNC(k_strncpy);
 

@@ -8,6 +8,8 @@ void *k_memcpy(void *, const void *, k_size_t);
 int k_memcmp(const void *, const void *, k_size_t);
 int k_strcmp(const char *, const char *);
 int k_strncmp(const char *, const char *, k_size_t);
+char *k_strcpy(char *, const char *);
+char *k_strncpy(char *, const char *, k_size_t);
 
 #endif
 
