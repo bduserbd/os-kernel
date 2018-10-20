@@ -100,10 +100,10 @@ void k_idt_init(void)
 	int i;
 
 	for (i = 0; i < 32; i++)
-		k_idt_set_gate(i , (k_uint32_t)k_idt_int_arr[i], K_IDT_INTERRUPT_GATE_32BIT);
+		k_idt_set_gate(i, (k_uint32_t)k_idt_int_arr[i], K_IDT_INTERRUPT_GATE_32BIT);
 
 	for (; i < 255; i++)
-		k_idt_set_gate(i , (k_uint32_t)k_irq_handler, K_IDT_TRAP_GATE);
+		k_idt_set_gate(i, (k_uint32_t)k_irq_handler, K_IDT_TRAP_GATE);
 
 	k_idt_set_gate(0xff , (k_uint32_t)k_spurious_int, K_IDT_TRAP_GATE);
 

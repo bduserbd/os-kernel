@@ -151,8 +151,10 @@ static k_error_t k_elf_resolve_symbol(Elf(Sym) *symbol, const char *name,
 			struct k_export_symbol *exsymbol;
 
 			exsymbol = k_loader_get_symbol(name);
-			if (!exsymbol)
+			if (!exsymbol) {
+				k_printf("`%s' is either unexported or doesn't exist", name);
 				return K_ERROR_UNEXPORTED_SYMBOL;
+			}
 
 			symbol->st_value = (unsigned long)exsymbol->address;
 

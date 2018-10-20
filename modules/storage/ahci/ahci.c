@@ -6,6 +6,7 @@ K_MODULE_NAME("Advanced Host Controller Interface");
 
 static k_error_t k_ahci_pci_init(struct k_pci_index i)
 {
+	k_uint8_t irq;
 	k_error_t error;
 
 	error = k_pci_check_device_class(i, K_PCI_BASE_CLASS_STORAGE,
@@ -13,7 +14,9 @@ static k_error_t k_ahci_pci_init(struct k_pci_index i)
 	if (error)
 		return error;
 
-	k_printf("%d %d %d\n", i.bus, i.dev, i.func);
+	irq = k_pci_read_config_byte(i.bus, i.dev, i.func, K_PCI_CONFIG_REG_IRQ);
+
+	k_printf("%x\n", irq);
 
 	return K_ERROR_NONE;
 }

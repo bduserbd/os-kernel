@@ -4,8 +4,6 @@
 #include <stdarg.h>
 #include "kernel/include/types.h"
 
-void k_print_set_output_callback(void (*)(const char *));
-
 void k_puts(const char *);
 void k_putchar(char);
 

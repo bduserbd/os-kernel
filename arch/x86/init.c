@@ -3,6 +3,7 @@
 #include "include/mp.h"
 #include "include/lapic.h"
 #include "include/smbios.h"
+#include "include/8259a.h"
 #include "include/video.h"
 #include "kernel/include/acpi/acpi.h"
 #include "kernel/include/mm/buddy.h"
@@ -10,6 +11,8 @@
 #include "kernel/include/video/print.h"
 #include "kernel/include/modules/loader.h"
 #include "kernel/include/initramfs/initramfs.h"
+
+void k_print_set_output_callback(void (*)(const char *));
 
 void k_x86_init(k_uint32_t heap, struct k_fb_info *fb, void *rsdp,
 		k_uint32_t initramfs_start, k_uint32_t initramfs_length)
@@ -28,6 +31,8 @@ void k_x86_init(k_uint32_t heap, struct k_fb_info *fb, void *rsdp,
 	k_cpu_get_info();
 
 	k_slab_init();
+
+	k_pic_init();
 
 #if 0
 	k_printf("%x ", k_malloc(4));

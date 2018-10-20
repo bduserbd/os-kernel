@@ -9,5 +9,7 @@ k_uint8_t k_inb(k_uint16_t);
 k_uint16_t k_inw(k_uint16_t);
 k_uint32_t k_inl(k_uint16_t); 
 
+void k_io_wait(void);
+
 #endif
 
