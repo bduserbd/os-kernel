@@ -1,5 +1,5 @@
 OBJS += init.o
-OBJS += cpu.o mp.o lapic.o
+OBJS += cpu.o mp.o lapic.o io.o
 OBJS += idt.o interrupt.o
 OBJS += smbios.o
 OBJS += elf.o
