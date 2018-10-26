@@ -1,3 +1,5 @@
+#include "include/idt.h"
+
 /* Exception that push error code. */
 	.macro K_IDT_ERROR_CODE number
 
@@ -61,10 +63,44 @@ K_IDT_NO_ERROR_CODE 31
 	addl	$0x8, %esp
 	iret
 
-	.globl	k_irq_handler
-k_irq_handler:
+/* IRQs. */
+	.macro K_IRQ_HANDLER number vector
+
+	.globl	k_irq_handler\number
+k_irq_handler\number:
+	pushl	$0x0
+	pushl	$\vector
+	jmp	2f
+
+	.endm
+
+K_IRQ_HANDLER 0 K_IRQ_MASTER_START
+K_IRQ_HANDLER 1 K_IRQ_MASTER_START + 1
+K_IRQ_HANDLER 2 K_IRQ_MASTER_START + 2
+K_IRQ_HANDLER 3 K_IRQ_MASTER_START + 3
+K_IRQ_HANDLER 4 K_IRQ_MASTER_START + 4
+K_IRQ_HANDLER 5 K_IRQ_MASTER_START + 5
+K_IRQ_HANDLER 6 K_IRQ_MASTER_START + 6
+K_IRQ_HANDLER 7 K_IRQ_MASTER_START + 7
+
+K_IRQ_HANDLER 8 K_IRQ_SLAVE_START
+K_IRQ_HANDLER 9 K_IRQ_SLAVE_START + 1
+K_IRQ_HANDLER 10 K_IRQ_SLAVE_START + 2
+K_IRQ_HANDLER 11 K_IRQ_SLAVE_START + 3
+K_IRQ_HANDLER 12 K_IRQ_SLAVE_START + 4
+K_IRQ_HANDLER 13 K_IRQ_SLAVE_START + 5
+K_IRQ_HANDLER 14 K_IRQ_SLAVE_START + 6
+K_IRQ_HANDLER 15 K_IRQ_SLAVE_START + 7
+
+2:
+	pusha
+	call	k_irq_handler
+	popa
+
+	addl	$0x8, %esp
 	iret
 
+/* Spurious interrupt. */
 	.globl	k_spurious_int
 k_spurious_int:
 	iret

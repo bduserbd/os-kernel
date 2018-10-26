@@ -7,8 +7,7 @@
 #include "smp.h"
 #endif
 
-void k_x86_init(k_uint32_t, struct k_fb_info *, void *,
-		k_uint32_t, k_uint32_t);
+void k_x86_init(k_uint32_t, void *, k_uint32_t, k_uint32_t);
 
 #endif
 

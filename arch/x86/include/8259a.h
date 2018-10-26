@@ -9,6 +9,8 @@
 #define K_PIC_SLAVE_COMMAND	0xa0
 #define K_PIC_SLAVE_DATA	0xa1
 
+#define K_PIC_EOI		0x20
+
 #define K_PIC_ICW1_ICW4		(1 << 0)
 #define K_PIC_ICW1_SNGL		(1 << 1)
 #define K_PIC_ICW1_ADI		(1 << 2)
@@ -24,6 +26,7 @@
 #define K_PIC_ICW4_SFNM		(1 << 4)
 
 void k_pic_init(void);
+void k_pic_outb(k_uint8_t, k_uint8_t);
 
 #endif
 

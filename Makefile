@@ -42,7 +42,7 @@ BUILD_CFLAGS += -Wall -m32
 BUILD_CFLAGS += -I $(CURDIR)
 BUILD_CFLAGS += -Wno-main -nostdlib -fno-builtin -fno-strict-aliasing
 BUILD_CFLAGS += $(BUILD_CPPFLAGS)
-BUILD_CFLAGS += -g
+#BUILD_CFLAGS += -g
 
 BUILD_LDFLAGS += -T $(BUILD_LD_SCRIPT) -melf_i386 -n
 
@@ -76,7 +76,7 @@ modules:
 link:
 	$(V)$(LD) $(BUILD_LDFLAGS) -o target.elf	\
 		$(addprefix $(BUILD_OBJDIR)/,$(shell cat $(BUILD_OBJDIR)/objects.txt))
-	$(V)if [ "$(ARCH)" = "x86" ] && [ "$(CPUS)" != 1 ]; then			\
+	if [ "$(ARCH)" = "x86" ] && [ "$(CPUS)" != 1 ]; then			\
 		$(OBJCOPY) target.elf --update-section .ap_start=$(BUILD_OBJDIR)/$(AP_BIN);	\
 	fi;
 

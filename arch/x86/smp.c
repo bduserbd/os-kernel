@@ -26,6 +26,8 @@ void k_smp_init(void)
 	if (!k_acpi.found)
 		return;
 
+	k_pic_disable();
+
 	esp = (k_uint32_t)__k_stack_start - cpu_stack_size;
 
 	k_memcpy((void *)0x8000, __k_ap_start, __k_ap_end - __k_ap_start);
