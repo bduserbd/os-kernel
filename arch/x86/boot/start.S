@@ -63,18 +63,13 @@ first_idt:
 	.word   0
 	.long   0
 
+/* The kernel stack. */
+	.p2align 5
+	.section ".kernel_stack", "a"
+	.skip   K_CONFIG_STACK_SIZE
+
 #ifdef K_CONFIG_SMP
 /* Empty space for AP start. */
 	.section ".ap_start", "a"
 	.skip   0x200
 #endif
-
-/* The kernel stack. */
-	.p2align 5
-	.section ".kernel_stack", "a"
-	.globl  __k_stack_end
-__k_stack_end:
-	.skip   K_CONFIG_STACK_SIZE
-	.globl  __k_stack_start
-__k_stack_start:
-

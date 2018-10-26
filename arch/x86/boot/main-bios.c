@@ -110,7 +110,7 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 	k_text_set_info(&fb);
 	k_print_set_output_callback(k_text_puts);
 
-	//k_pic_init();
+	k_pic_init();
 	k_idt_init();
 
 	page_table = K_ALIGN_UP(K_MAX((k_uint32_t)__k_end, ebx + *(k_uint32_t *)ebx), 0x1000);
@@ -134,9 +134,9 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 
 	k_paging_init();
 
-	//k_pit_init();
+	k_pit_init();
 
-	//asm volatile("sti");
+	asm volatile("sti");
 
 	heap = page_table + 0x1000 + 0x400 * 0x1000;
 

@@ -56,7 +56,13 @@ void k_int_handler(struct k_int_regs regs)
 
 void k_irq_handler(struct k_int_regs regs)
 {
-	//k_printf("%d", regs.cs);
+	static int ticks = 0;
+
+	ticks++;
+	if (ticks == 1000) {
+		k_printf("$");
+		ticks = 0;
+	}
 
 	if (regs.interrupt >= K_IRQ_SLAVE_START)
 		k_outb(0x20, 0xa0);
