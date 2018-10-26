@@ -1,5 +1,7 @@
 #include "include/init.h"
 #include "include/idt.h"
+#include "include/8259a.h"
+#include "include/8253.h"
 #include "kernel/include/mm/buddy.h"
 #include "kernel/include/grub/multiboot2.h"
 #include "kernel/include/fb/shell.h"
@@ -34,6 +36,17 @@ static k_error_t k_reserve_reserved_pages(void *tag, void *data)
 	return K_ERROR_NONE;
 }
 
+static k_error_t k_get_smbios(void *tag, void *data)
+{
+	struct k_multiboot2_tag_smbios *smbiostag;
+
+	smbiostag = tag;
+
+	*(void **)data = &smbiostag->tables[0];
+
+	return K_ERROR_NONE;
+}
+
 static k_error_t k_get_old_acpi(void *tag, void *data)
 {
 	struct k_multiboot2_tag_old_acpi *oldacpi;
@@ -41,7 +54,7 @@ static k_error_t k_get_old_acpi(void *tag, void *data)
 
 	oldacpi = tag;
 
-	rsdp = &oldacpi->rsdp[0];
+	rsdp = (void *)&oldacpi->rsdp[0];
 	if (!rsdp->length)
 		return K_ERROR_NOT_FOUND;
 
@@ -98,8 +111,6 @@ k_error_t k_get_initramfs(void *tag, void *data)
 	if (!k_strncmp(moduletag->cmdline, INITRAMFS, sizeof(INITRAMFS) - 1)) {
 		initramfs[0] = moduletag->mod_start;
 		initramfs[1] = moduletag->mod_end - initramfs[0];
-
-		k_paging_reserve_pages(initramfs[0], initramfs[1] - initramfs[0]);
 
 		return K_ERROR_NONE;
 	} else {
@@ -175,30 +186,40 @@ k_error_t k_scan_multiboot_tags(k_uint32_t ebx, int type, k_error_t (*callback)
 	return K_ERROR_NOT_FOUND;
 }
 
+void k_print_set_output_callback(void (*)(const char *));
+
 void k_main(k_uint32_t eax, k_uint32_t ebx)
 {
 	k_error_t error;
 	k_uint32_t page_table, heap, initramfs[2];
 	struct k_fb_info fb;
+	void *smbios = (void *)-1;
 	void *rsdp = NULL;
 
 	if (eax != K_MULTIBOOT2_BOOTLOADER_MAGIC)
 		return;
 
-	k_idt_init();
-
 	page_table = K_ALIGN_UP(K_MAX((k_uint32_t)__k_end, ebx + *(k_uint32_t *)ebx), 0x1000);
+	error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_MODULE, k_get_initramfs, initramfs);
+	if (error)
+		return;
+
+	page_table = K_ALIGN_UP(K_MAX(page_table, initramfs[0] + initramfs[1]), 0x1000);
 	k_paging_table_set_start(page_table);
 
-	/* TODO: Make this only for BIOS. */
-	k_paging_reserve_pages(0x0, 1 << 20);
+	k_paging_reserve_pages(0x8000, 0x1000);
 	k_paging_reserve_pages((k_uint32_t)__k_start, __k_end - __k_start);
 	k_paging_reserve_pages(ebx, *(k_uint32_t *)ebx);
+	k_paging_reserve_pages(initramfs[0], initramfs[1]);
+	error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_MMAP, k_reserve_reserved_pages, NULL);
+	if (error)
+		return;
 
-	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_MMAP, k_reserve_reserved_pages, NULL);
-	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_EFI_MMAP, k_reserve_reserved_pages_efi, NULL);
+	error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_EFI_MMAP, k_reserve_reserved_pages_efi, NULL);
+	if (error)
+		return;
 
-	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_MODULE, k_get_initramfs, initramfs);
+	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_SMBIOS, k_get_smbios, &smbios);
 
 	error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_ACPI_OLD, k_get_old_acpi, &rsdp);
 	if (error)
@@ -209,10 +230,21 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 	// QEMU doesn't report APIC BIOS e820 memory map.
 	k_paging_reserve_pages(0xfee00000, 0x1000);
 
+	heap = page_table + 0x1000 + 0x400 * 0x1000;
+	k_buddy_init(heap);
+
+	k_fb_set_info(&fb);
+	k_shell_init();
+	k_print_set_output_callback(k_shell_puts);
+
+	k_pic_init();
+	k_idt_init();
+
 	k_paging_init();
 
-	heap = page_table + 0x1000 + 0x400 * 0x1000;
+	k_pit_init();
+	asm volatile("sti");
 
-	k_x86_init(heap, &fb, rsdp, initramfs[0], initramfs[1]);
+	k_x86_init(smbios, rsdp, initramfs[0], initramfs[1]);
 }
 

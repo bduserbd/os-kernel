@@ -42,7 +42,7 @@
  * |++++++++++++|++++++++++++|++++++++++++|++++++++++++|
  * |                     Reserved                      | 38h
  * |++++++++++++|++++++++++++|++++++++++++|++++++++++++|
- * |  Max Lat.  |  Min Gnt.  |  Int. Pin  |  Int. Line | 3Ch
+ * |  Max Lat.  |  Min Gnt.  |  Int. Pin  |  IRQ. Line | 3Ch
  * |++++++++++++|++++++++++++|++++++++++++|++++++++++++|
  */
 
@@ -60,6 +60,7 @@
 #define K_PCI_CONFIG_REG_LATENCY_TIMER	0x0d
 #define K_PCI_CONFIG_REG_HEADER_TYPE	0x0e
 #define K_PCI_CONFIG_REG_BIST		0x0f
+#define K_PCI_CONFIG_REG_IRQ		0x3c
 
 /* Base Address - BAR. */
 #define K_PCI_CONFIG_REG_BAR0	0x10

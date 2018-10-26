@@ -97,7 +97,7 @@ struct k_smbios_chassis {
 	__u8	element_record_length;
 } __attribute__((packed));
 
-void k_smbios_get_info(void);
+void k_smbios_get_info(void *);
 
 #endif
 

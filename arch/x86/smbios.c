@@ -54,30 +54,41 @@ static void *k_smbios_scan_address_range(k_uint32_t start, k_uint32_t range)
 	return NULL;
 }
 
+static k_error_t k_smbios_check_entry(struct k_smbios_entry_point *smbios)
+{
+	k_error_t error;
+
+	if (smbios->length != 0x1f)
+		return K_ERROR_FAILURE;
+
+	error = k_smbios_checksum(smbios, smbios->length);
+	if (error)
+		return K_ERROR_BAD_CHECKSUM;
+
+	error = k_smbios_checksum((k_uint8_t *)smbios + 0x10, 0xf);
+	if (error)
+		return K_ERROR_BAD_CHECKSUM;
+
+	return K_ERROR_NONE;
+}
+
 static struct k_smbios_entry_point *k_smbios_get_entry_point(void)
 {
 	k_error_t error;
-	struct k_smbios_entry_point *ptr;
+	struct k_smbios_entry_point *smbios;
 
-	ptr = k_smbios_scan_address_range(0xf0000, 0x10000);
-	if (!ptr)
+	smbios = k_smbios_scan_address_range(0xf0000, 0x10000);
+	if (!smbios)
 		return NULL;
 
-	if (ptr->length != 0x1f)
-		return NULL;
-
-	error = k_smbios_checksum(ptr, ptr->length);
+	error = k_smbios_check_entry(smbios);
 	if (error)
 		return NULL;
 
-	error = k_smbios_checksum((k_uint8_t *)ptr + 0x10, 0xf);
-	if (error)
-		return NULL;
+	k_smbios.major_version = smbios->major_version;
+	k_smbios.minor_version = smbios->minor_version;
 
-	k_smbios.major_version = ptr->major_version;
-	k_smbios.minor_version = ptr->minor_version;
-
-	return ptr;
+	return smbios;
 }
 
 static int k_smbios_strings_length(const char *strings)
@@ -168,22 +179,34 @@ static int k_smbios_parse_bios_information(struct k_smbios_bios *bios)
 	return bios->length + k_smbios_strings_length(strings);
 }
 
-void k_smbios_get_info(void)
+void k_smbios_get_info(void *_smbios)
 {
 	int length;
 	k_uint16_t i;
 	k_uint8_t *header;
-	struct k_smbios_entry_point *ptr;
+	struct k_smbios_entry_point *smbios;
+	k_error_t error;
 
-	ptr = k_smbios_get_entry_point();
-	if (!ptr)
+	if (_smbios) {
+		if ((unsigned long)_smbios == -1)
+			return;
+
+		error = k_smbios_check_entry(_smbios);
+		if (error)
+			smbios = NULL;
+		else
+			smbios = _smbios;
+	} else
+		smbios = k_smbios_get_entry_point();
+
+	if (!smbios)
 		return;
 
 	if (k_smbios.major_version < 2)
 		return;
 
-	header = (k_uint8_t *)ptr->table_address;
-	for (i = 0; i < ptr->structures; i++) {
+	header = (k_uint8_t *)smbios->table_address;
+	for (i = 0; i < smbios->structures; i++) {
 		switch (*header) {
 		case K_SMBIOS_STRUCTURE_BIOS:
 			length = k_smbios_parse_bios_information((void *)header);

@@ -30,6 +30,10 @@ SECTIONS {
 	__k_ap_end = .;
 #endif
 
+	__k_stack_end = .;
+	.kernel_stack	: { *(.kernel_stack) }
+	__k_stack_start = .;
+
 	__k_end = .;
 }
 

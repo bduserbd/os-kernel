@@ -20,6 +20,7 @@
 #define K_MULTIBOOT2_TAG_TYPE_BASIC_MEMINFO	4
 #define K_MULTIBOOT2_TAG_TYPE_MMAP		6
 #define K_MULTIBOOT2_TAG_TYPE_FRAMEBUFFER	8
+#define K_MULTIBOOT2_TAG_TYPE_SMBIOS		13
 #define K_MULTIBOOT2_TAG_TYPE_ACPI_OLD		14
 #define K_MULTIBOOT2_TAG_TYPE_ACPI_NEW		15
 #ifdef K_CONFIG_UEFI
@@ -95,6 +96,15 @@ struct k_multiboot2_tag_framebuffer {
 	k_uint8_t green_mask_size;
 	k_uint8_t blue_field_position;
 	k_uint8_t blue_mask_size;
+} __attribute__((packed));
+
+struct k_multiboot2_tag_smbios {
+	k_uint32_t type;
+	k_uint32_t size;
+	k_uint8_t major;
+	k_uint8_t minor;
+	k_uint8_t reserved[6];
+	k_uint8_t tables[0];
 } __attribute__((packed));
 
 struct k_multiboot2_tag_old_acpi {
