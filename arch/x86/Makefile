@@ -1,10 +1,11 @@
 OBJS += init.o
-OBJS += cpu.o io.o mp.o lapic.o
+OBJS += cpu.o io.o lapic.o
 OBJS += idt.o interrupt.o 8259a.o 8253.o
 OBJS += smbios.o
 OBJS += elf.o
 
 ifeq ($(FIRMWARE),BIOS)
+  OBJS += mp.o
   OBJS += video.o
 endif
 

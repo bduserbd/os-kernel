@@ -51,6 +51,9 @@ void k_int_handler(struct k_int_regs regs)
 		asm volatile("mov %%cr2,%0" : "=r" (cr2));
 
 		k_printf("CR2: %x", cr2);
+
+		for (;;)
+			asm volatile("hlt");
 	}
 }
 

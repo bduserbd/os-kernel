@@ -135,11 +135,11 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 	k_paging_init();
 
 	k_pit_init();
-
 	asm volatile("sti");
 
 	heap = page_table + 0x1000 + 0x400 * 0x1000;
+	k_buddy_init(heap);
 
-	k_x86_init(heap, NULL, initramfs_start, initramfs_length);
+	k_x86_init(NULL, NULL, initramfs_start, initramfs_length);
 }
 

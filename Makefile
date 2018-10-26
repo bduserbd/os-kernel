@@ -76,7 +76,7 @@ modules:
 link:
 	$(V)$(LD) $(BUILD_LDFLAGS) -o target.elf	\
 		$(addprefix $(BUILD_OBJDIR)/,$(shell cat $(BUILD_OBJDIR)/objects.txt))
-	if [ "$(ARCH)" = "x86" ] && [ "$(CPUS)" != 1 ]; then			\
+	$(V)if [ "$(ARCH)" = "x86" ] && [ "$(CPUS)" != "1" ]; then			\
 		$(OBJCOPY) target.elf --update-section .ap_start=$(BUILD_OBJDIR)/$(AP_BIN);	\
 	fi;
 
