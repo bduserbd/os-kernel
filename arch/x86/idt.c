@@ -62,7 +62,7 @@ void k_irq_handler(struct k_int_regs regs)
 	static int ticks = 0;
 
 	ticks++;
-	if (ticks == 1000) {
+	if (ticks == 10000) {
 		k_printf("$");
 		ticks = 0;
 	}
