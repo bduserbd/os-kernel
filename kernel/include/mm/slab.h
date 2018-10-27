@@ -9,8 +9,8 @@
 #define K_SLAB_MIN_ALIGNMENT	sizeof(unsigned long)
 #define K_SLAB_MAX_ALIGNMENT	(1 << 6)
 
-#define K_SLAB_FLAGS_L1_ALIGNMENT	0x1
-#define K_SLAB_FLAGS_MANAGEMENT_OFF	0x2
+#define K_SLAB_FLAGS_L1_ALIGNMENT	(1 << 0)
+#define K_SLAB_FLAGS_MANAGEMENT_OFF	(1 << 1)
 
 #define K_SLAB_MANAGEMENT_BLOCK_LOG2	3
 

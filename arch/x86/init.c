@@ -43,5 +43,10 @@ void k_x86_init(void *smbios, void *rsdp,
 
 	k_loader_init();
 	k_initramfs_get_info(initramfs_start, initramfs_length);
+
+	k_irq_mask(0);
+	for (int i = 0; i < 100000000; i++)
+		asm volatile("nop");
+	k_irq_unmask(0);
 }
 
