@@ -48,7 +48,7 @@ static void k_cpio_newc_scan_files(struct k_cpio_newc *cpio)
 			break;
 
 		if (filesize) {
-			k_printf("%s %x %x | ", cpio->filename, namesize, filesize);
+			//k_printf("%s %x %x | ", cpio->filename, namesize, filesize);
 
 			if (!k_strncmp(cpio->filename, K_INITRAMFS_MODULES_DIR,
 						sizeof(K_INITRAMFS_MODULES_DIR) - 1))

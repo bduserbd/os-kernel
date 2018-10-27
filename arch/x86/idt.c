@@ -1,5 +1,5 @@
 #include "include/idt.h"
-#include "include/8259a.h"
+#include "kernel/include/irq/irq-info.h"
 #include "kernel/include/io/io.h"
 #include "kernel/include/video/print.h"
 
@@ -59,18 +59,15 @@ void k_int_handler(struct k_int_regs regs)
 
 void k_irq_handler(struct k_int_regs regs)
 {
-	static int ticks = 0;
+	unsigned int irq;
 
-	ticks++;
-	if (ticks == 1000) {
-		k_printf("$");
-		ticks = 0;
-	}
+	irq = k_irq_from_int(regs.interrupt);
+	if (irq == K_INVALID_IRQ)
+		return;
 
-	if (regs.interrupt >= K_IRQ_SLAVE_START)
-		k_outb(0x20, 0xa0);
+	k_irq_ack(irq);
 
-	k_outb(0x20, 0x20);
+	k_irq_execute_handler(irq);
 }
 
 static void k_idt_set_gate(int i, k_uint32_t offset, int type)

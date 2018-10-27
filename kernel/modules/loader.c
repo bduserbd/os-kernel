@@ -78,7 +78,8 @@ k_error_t k_loader(const k_uint8_t *buf, k_size_t size)
 	} else
 		mod->init();
 
-	k_printf("%s", mod_name);
+	mod->next = k_mods;
+	k_mods = mod;
 
 	return K_ERROR_NONE;
 
