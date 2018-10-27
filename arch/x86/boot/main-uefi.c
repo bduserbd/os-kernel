@@ -1,7 +1,6 @@
 #include "include/init.h"
 #include "include/idt.h"
 #include "include/8259a.h"
-#include "include/8253.h"
 #include "kernel/include/mm/buddy.h"
 #include "kernel/include/grub/multiboot2.h"
 #include "kernel/include/fb/shell.h"
@@ -241,9 +240,6 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 	k_idt_init();
 
 	k_paging_init();
-
-	k_pit_init();
-	asm volatile("sti");
 
 	k_x86_init(smbios, rsdp, initramfs[0], initramfs[1]);
 }

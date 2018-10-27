@@ -41,6 +41,29 @@ k_error_t k_irq_init(struct k_irq_chip *chip)
 	return K_ERROR_NONE;
 }
 
+k_error_t k_irq_execute_handler(unsigned int irq)
+{
+	k_error_t error;
+	struct k_irq_action *action;
+	struct k_irq_descriptor *irq_desc;
+
+	if (irq > K_NUMBER_OF_IRQS - 1)
+		return K_ERROR_INVALID_PARAMETER;
+
+	irq_desc = &k_irqs[irq];
+	if (irq_desc->status != K_IRQ_STATUS_ACTIVATED)
+		return K_ERROR_FAILURE;
+
+	for (action = irq_desc->actions; action; action = action->next) {
+		error = action->handler(irq, action->device);
+		if (error)
+			if (error != K_ERROR_NONE_IRQ)
+				return error;
+	}
+
+	return K_ERROR_NONE;
+}
+
 void k_irq_ack(unsigned int irq)
 {
 	if (!k_irq_chip)

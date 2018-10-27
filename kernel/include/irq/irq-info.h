@@ -46,6 +46,7 @@ struct k_irq_descriptor {
 extern struct k_irq_descriptor k_irqs[K_NUMBER_OF_IRQS];
 
 k_error_t k_irq_init(struct k_irq_chip *);
+k_error_t k_irq_execute_handler(unsigned int);
 void k_irq_ack(unsigned int);
 void k_irq_mask(unsigned int);
 void k_irq_unmask(unsigned int);

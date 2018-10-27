@@ -60,19 +60,14 @@ void k_int_handler(struct k_int_regs regs)
 void k_irq_handler(struct k_int_regs regs)
 {
 	unsigned int irq;
-	static int ticks = 0;
-
-	ticks++;
-	if (ticks == 100) {
-		k_printf("$");
-		ticks = 0;
-	}
 
 	irq = k_irq_from_int(regs.interrupt);
 	if (irq == K_INVALID_IRQ)
 		return;
 
 	k_irq_ack(irq);
+
+	k_irq_execute_handler(irq);
 }
 
 static void k_idt_set_gate(int i, k_uint32_t offset, int type)

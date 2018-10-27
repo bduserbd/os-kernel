@@ -2,12 +2,14 @@
 #include "include/cpu.h"
 #include "include/lapic.h"
 #include "include/smbios.h"
+#include "include/8253.h"
 #include "include/video.h"
 #include "kernel/include/acpi/acpi.h"
 #include "kernel/include/mm/mm.h"
-#include "kernel/include/video/print.h"
 #include "kernel/include/modules/loader.h"
 #include "kernel/include/initramfs/initramfs.h"
+#include "kernel/include/irq/irq-info.h"
+#include "kernel/include/video/print.h"
 
 void k_x86_init(void *smbios, void *rsdp,
 		k_uint32_t initramfs_start, k_uint32_t initramfs_length)
@@ -34,6 +36,9 @@ void k_x86_init(void *smbios, void *rsdp,
 #endif
 	k_acpi_get_info(rsdp);
 	k_smbios_get_info(smbios);
+
+	k_pit_init();
+	asm volatile("sti");
 
 	k_lapic_init();
 
