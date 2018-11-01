@@ -1,0 +1,8 @@
+RTL8139 := rtl8139.o
+
+CFLAGS += -I ./
+
+.PHONY := all
+all:
+	$(V)$(MAKE) $(BUILD_MODULE) TARGET="$(RTL8139)" CFLAGS="$(CFLAGS)"
+

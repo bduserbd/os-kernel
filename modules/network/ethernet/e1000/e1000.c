@@ -26,8 +26,10 @@ static k_error_t k_e1000_is_supported(struct k_pci_index index)
 	found = false;
 	for (i = 0; k_e1000_supported_cards[i].vendor_id; i++)
 		if (k_e1000_supported_cards[i].vendor_id == vendor_id &&
-				k_e1000_supported_cards[i].device_id == device_id)
+				k_e1000_supported_cards[i].device_id == device_id) {
 			found = true;
+			break;
+		}
 
 	if (found)
 		return K_ERROR_NONE;
