@@ -1,10 +1,10 @@
-#ifndef K_NETWORK_DEVICE_H
-#define K_NETWORK_DEVICE_H
+#ifndef K_NETWORK_CARD_H
+#define K_NETWORK_CARD_H
 
 #include "kernel/include/types.h"
 #include "kernel/include/error.h"
 
-struct k_network_device {
+struct k_network_card {
 	char name[32];
 	k_uint8_t hw_address[6];
 

@@ -1,6 +1,6 @@
 #include "include/video.h"
 
-static unsigned char *k_text_video = (unsigned char *)0xb8000;
+static unsigned char *k_text_video = NULL;
 static k_uint32_t k_text_rows = 0;
 static k_uint32_t k_text_cols = 0;
 
@@ -45,6 +45,8 @@ void k_text_puts(const char *s)
 
 void k_text_set_info(struct k_fb_info *fb)
 {
+	k_text_video = (unsigned char *)fb->framebuffer;
+
 	k_text_rows = fb->height;
 	k_text_cols = fb->width;
 

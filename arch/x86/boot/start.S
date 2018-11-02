@@ -1,18 +1,19 @@
 #include "include/gdt-descriptor.S"
+#include "include/paging.h"
 
 	.text
 	.globl	_real_start
 _real_start:
 	cli
 
-	movl    $__k_stack_start, %esp
+	movl    $K_PHYSICAL_ADDRESS(__k_stack_start), %esp
 
 	/* Grub info. */
-	pushl   %ebx
-	pushl   %eax
+	movl	%eax, K_PHYSICAL_ADDRESS(k_multiboot_magic_ptr)
+	movl	%ebx, K_PHYSICAL_ADDRESS(k_multiboot_info_ptr)
 
 	/* Set segments & GDT & IDT. */
-	lgdt	first_gdt_desc
+	lgdt	K_PHYSICAL_ADDRESS(first_gdt_desc)
 	movl    $0x10, %eax
 	movw    %ax, %ds
 	movw    %ax, %es
@@ -20,17 +21,46 @@ _real_start:
 	movw    %ax, %gs
 	movw    %ax, %ss
 
+	lidt    K_PHYSICAL_ADDRESS(first_idt)
+
+	/* Boot setup. */
+	call	k_is_valid_multiboot
+	testl	%eax, %eax
+	jnz	die
+
+	call	k_alloc_boot_page_table
+	testl	%eax, %eax
+	jz	die
+
+	pushl	%eax
+	call	k_paging_table_set_start
+	addl	$0x4, %esp
+
+	movl	$__k_end, %eax
+	subl	$__k_start, %eax
+	pushl	%eax
+	pushl	$K_PHYSICAL_ADDRESS(__k_start)
+	pushl	$__k_start
+	call	k_paging_map_identity
+	addl	$0xc, %esp
+
+	call	k_paging_init
+
+	lea	1f, %eax
+	jmp	*%eax
+1:
+
+	addl	$K_IMAGE_BASE, %esp
+	addl	$K_IMAGE_BASE, k_multiboot_info_ptr
+
 	jmp	$0x8, $our_protected_mode
 our_protected_mode:
-
-	lidt    first_idt
 
 	pushl   $0
 	popf
 
 	/* Basic CPU reqiurements. */
 	call    k_cpu_valid
-
 	testl   %eax, %eax
 	jnz     die
 
@@ -55,13 +85,21 @@ first_gdt_end:
 	.p2align 3
 first_gdt_desc:
 	.word   first_gdt_end-first_gdt-1
-	.long   first_gdt
+	.long   K_PHYSICAL_ADDRESS(first_gdt)
 
 /* Just set IDT. */
 	.p2align 3
 first_idt:
 	.word   0
 	.long   0
+
+	.globl k_multiboot_magic_ptr
+k_multiboot_magic_ptr:
+	.long	0
+
+	.globl k_multiboot_info_ptr
+k_multiboot_info_ptr:
+	.long	0
 
 /* The kernel stack. */
 	.p2align 5

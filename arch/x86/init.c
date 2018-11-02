@@ -14,6 +14,7 @@
 void k_x86_init(void *smbios, void *rsdp,
 		k_uint32_t initramfs_start, k_uint32_t initramfs_length)
 {
+#if 0
 	k_cpu_get_info();
 
 	k_slab_init();
@@ -53,5 +54,6 @@ void k_x86_init(void *smbios, void *rsdp,
 	for (int i = 0; i < 100000000; i++)
 		asm volatile("nop");
 	k_irq_unmask(0);
+#endif
 }
 

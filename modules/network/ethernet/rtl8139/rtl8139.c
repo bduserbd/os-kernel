@@ -1,13 +1,25 @@
 #include "rtl8139.h"
 #include "kernel/include/modules/export.h"
 #include "kernel/include/pci/pci.h"
+#include "kernel/include/network/card.h"
+#include "kernel/include/mm/mm.h"
 #include "kernel/include/video/print.h"
 
 K_MODULE_NAME("RTL8139");
 
-static k_uint8_t k_rtl8139_inb(unsigned long io, int reg)
+struct k_rtl8139 {
+	unsigned long io;
+	k_uint8_t mac[6];
+};
+
+static inline k_uint8_t k_rtl8139_inb(struct k_rtl8139 *rtl8139, int reg)
 {
-	return k_inb(io + reg);
+	return k_inb(rtl8139->io + reg);
+}
+
+static inline void k_rtl8139_outb(struct k_rtl8139 *rtl8139, int reg, k_uint8_t data)
+{
+	k_outb(data, rtl8139->io + reg);
 }
 
 static k_error_t k_rtl8139_is_supported(struct k_pci_index index)
@@ -26,12 +38,21 @@ static k_error_t k_rtl8139_is_supported(struct k_pci_index index)
 	return K_ERROR_NONE;
 }
 
-static k_error_t k_rtl8139_init(unsigned long io)
+static k_error_t k_rtl8139_init(struct k_rtl8139 *rtl8139)
 {
 	int i;
 
-	for (i = 0; i < 6; i++)
-		k_printf("%x:", k_rtl8139_inb(io, K_RTL8139_IDR + i));
+	k_rtl8139_outb(rtl8139, K_RTL8139_CONFIG1, 0x0);
+
+	k_rtl8139_outb(rtl8139, K_RTL8139_CR, K_RTL8139_CR_RST);
+	while (k_rtl8139_inb(rtl8139, K_RTL8139_CR) & K_RTL8139_CR_RST) ;
+
+	k_printf("%x ", rtl8139);
+
+	for (i = 0; i < 6; i++) {
+		rtl8139->mac[i] = k_rtl8139_inb(rtl8139, K_RTL8139_IDR + i);
+		k_printf("%x:", rtl8139->mac[i]);
+	}
 
 	return K_ERROR_NONE;
 }
@@ -40,6 +61,7 @@ static k_error_t k_rtl8139_pci_init(struct k_pci_index index)
 {
 	k_error_t error;
 	unsigned long io;
+	struct k_rtl8139 *rtl8139;
 
 	error = k_pci_check_device_class(index, K_PCI_BASE_CLASS_NETWORK,
 			K_PCI_SUBCLASS_NETWORK_ETHERNET, -1);
@@ -52,14 +74,18 @@ static k_error_t k_rtl8139_pci_init(struct k_pci_index index)
 
 	io = k_pci_read_config_long(index.bus, index.dev, index.func,
 			K_PCI_CONFIG_REG_BAR0);
-	if ((io & 0x1) == 0)
+	if (!(io & 1))
 		return K_ERROR_INVALID_DEVICE;
-
-	io &= ~1UL;
 
 	k_pci_set_bus_mastering(index);
 
-	error = k_rtl8139_init(io);
+	rtl8139 = k_malloc(sizeof(struct k_rtl8139));
+	if (!rtl8139)
+		return K_ERROR_MEMORY_ALLOCATION_FAILED;
+
+	rtl8139->io = io & ~1UL;
+
+	error = k_rtl8139_init(rtl8139);
 	if (error)
 		return error;
 
