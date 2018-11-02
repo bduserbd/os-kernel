@@ -15,6 +15,9 @@ extern __u8 __k_end[];
 extern unsigned long *k_multiboot_magic_ptr;
 extern unsigned long *k_multiboot_info_ptr;
 
+static unsigned long k_initramfs_start = 0;
+static unsigned long k_initramfs_length = 0;
+
 #if 0
 static k_error_t k_reserve_reserved_pages(struct k_multiboot_info *mbi)
 {
@@ -118,6 +121,9 @@ k_uint32_t k_alloc_boot_page_table(void)
 	if (error)
 		return 0;
 
+	K_VALUE_PHYSICAL_ADDRESS(&k_initramfs_start) = K_VIRTUAL_ADDRESS(initramfs_start);
+	K_VALUE_PHYSICAL_ADDRESS(&k_initramfs_length) = initramfs_length;
+
 	return K_ALIGN_UP(K_MAX(page_table, initramfs_start + initramfs_length), 0x1000);
 }
 
@@ -126,15 +132,14 @@ void k_print_set_output_callback(void (*)(const char *));
 k_error_t k_main(k_uint32_t eax, k_uint32_t ebx)
 {
 	k_error_t error;
-	//k_uint32_t heap;
 	struct k_multiboot_info *mbi;
-	k_uint32_t initramfs_start, initramfs_length;
 	struct k_fb_info fb;
 
 	mbi = (void *)k_multiboot_info_ptr;
 
 	k_paging_reserve_pages((unsigned long)mbi, sizeof(struct k_multiboot_info));
 
+#if 0
 	error = k_get_fb_info(mbi, &fb);
 	if (error)
 		return error;
@@ -147,34 +152,24 @@ k_error_t k_main(k_uint32_t eax, k_uint32_t ebx)
 	k_pic_init();
 	k_idt_init();
 
-	k_printf("Here");
-	k_printf("Wow");
+	k_paging_reserve_pages(k_initramfs_start, k_initramfs_length);
+#endif
 
 #if 0
-	page_table = K_ALIGN_UP(K_MAX((k_uint32_t)__k_end, ebx + *(k_uint32_t *)ebx), 0x1000);
-	error = k_get_initramfs(ebx, &initramfs_start, &initramfs_length);
-	if (error)
-		return;
-
-	page_table = K_ALIGN_UP(K_MAX(page_table, initramfs_start + initramfs_length), 0x1000);
-	k_paging_table_set_start(page_table);
-
-	k_paging_reserve_pages((k_uint32_t)__k_start, __k_end - __k_start);
-	k_paging_reserve_pages(initramfs_start, initramfs_length);
-
 	error = k_reserve_reserved_pages(mbi);
 	if (error)
 		return error;
 
 	// QEMU doesn't report APIC BIOS e820 memory map.
 	k_paging_reserve_pages(0xfee00000, 0x1000);
+#endif
 
-	k_paging_init();
+#if 0
+	k_printf("%x\n", k_page_table);
 
-	heap = page_table + 0x1000 + 0x400 * 0x1000;
-	k_buddy_init(heap);
+	k_buddy_init((unsigned long)k_page_table + 0x1000 + 0x400 * 0x1000);
 
-	k_x86_init(NULL, NULL, initramfs_start, initramfs_length);
+	k_x86_init(NULL, NULL, k_initramfs_start, k_initramfs_length);
 #endif
 
 	return K_ERROR_FAILURE;

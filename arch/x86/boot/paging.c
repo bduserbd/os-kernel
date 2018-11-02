@@ -13,6 +13,34 @@ static inline void k_paging_flush_tlb(void)
 	asm volatile("mov %0, %%cr3" : : "r" (reg));
 }
 
+void k_paging_remove_identity_map(void)
+{
+	k_uint32_t a, b;
+	k_uint32_t pde;
+
+	k_page_table = (k_pde_t *)K_VIRTUAL_ADDRESS(k_page_table);
+
+	a = 0x0;
+	b = K_IMAGE_BASE - K_MB(4);
+
+	while (1) {
+		k_uint32_t table = (a >> 22) & 0x3ff;
+
+		if (k_page_table[table] & K_PTE_P) {
+			//pde = k_page_table[table];
+			k_page_table[table] = 0x0;
+			//k_memset((void *)(pde & ~0xfff), 0, 0x1000);
+		}
+
+		if (a == b)
+			break;
+
+		a += K_MB(4);
+	}
+
+	k_paging_flush_tlb();
+}
+
 static void k_paging_reserve_pages_ptr(k_pde_t *k_pde, k_uint32_t start, k_uint32_t range,
 		int high_memory)
 {
@@ -67,7 +95,7 @@ void k_paging_reserve_pages(k_uint32_t start, k_uint32_t range)
 	k_paging_flush_tlb();
 }
 
-void k_paging_map_identity(k_uint32_t virtual, k_uint32_t physical, k_uint32_t range)
+void k_paging_identity_map(k_uint32_t virtual, k_uint32_t physical, k_uint32_t range)
 {
 	unsigned long k_pde;
 
@@ -91,7 +119,7 @@ void k_paging_table_set_start(k_uint32_t start)
 
 		k_memset((void *)*k_pde, 0, 0x1000);
 
-		k_paging_map_identity(start + K_IMAGE_BASE, start, 0x1000 + 0x400 * 0x1000);
+		k_paging_identity_map(start + K_IMAGE_BASE, start, 0x1000 + 0x400 * 0x1000);
 	}
 }
 

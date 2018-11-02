@@ -41,7 +41,7 @@ _real_start:
 	pushl	%eax
 	pushl	$K_PHYSICAL_ADDRESS(__k_start)
 	pushl	$__k_start
-	call	k_paging_map_identity
+	call	k_paging_identity_map
 	addl	$0xc, %esp
 
 	call	k_paging_init
@@ -51,13 +51,15 @@ _real_start:
 1:
 
 	addl	$K_IMAGE_BASE, %esp
-	addl	$K_IMAGE_BASE, k_multiboot_info_ptr
 
 	jmp	$0x8, $our_protected_mode
 our_protected_mode:
 
 	pushl   $0
 	popf
+
+	addl	$K_IMAGE_BASE, k_multiboot_info_ptr
+	call	k_paging_remove_identity_map
 
 	/* Basic CPU reqiurements. */
 	call    k_cpu_valid
