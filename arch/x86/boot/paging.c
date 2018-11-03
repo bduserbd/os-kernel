@@ -5,6 +5,16 @@
 
 k_pde_t *k_page_table = NULL;
 
+void *k_p2v(const void *physical)
+{
+	return (void *)K_VIRTUAL_ADDRESS(physical);
+}
+
+unsigned long k_p2v_l(unsigned long physical)
+{
+	return (unsigned long)k_p2v((const void *)physical);
+}
+
 static inline void k_paging_flush_tlb(void)
 {
 	k_uint32_t reg;

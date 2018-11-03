@@ -4,6 +4,7 @@
 #include "include/idt.h"
 #include "include/8259a.h"
 #include "kernel/include/mm/buddy.h"
+#include "kernel/include/mm/mm.h"
 #include "kernel/include/grub/multiboot.h"
 #include "kernel/include/fb/shell.h"
 #include "kernel/include/string.h"
@@ -18,30 +19,7 @@ extern unsigned long *k_multiboot_info_ptr;
 static unsigned long k_initramfs_start = 0;
 static unsigned long k_initramfs_length = 0;
 
-#if 0
-static k_error_t k_reserve_reserved_pages(struct k_multiboot_info *mbi)
-{
-	k_uint32_t i;
-	struct k_multiboot_mmap_entry *entry;
-
-	if ((mbi->flags & K_MULTIBOOT_INFO_MEM_MAP) == 0)
-		return K_ERROR_NOT_FOUND;
-
-	entry = (void *)K_VIRTUAL_ADDRESS(mbi->mmap_addr);
-
-	for (i = 0; i < mbi->mmap_length / sizeof(struct k_multiboot_mmap_entry); i++)
-		if (entry[i].type == K_MULTIBOOT_MEMORY_RESERVED ||
-				entry[i].type == K_MULTIBOOT_MEMORY_ACPI_RECLAIMABLE) {
-			k_printf("%x %x\n", entry[i].addr & 0xffffffff, entry[i].len & 0xffffffff);
-			if (entry[i].addr + entry[i].len > (1 << 20)) {
-				k_paging_reserve_pages(entry[i].addr & 0xffffffff, entry[i].len & 0xffffffff);
-			}
-		}
-
-	return K_ERROR_NONE;
-}
-#endif
-
+/* Functions from here are called when high virtual memory isn't set. */
 k_error_t k_get_initramfs(struct k_multiboot_info *mbi,
 		k_uint32_t *initramfs_start, k_uint32_t *initramfs_length)
 {
@@ -70,27 +48,6 @@ k_error_t k_get_initramfs(struct k_multiboot_info *mbi,
 	}
 
 	return K_ERROR_NOT_FOUND;
-}
-
-k_error_t k_get_fb_info(struct k_multiboot_info *mbi, struct k_fb_info *fb)
-{
-	if ((mbi->flags & K_MULTIBOOT_INFO_FRAMEBUFFER_INFO) == 0)
-		return K_ERROR_NOT_FOUND;
-
-	switch (mbi->framebuffer_type) {
-	case K_MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT:
-		fb->width = mbi->framebuffer_width;
-		fb->height = mbi->framebuffer_height;
-
-		fb->framebuffer = K_VIRTUAL_ADDRESS(mbi->framebuffer_addr);
-
-		break;
-
-	default:
-		return K_ERROR_NOT_FOUND;
-	}
-
-	return K_ERROR_NONE;
 }
 
 k_error_t k_is_valid_multiboot(void)
@@ -127,6 +84,49 @@ k_uint32_t k_alloc_boot_page_table(void)
 	return K_ALIGN_UP(K_MAX(page_table, initramfs_start + initramfs_length), 0x1000);
 }
 
+/* Functions from here are called when high virtual memory is initialized. */
+static k_error_t k_reserve_reserved_pages(struct k_multiboot_info *mbi)
+{
+	k_uint32_t i;
+	struct k_multiboot_mmap_entry *entry;
+
+	if ((mbi->flags & K_MULTIBOOT_INFO_MEM_MAP) == 0)
+		return K_ERROR_NOT_FOUND;
+
+	k_paging_reserve_pages(K_VIRTUAL_ADDRESS(mbi->mmap_addr), mbi->mmap_length);
+
+	entry = (void *)k_p2v_l(mbi->mmap_addr);
+
+	for (i = 0; i < mbi->mmap_length / sizeof(struct k_multiboot_mmap_entry); i++)
+		if (entry[i].type == K_MULTIBOOT_MEMORY_RESERVED ||
+				entry[i].type == K_MULTIBOOT_MEMORY_ACPI_RECLAIMABLE)
+			if (entry[i].addr + entry[i].len > (1 << 20))
+				k_paging_reserve_pages(entry[i].addr & 0xffffffff, entry[i].len & 0xffffffff);
+
+	return K_ERROR_NONE;
+}
+
+k_error_t k_get_fb_info(struct k_multiboot_info *mbi, struct k_fb_info *fb)
+{
+	if ((mbi->flags & K_MULTIBOOT_INFO_FRAMEBUFFER_INFO) == 0)
+		return K_ERROR_NOT_FOUND;
+
+	switch (mbi->framebuffer_type) {
+	case K_MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT:
+		fb->width = mbi->framebuffer_width;
+		fb->height = mbi->framebuffer_height;
+
+		fb->framebuffer = k_p2v_l(mbi->framebuffer_addr);
+
+		break;
+
+	default:
+		return K_ERROR_NOT_FOUND;
+	}
+
+	return K_ERROR_NONE;
+}
+
 void k_print_set_output_callback(void (*)(const char *));
 
 k_error_t k_main(k_uint32_t eax, k_uint32_t ebx)
@@ -143,7 +143,7 @@ k_error_t k_main(k_uint32_t eax, k_uint32_t ebx)
 	if (error)
 		return error;
 
-	k_paging_reserve_pages(K_IMAGE_BASE, K_MB(1));
+	k_paging_reserve_pages(k_p2v_l(0x0), K_MB(1));
 
 	k_text_set_info(&fb);
 	k_print_set_output_callback(k_text_puts);
@@ -153,18 +153,14 @@ k_error_t k_main(k_uint32_t eax, k_uint32_t ebx)
 
 	k_paging_reserve_pages(k_initramfs_start, k_initramfs_length);
 
-#if 0
 	error = k_reserve_reserved_pages(mbi);
 	if (error)
 		return error;
 
+#if 0
 	// QEMU doesn't report APIC BIOS e820 memory map.
 	k_paging_reserve_pages(0xfee00000, 0x1000);
 #endif
-
-	k_printf("%x\n", k_page_table);
-
-	//*(unsigned char *)((unsigned long)k_page_table - K_IMAGE_BASE) = 'A';
 
 	k_buddy_init((unsigned long)k_page_table + 0x1000 + 0x400 * 0x1000);
 

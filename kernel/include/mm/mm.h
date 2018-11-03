@@ -8,5 +8,8 @@ void k_slab_init(void);
 void *k_malloc(k_size_t);
 void k_free(const void *);
 
+void *k_p2v(const void *);
+unsigned long k_p2v_l(unsigned long);
+
 #endif
 

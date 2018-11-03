@@ -1,4 +1,5 @@
 #include "include/smbios.h"
+#include "kernel/include/mm/mm.h"
 #include "kernel/include/string.h"
 
 static struct k_smbios_info {
@@ -77,7 +78,7 @@ static struct k_smbios_entry_point *k_smbios_get_entry_point(void)
 	k_error_t error;
 	struct k_smbios_entry_point *smbios;
 
-	smbios = k_smbios_scan_address_range(0xf0000, 0x10000);
+	smbios = k_smbios_scan_address_range(k_p2v_l(0xf0000), 0x10000);
 	if (!smbios)
 		return NULL;
 
@@ -205,7 +206,7 @@ void k_smbios_get_info(void *_smbios)
 	if (k_smbios.major_version < 2)
 		return;
 
-	header = (k_uint8_t *)smbios->table_address;
+	header = (k_uint8_t *)k_p2v_l(smbios->table_address);
 	for (i = 0; i < smbios->structures; i++) {
 		switch (*header) {
 		case K_SMBIOS_STRUCTURE_BIOS:

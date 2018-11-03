@@ -1,5 +1,6 @@
 #include "include/acpi/acpi.h"
 #include "include/string.h"
+#include "kernel/include/mm/mm.h"
 #include "kernel/include/video/print.h"
 
 struct k_acpi_info k_acpi;
@@ -193,12 +194,12 @@ static struct k_acpi_rsdp *k_acpi_find_rsdp(void)
 
 	rsdp = NULL;
 
-	ebda = *(k_uint16_t *)0x40e;
+	ebda = *(k_uint16_t *)k_p2v_l(0x40e);
 	if (ebda)
-		rsdp = (void *)k_acpi_scan_address_range(ebda << 4, 0x400);
+		rsdp = (void *)k_acpi_scan_address_range(k_p2v_l(ebda << 4), 0x400);
 
 	if (!rsdp)
-		rsdp = (void *)k_acpi_scan_address_range(0xe0000, 0x20000);
+		rsdp = (void *)k_acpi_scan_address_range(k_p2v_l(0xe0000), 0x20000);
 
 	if (!rsdp)
 		return NULL;

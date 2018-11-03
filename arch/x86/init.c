@@ -18,6 +18,7 @@ void k_x86_init(void *smbios, void *rsdp,
 
 	k_slab_init();
 
+#if 0
 	k_printf("%x ", k_malloc(4));
 	k_printf("%x ", k_malloc(7));
 	k_printf("%x ", k_malloc(12));
@@ -28,17 +29,18 @@ void k_x86_init(void *smbios, void *rsdp,
 	k_printf("%x ", k_malloc(780));
 	k_printf("%x ", k_malloc(16));
 	k_printf("\n");
+#endif
 
 #ifdef K_CONFIG_BIOS
 	k_mp_get_info();
 #endif
 	k_acpi_get_info(rsdp);
-#if 0
 	k_smbios_get_info(smbios);
 
 	k_pit_init();
 	asm volatile("sti");
 
+#if 0
 	k_lapic_init();
 
 #ifdef K_CONFIG_SMP
