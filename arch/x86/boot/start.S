@@ -26,6 +26,7 @@ _real_start:
 	addl	$0x4, %esp
 
 	pushl	$0
+	pushl	$0
 	movl	$__k_end, %eax
 	subl	$__k_start, %eax
 	pushl	%eax

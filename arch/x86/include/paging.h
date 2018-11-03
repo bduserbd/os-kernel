@@ -4,17 +4,17 @@
 #ifndef __ASSEMBLER__
 
 #include "kernel/include/types.h"
-#include "kernel/include/mm/mm.h"
+#include "kernel/include/mm/zone.h"
 
 typedef k_uint32_t	k_pde_t;
 typedef k_uint32_t	k_pte_t;
 
 extern k_pde_t *k_page_table;
 
-extern unsigned long k_total_frames;
-extern struct k_frame *k_frames;
+extern unsigned long k_total_normal_frames;
+extern struct k_frame *k_normal_frames;
 
-#define K_FRAME_ARRAY_SIZE	(k_total_frames * sizeof(struct k_frame))
+#define K_FRAME_ARRAY_SIZE	(k_total_normal_frames * sizeof(struct k_frame))
 
 #define K_PHYSICAL_ADDRESS(virtual)	\
 	((unsigned long)(virtual) - K_IMAGE_BASE)

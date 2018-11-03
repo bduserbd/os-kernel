@@ -6,8 +6,8 @@
 
 k_pde_t *k_page_table = NULL;
 
-unsigned long k_total_frames = 0;
-struct k_frame *k_frames = NULL;
+unsigned long k_total_normal_frames = 0;
+struct k_frame *k_normal_frames = NULL;
 
 void *k_p2v(const void *physical)
 {
@@ -16,10 +16,10 @@ void *k_p2v(const void *physical)
 	offset = (unsigned long)physical & 0xfff;
 	frame = (unsigned long)physical >> 12;
 
-	if (frame > k_total_frames)
+	if (frame > k_total_normal_frames)
 		return NULL;
 
-	return (void *)((unsigned long)k_frames[frame].virtual + offset);
+	return (void *)((unsigned long)k_normal_frames[frame].virtual + offset);
 }
 
 unsigned long k_p2v_l(unsigned long physical)
@@ -27,9 +27,12 @@ unsigned long k_p2v_l(unsigned long physical)
 	return (unsigned long)k_p2v((const void *)physical);
 }
 
-void k_paging_map_dma(unsigned long physical)
+static inline void k_paging_flush_tlb(void)
 {
+	k_uint32_t reg;
 
+	asm volatile("mov %%cr3, %0" : "=r" (reg));
+	asm volatile("mov %0, %%cr3" : : "r" (reg));
 }
 
 void k_paging_build_frame_array(unsigned long total_frames)
@@ -37,7 +40,7 @@ void k_paging_build_frame_array(unsigned long total_frames)
 	int i, j;
 	struct k_frame *frames;
 
-	k_total_frames = total_frames;
+	k_total_normal_frames = total_frames;
 	frames = (struct k_frame *)K_OFFSET_FROM(k_page_table, K_PAGE_TABLE_TOTAL_SIZE);
 
 	k_paging_reserve_pages((unsigned long)frames, K_FRAME_ARRAY_SIZE);
@@ -57,15 +60,7 @@ void k_paging_build_frame_array(unsigned long total_frames)
 		}
 	}
 
-	k_frames = frames;
-}
-
-static inline void k_paging_flush_tlb(void)
-{
-	k_uint32_t reg;
-
-	asm volatile("mov %%cr3, %0" : "=r" (reg));
-	asm volatile("mov %0, %%cr3" : : "r" (reg));
+	k_normal_frames = frames;
 }
 
 void k_paging_remove_identity_map(void)
@@ -96,7 +91,7 @@ void k_paging_remove_identity_map(void)
 }
 
 void k_paging_reserve_pages_ptr(k_pde_t *k_pde, k_uint32_t start, k_uint32_t range,
-		int high_memory)
+		int high_memory, unsigned long dma)
 {
 	k_uint32_t a, b;
 	k_uint32_t physical;
@@ -135,11 +130,15 @@ void k_paging_reserve_pages_ptr(k_pde_t *k_pde, k_uint32_t start, k_uint32_t ran
 		}
 
 		if (high_memory) {
-			physical = a - K_IMAGE_BASE;
+			if (dma)
+				physical = dma + a - (start & ~0xfff);
+			else
+				physical = a - K_IMAGE_BASE;
+
 			pte = (k_pte_t *)(K_IMAGE_BASE + (pde[table] & ~0xfff));
 
-			if (k_frames)
-				k_frames[physical >> 12].virtual = (void *)((table << 22) + (page << 12));
+			if (k_normal_frames)
+				k_normal_frames[physical >> 12].virtual = (void *)((table << 22) + (page << 12));
 		} else {
 			physical = a;
 			pte = (k_pte_t *)((pde[table] & ~0xfff));
@@ -154,9 +153,15 @@ void k_paging_reserve_pages_ptr(k_pde_t *k_pde, k_uint32_t start, k_uint32_t ran
 	}
 }
 
+void k_paging_map_dma(unsigned long virtual, unsigned long physical, unsigned long range)
+{
+	k_paging_reserve_pages_ptr(k_page_table, virtual, range, true, physical);
+	k_paging_flush_tlb();
+}
+
 void k_paging_reserve_pages(k_uint32_t start, k_uint32_t range)
 {
-	k_paging_reserve_pages_ptr(k_page_table, start, range, true);
+	k_paging_reserve_pages_ptr(k_page_table, start, range, true, 0x0);
 	k_paging_flush_tlb();
 }
 
@@ -204,7 +209,8 @@ void k_paging_table_set_start(k_uint32_t start)
 
 		k_memset((void *)*pde, 0, 0x1000);
 
-		k_paging_reserve_pages_ptr((void *)*pde, start, K_PAGE_TABLE_TOTAL_SIZE, false);
+		k_paging_reserve_pages_ptr((void *)*pde, start, K_PAGE_TABLE_TOTAL_SIZE,
+				false, 0x0);
 	}
 }
 

@@ -4,6 +4,7 @@
 #include "include/smbios.h"
 #include "include/8253.h"
 #include "include/video.h"
+#include "include/paging.h"
 #include "kernel/include/acpi/acpi.h"
 #include "kernel/include/mm/mm.h"
 #include "kernel/include/modules/loader.h"
@@ -31,11 +32,13 @@ void k_x86_init(void *smbios, void *rsdp,
 	k_printf("\n");
 #endif
 
+	k_memory_zone_init(k_normal_frames, 0, k_total_normal_frames);
+
+#if 0
 #ifdef K_CONFIG_BIOS
 	k_mp_get_info();
 #endif
 	k_acpi_get_info(rsdp);
-#if 0
 	k_smbios_get_info(smbios);
 
 	k_pit_init();
