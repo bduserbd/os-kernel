@@ -29,11 +29,11 @@ void k_x86_init(void *smbios, void *rsdp,
 	k_printf("%x ", k_malloc(16));
 	k_printf("\n");
 
-#if 0
 #ifdef K_CONFIG_BIOS
 	k_mp_get_info();
 #endif
 	k_acpi_get_info(rsdp);
+#if 0
 	k_smbios_get_info(smbios);
 
 	k_pit_init();

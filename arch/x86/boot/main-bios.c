@@ -139,7 +139,6 @@ k_error_t k_main(k_uint32_t eax, k_uint32_t ebx)
 
 	k_paging_reserve_pages((unsigned long)mbi, sizeof(struct k_multiboot_info));
 
-#if 0
 	error = k_get_fb_info(mbi, &fb);
 	if (error)
 		return error;
@@ -153,7 +152,6 @@ k_error_t k_main(k_uint32_t eax, k_uint32_t ebx)
 	k_idt_init();
 
 	k_paging_reserve_pages(k_initramfs_start, k_initramfs_length);
-#endif
 
 #if 0
 	error = k_reserve_reserved_pages(mbi);
@@ -164,13 +162,13 @@ k_error_t k_main(k_uint32_t eax, k_uint32_t ebx)
 	k_paging_reserve_pages(0xfee00000, 0x1000);
 #endif
 
-#if 0
 	k_printf("%x\n", k_page_table);
+
+	//*(unsigned char *)((unsigned long)k_page_table - K_IMAGE_BASE) = 'A';
 
 	k_buddy_init((unsigned long)k_page_table + 0x1000 + 0x400 * 0x1000);
 
 	k_x86_init(NULL, NULL, k_initramfs_start, k_initramfs_length);
-#endif
 
 	return K_ERROR_FAILURE;
 }

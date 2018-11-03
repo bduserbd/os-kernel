@@ -12,17 +12,6 @@ _real_start:
 	movl	%eax, K_PHYSICAL_ADDRESS(k_multiboot_magic_ptr)
 	movl	%ebx, K_PHYSICAL_ADDRESS(k_multiboot_info_ptr)
 
-	/* Set segments & GDT & IDT. */
-	lgdt	K_PHYSICAL_ADDRESS(first_gdt_desc)
-	movl    $0x10, %eax
-	movw    %ax, %ds
-	movw    %ax, %es
-	movw    %ax, %fs
-	movw    %ax, %gs
-	movw    %ax, %ss
-
-	lidt    K_PHYSICAL_ADDRESS(first_idt)
-
 	/* Boot setup. */
 	call	k_is_valid_multiboot
 	testl	%eax, %eax
@@ -40,9 +29,10 @@ _real_start:
 	subl	$__k_start, %eax
 	pushl	%eax
 	pushl	$K_PHYSICAL_ADDRESS(__k_start)
-	pushl	$__k_start
+	call	foo
+	addl	$0x8, %esp
+
 	call	k_paging_identity_map
-	addl	$0xc, %esp
 
 	call	k_paging_init
 
@@ -52,13 +42,25 @@ _real_start:
 
 	addl	$K_IMAGE_BASE, %esp
 
+	/* Set segments & GDT & IDT. */
+	lgdt	first_gdt_desc
+	movl    $0x10, %eax
+	movw    %ax, %ds
+	movw    %ax, %es
+	movw    %ax, %fs
+	movw    %ax, %gs
+	movw    %ax, %ss
+
 	jmp	$0x8, $our_protected_mode
 our_protected_mode:
 
-	pushl   $0
+	lidt first_idt
+
+	pushl	$0
 	popf
 
 	addl	$K_IMAGE_BASE, k_multiboot_info_ptr
+
 	call	k_paging_remove_identity_map
 
 	/* Basic CPU reqiurements. */
@@ -75,7 +77,6 @@ die:
 
 
 	.data
-
 /* Basic GDT. */
 	.p2align 3
 first_gdt:
@@ -87,7 +88,7 @@ first_gdt_end:
 	.p2align 3
 first_gdt_desc:
 	.word   first_gdt_end-first_gdt-1
-	.long   K_PHYSICAL_ADDRESS(first_gdt)
+	.long   first_gdt
 
 /* Just set IDT. */
 	.p2align 3
@@ -113,3 +114,4 @@ k_multiboot_info_ptr:
 	.section ".ap_start", "a"
 	.skip   0x200
 #endif
+
