@@ -35,12 +35,12 @@ void k_x86_init(void *smbios, void *rsdp,
 	k_mp_get_info();
 #endif
 	k_acpi_get_info(rsdp);
+#if 0
 	k_smbios_get_info(smbios);
 
 	k_pit_init();
 	asm volatile("sti");
 
-#if 0
 	k_lapic_init();
 
 #ifdef K_CONFIG_SMP

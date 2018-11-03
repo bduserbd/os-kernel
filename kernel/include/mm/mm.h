@@ -3,6 +3,10 @@
 
 #include "kernel/include/types.h"
 
+struct k_frame {
+	void *virtual;
+};
+
 void k_slab_init(void);
 
 void *k_malloc(k_size_t);

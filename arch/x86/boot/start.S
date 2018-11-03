@@ -25,12 +25,14 @@ _real_start:
 	call	k_paging_table_set_start
 	addl	$0x4, %esp
 
+	pushl	$0
 	movl	$__k_end, %eax
 	subl	$__k_start, %eax
 	pushl	%eax
 	pushl	$K_PHYSICAL_ADDRESS(__k_start)
-	call	foo
-	addl	$0x8, %esp
+	pushl	K_PHYSICAL_ADDRESS(k_page_table);
+	call	k_paging_reserve_pages_ptr
+	addl	$0x10, %esp
 
 	call	k_paging_identity_map
 

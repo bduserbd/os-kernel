@@ -72,7 +72,7 @@ k_uint32_t k_alloc_boot_page_table(void)
 	mbi = (void *)K_VALUE_PHYSICAL_ADDRESS(&k_multiboot_info_ptr);
 
 	page_table = K_ALIGN_UP(K_MAX(K_PHYSICAL_ADDRESS((k_uint32_t)__k_end),
-			(unsigned long)mbi + sizeof(struct k_multiboot_info)), 0x1000);
+				(unsigned long)mbi + sizeof(struct k_multiboot_info)), 0x1000);
 
 	error = k_get_initramfs(mbi, &initramfs_start, &initramfs_length);
 	if (error)
@@ -93,15 +93,18 @@ static k_error_t k_reserve_reserved_pages(struct k_multiboot_info *mbi)
 	if ((mbi->flags & K_MULTIBOOT_INFO_MEM_MAP) == 0)
 		return K_ERROR_NOT_FOUND;
 
-	k_paging_reserve_pages(K_VIRTUAL_ADDRESS(mbi->mmap_addr), mbi->mmap_length);
-
+	// TODO: What if we wiped these ?
 	entry = (void *)k_p2v_l(mbi->mmap_addr);
 
 	for (i = 0; i < mbi->mmap_length / sizeof(struct k_multiboot_mmap_entry); i++)
 		if (entry[i].type == K_MULTIBOOT_MEMORY_RESERVED ||
-				entry[i].type == K_MULTIBOOT_MEMORY_ACPI_RECLAIMABLE)
-			if (entry[i].addr + entry[i].len > (1 << 20))
-				k_paging_reserve_pages(entry[i].addr & 0xffffffff, entry[i].len & 0xffffffff);
+				entry[i].type == K_MULTIBOOT_MEMORY_ACPI_RECLAIMABLE) {
+			if (entry[i].addr + entry[i].len > K_MB(1)) {
+				k_printf("%x %x\n", (k_uint32_t)entry[i].addr, (k_uint32_t)entry[i].len);
+				//k_paging_reserve_pages(K_VIRTUAL_ADDRESS(entry[i].addr & 0xffffffff),
+				//		entry[i].len & 0xffffffff);
+			}
+		}
 
 	return K_ERROR_NONE;
 }
@@ -112,16 +115,16 @@ k_error_t k_get_fb_info(struct k_multiboot_info *mbi, struct k_fb_info *fb)
 		return K_ERROR_NOT_FOUND;
 
 	switch (mbi->framebuffer_type) {
-	case K_MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT:
-		fb->width = mbi->framebuffer_width;
-		fb->height = mbi->framebuffer_height;
+		case K_MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT:
+			fb->width = mbi->framebuffer_width;
+			fb->height = mbi->framebuffer_height;
 
-		fb->framebuffer = k_p2v_l(mbi->framebuffer_addr);
+			fb->framebuffer = K_VIRTUAL_ADDRESS(mbi->framebuffer_addr);
 
-		break;
+			break;
 
-	default:
-		return K_ERROR_NOT_FOUND;
+		default:
+			return K_ERROR_NOT_FOUND;
 	}
 
 	return K_ERROR_NONE;
@@ -136,14 +139,13 @@ k_error_t k_main(k_uint32_t eax, k_uint32_t ebx)
 	struct k_fb_info fb;
 
 	mbi = (void *)k_multiboot_info_ptr;
-
 	k_paging_reserve_pages((unsigned long)mbi, sizeof(struct k_multiboot_info));
 
 	error = k_get_fb_info(mbi, &fb);
 	if (error)
 		return error;
 
-	k_paging_reserve_pages(k_p2v_l(0x0), K_MB(1));
+	k_paging_reserve_pages(K_VIRTUAL_ADDRESS(0x0), K_MB(1));
 
 	k_text_set_info(&fb);
 	k_print_set_output_callback(k_text_puts);
@@ -151,20 +153,21 @@ k_error_t k_main(k_uint32_t eax, k_uint32_t ebx)
 	k_pic_init();
 	k_idt_init();
 
-	k_paging_reserve_pages(k_initramfs_start, k_initramfs_length);
+	k_paging_build_frame_array(K_KB(mbi->mem_upper) >> 12);
 
-	error = k_reserve_reserved_pages(mbi);
-	if (error)
-		return error;
+	k_buddy_init(K_ALIGN_UP(K_OFFSET_FROM(k_frames, K_FRAME_ARRAY_SIZE), 0x1000));
+
+	k_reserve_reserved_pages(mbi);
+
+	k_paging_reserve_pages(k_initramfs_start, k_initramfs_length);
 
 #if 0
 	// QEMU doesn't report APIC BIOS e820 memory map.
 	k_paging_reserve_pages(0xfee00000, 0x1000);
-#endif
 
-	k_buddy_init((unsigned long)k_page_table + 0x1000 + 0x400 * 0x1000);
 
 	k_x86_init(NULL, NULL, k_initramfs_start, k_initramfs_length);
+#endif
 
 	return K_ERROR_FAILURE;
 }

@@ -1,18 +1,63 @@
 #include "include/paging.h"
 #include "include/cr0.h"
 #include "include/cpu.h"
+#include "kernel/include/video/print.h"
 #include "kernel/include/string.h"
 
 k_pde_t *k_page_table = NULL;
 
+unsigned long k_total_frames = 0;
+struct k_frame *k_frames = NULL;
+
 void *k_p2v(const void *physical)
 {
-	return (void *)K_VIRTUAL_ADDRESS(physical);
+	unsigned long frame, offset;
+
+	offset = (unsigned long)physical & 0xfff;
+	frame = (unsigned long)physical >> 12;
+
+	if (frame > k_total_frames)
+		return NULL;
+
+	return (void *)((unsigned long)k_frames[frame].virtual + offset);
 }
 
 unsigned long k_p2v_l(unsigned long physical)
 {
 	return (unsigned long)k_p2v((const void *)physical);
+}
+
+void k_paging_map_dma(unsigned long physical)
+{
+
+}
+
+void k_paging_build_frame_array(unsigned long total_frames)
+{
+	int i, j;
+	struct k_frame *frames;
+
+	k_total_frames = total_frames;
+	frames = (struct k_frame *)K_OFFSET_FROM(k_page_table, K_PAGE_TABLE_TOTAL_SIZE);
+
+	k_paging_reserve_pages((unsigned long)frames, K_FRAME_ARRAY_SIZE);
+
+	k_memset(frames, 0, K_FRAME_ARRAY_SIZE);
+
+	for (i = (K_IMAGE_BASE >> 22); i < 1024; i++) {
+		if (!(k_page_table[i] & K_PDE_P))
+			continue;
+
+		k_pte_t *pte = (k_pte_t *)(K_IMAGE_BASE + (k_page_table[i] & ~0xfff));
+		for (j = 0; j < 1024; j++) {
+			if (!(pte[j] & K_PTE_P))
+				continue;
+
+			frames[pte[j] >> 12].virtual = (void *)((i << 22) + (j << 12));
+		}
+	}
+
+	k_frames = frames;
 }
 
 static inline void k_paging_flush_tlb(void)
@@ -29,7 +74,8 @@ void k_paging_remove_identity_map(void)
 
 	k_page_table = (k_pde_t *)K_VIRTUAL_ADDRESS(k_page_table);
 
-	a = 0x0; b = K_IMAGE_BASE - K_MB(4);
+	a = 0x0;
+	b = K_IMAGE_BASE - K_MB(4);
 
 	while (1) {
 		k_uint32_t table = (a >> 22) & 0x3ff;
@@ -49,7 +95,7 @@ void k_paging_remove_identity_map(void)
 	k_paging_flush_tlb();
 }
 
-static void k_paging_reserve_pages_ptr(k_pde_t *k_pde, k_uint32_t start, k_uint32_t range,
+void k_paging_reserve_pages_ptr(k_pde_t *k_pde, k_uint32_t start, k_uint32_t range,
 		int high_memory)
 {
 	k_uint32_t a, b;
@@ -91,6 +137,9 @@ static void k_paging_reserve_pages_ptr(k_pde_t *k_pde, k_uint32_t start, k_uint3
 		if (high_memory) {
 			physical = a - K_IMAGE_BASE;
 			pte = (k_pte_t *)(K_IMAGE_BASE + (pde[table] & ~0xfff));
+
+			if (k_frames)
+				k_frames[physical >> 12].virtual = (void *)((table << 22) + (page << 12));
 		} else {
 			physical = a;
 			pte = (k_pte_t *)((pde[table] & ~0xfff));
@@ -109,15 +158,6 @@ void k_paging_reserve_pages(k_uint32_t start, k_uint32_t range)
 {
 	k_paging_reserve_pages_ptr(k_page_table, start, range, true);
 	k_paging_flush_tlb();
-}
-
-void foo(k_uint32_t physical, k_uint32_t range)
-{
-	k_pde_t *pde;
-
-	pde = (k_pde_t *)K_VALUE_PHYSICAL_ADDRESS(&k_page_table);
-
-	k_paging_reserve_pages_ptr(pde, physical, range, false);
 }
 
 void k_paging_identity_map(void)
@@ -164,8 +204,7 @@ void k_paging_table_set_start(k_uint32_t start)
 
 		k_memset((void *)*pde, 0, 0x1000);
 
-		k_paging_reserve_pages_ptr((void *)*pde, start,
-				0x1000 + 0x400 * 0x1000, false);
+		k_paging_reserve_pages_ptr((void *)*pde, start, K_PAGE_TABLE_TOTAL_SIZE, false);
 	}
 }
 
