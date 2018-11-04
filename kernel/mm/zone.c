@@ -1,6 +1,7 @@
 #include "include/mm/zone.h"
 #include "include/mm/mm.h"
 #include "include/mm/buddy.h"
+#include "include/modules/export-symbol.h"
 
 static k_uint8_t *k_dma_zones = NULL;
 struct k_memory_zone *k_memory_zones = NULL;
@@ -22,11 +23,13 @@ void *k_p2v(const void *physical)
 
 	return NULL;
 }
+K_EXPORT_FUNC(k_p2v);
 
 unsigned long k_p2v_l(unsigned long physical)
 {
 	return (unsigned long)k_p2v((const void *)physical);
 }
+K_EXPORT_FUNC(k_p2v_l);
 
 static inline void k_memory_zone_register(struct k_memory_zone *zone)
 {

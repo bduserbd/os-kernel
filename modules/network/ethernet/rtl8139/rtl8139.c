@@ -3,6 +3,7 @@
 #include "kernel/include/pci/pci.h"
 #include "kernel/include/network/card.h"
 #include "kernel/include/mm/mm.h"
+#include "kernel/include/irq/irq.h"
 #include "kernel/include/video/print.h"
 
 K_MODULE_NAME("RTL8139");
@@ -10,16 +11,39 @@ K_MODULE_NAME("RTL8139");
 struct k_rtl8139 {
 	unsigned long io;
 	k_uint8_t mac[6];
+
+	unsigned int irq;
+
+	k_uint8_t *rx_buffer;
+
+	struct k_rtl8139 *next;
 };
+static struct k_rtl8139 *k_rtl8139_list = NULL;
+
+static inline void k_rtl8139_add(struct k_rtl8139 *rtl8139)
+{
+	rtl8139->next = k_rtl8139_list;
+	k_rtl8139_list = rtl8139;
+}
 
 static inline k_uint8_t k_rtl8139_inb(struct k_rtl8139 *rtl8139, int reg)
 {
 	return k_inb(rtl8139->io + reg);
 }
 
-static inline void k_rtl8139_outb(struct k_rtl8139 *rtl8139, int reg, k_uint8_t data)
+static inline void k_rtl8139_outb(struct k_rtl8139 *rtl8139, k_uint8_t data, int reg)
 {
 	k_outb(data, rtl8139->io + reg);
+}
+
+static inline void k_rtl8139_outw(struct k_rtl8139 *rtl8139, k_uint16_t data, int reg)
+{
+	k_outw(data, rtl8139->io + reg);
+}
+
+static inline void k_rtl8139_outl(struct k_rtl8139 *rtl8139, k_uint32_t data, int reg)
+{
+	k_outl(data, rtl8139->io + reg);
 }
 
 static k_error_t k_rtl8139_is_supported(struct k_pci_index index)
@@ -38,19 +62,49 @@ static k_error_t k_rtl8139_is_supported(struct k_pci_index index)
 	return K_ERROR_NONE;
 }
 
+static k_error_t k_rtl8139_irq_handler(unsigned int irq, void *device)
+{
+	k_printf("#");
+
+	return K_ERROR_NONE_IRQ;
+}
+
 static k_error_t k_rtl8139_init(struct k_rtl8139 *rtl8139)
 {
 	int i;
+	k_error_t error;
 
-	k_rtl8139_outb(rtl8139, K_RTL8139_CONFIG1, 0x0);
+	k_rtl8139_outb(rtl8139, 0x0, K_RTL8139_CONFIG1);
 
-	k_rtl8139_outb(rtl8139, K_RTL8139_CR, K_RTL8139_CR_RST);
+	k_rtl8139_outb(rtl8139, K_RTL8139_CR_RST, K_RTL8139_CR);
 	while (k_rtl8139_inb(rtl8139, K_RTL8139_CR) & K_RTL8139_CR_RST) ;
 
 	for (i = 0; i < 6; i++) {
 		rtl8139->mac[i] = k_rtl8139_inb(rtl8139, K_RTL8139_IDR + i);
 		k_printf("%x:", rtl8139->mac[i]);
 	}
+	k_printf("\n");
+
+	rtl8139->rx_buffer = k_malloc(K_KB(8) + 16 + 1500);
+	if (!rtl8139->rx_buffer)
+		return K_ERROR_MEMORY_ALLOCATION_FAILED;
+
+	k_printf("%x:%x", rtl8139->rx_buffer, k_v2p(rtl8139->rx_buffer));
+	k_rtl8139_outl(rtl8139, k_v2p_l((unsigned long)rtl8139->rx_buffer), K_RTL8139_RBSTART);
+
+	k_rtl8139_outw(rtl8139, K_RTL8139_IMR_ROK | K_RTL8139_IMR_TOK, K_RTL8139_IMR);
+
+	k_rtl8139_outl(rtl8139, K_RTL8139_RCR_AAP | K_RTL8139_RCR_APM |
+				K_RTL8139_RCR_AM | K_RTL8139_RCR_AB |
+				K_RTL8139_RCR_WRAP |K_RTL8139_RCR_RBLEN_8KB_16BYTES,
+				K_RTL8139_RCR);
+
+	error = k_irq_request(rtl8139->irq, k_rtl8139_irq_handler, K_IRQ_FLAGS_SHARED,
+			rtl8139);
+	if (error)
+		return error;
+
+	k_rtl8139_outb(rtl8139, K_RTL8139_CR_TE | K_RTL8139_CR_RE, K_RTL8139_CR);
 
 	return K_ERROR_NONE;
 }
@@ -70,8 +124,7 @@ static k_error_t k_rtl8139_pci_init(struct k_pci_index index)
 	if (error)
 		return error;
 
-	io = k_pci_read_config_long(index.bus, index.dev, index.func,
-			K_PCI_CONFIG_REG_BAR0);
+	io = k_pci_read_config_long(index.bus, index.dev, index.func, K_PCI_CONFIG_REG_BAR0);
 	if (!(io & 1))
 		return K_ERROR_INVALID_DEVICE;
 
@@ -81,6 +134,8 @@ static k_error_t k_rtl8139_pci_init(struct k_pci_index index)
 	if (!rtl8139)
 		return K_ERROR_MEMORY_ALLOCATION_FAILED;
 
+	rtl8139->irq = k_pci_read_config_byte(index.bus, index.dev, index.func,
+			K_PCI_CONFIG_REG_IRQ);
 	rtl8139->io = io & ~1UL;
 
 	error = k_rtl8139_init(rtl8139);

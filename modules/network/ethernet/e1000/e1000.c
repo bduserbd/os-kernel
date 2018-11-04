@@ -39,7 +39,7 @@ static k_error_t k_e1000_is_supported(struct k_pci_index index)
 
 static k_error_t k_e1000_pci_init(struct k_pci_index index)
 {
-	k_uint8_t irq;
+	//k_uint8_t irq;
 	k_error_t error;
 
 	error = k_pci_check_device_class(index, K_PCI_BASE_CLASS_NETWORK,
@@ -51,8 +51,8 @@ static k_error_t k_e1000_pci_init(struct k_pci_index index)
 	if (error)
 		return error;
 
-	irq = k_pci_read_config_byte(index.bus, index.dev, index.func, K_PCI_CONFIG_REG_IRQ);
-	k_printf("%x\n", irq);
+	//irq = k_pci_read_config_byte(index.bus, index.dev, index.func, K_PCI_CONFIG_REG_IRQ);
+	//k_printf("%x\n", irq);
 
 	return K_ERROR_NONE;
 }

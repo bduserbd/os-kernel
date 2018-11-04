@@ -9,7 +9,7 @@ static k_error_t k_pit_irq_handler(unsigned int irq, void *device)
 
 	ticks++;
 	if (ticks == 500) {
-		k_printf("$");
+		//k_printf("$");
 		ticks = 0;
 	}
 
