@@ -5,6 +5,7 @@
 #include "include/8259a.h"
 #include "kernel/include/mm/buddy.h"
 #include "kernel/include/mm/mm.h"
+#include "kernel/include/mm/zone.h"
 #include "kernel/include/grub/multiboot.h"
 #include "kernel/include/fb/shell.h"
 #include "kernel/include/string.h"
@@ -85,11 +86,13 @@ k_uint32_t k_alloc_boot_page_table(void)
 }
 
 /* Functions from here are called when high virtual memory is initialized. */
-#if 0
-static k_error_t k_reserve_reserved_pages(struct k_multiboot_info *mbi)
+k_error_t k_reserve_reserved_pages(void)
 {
 	k_uint32_t i;
+	struct k_multiboot_info *mbi;
 	struct k_multiboot_mmap_entry *entry;
+
+	mbi = (void *)k_multiboot_info_ptr;
 
 	if ((mbi->flags & K_MULTIBOOT_INFO_MEM_MAP) == 0)
 		return K_ERROR_NOT_FOUND;
@@ -97,19 +100,20 @@ static k_error_t k_reserve_reserved_pages(struct k_multiboot_info *mbi)
 	// TODO: What if we wiped these ?
 	entry = (void *)k_p2v_l(mbi->mmap_addr);
 
-	for (i = 0; i < mbi->mmap_length / sizeof(struct k_multiboot_mmap_entry); i++) {
+	for (i = 0; i < mbi->mmap_length / sizeof(struct k_multiboot_mmap_entry); i++)
 		if (entry[i].type == K_MULTIBOOT_MEMORY_RESERVED ||
-				entry[i].type == K_MULTIBOOT_MEMORY_ACPI_RECLAIMABLE) {
+				entry[i].type == K_MULTIBOOT_MEMORY_ACPI_RECLAIMABLE)
 			if (entry[i].addr + entry[i].len > K_MB(1)) {
-				k_printf("%x %x\n", (k_uint32_t)entry[i].addr, (k_uint32_t)entry[i].len);
-				//k_buddy_alloc_dma((k_size_t)entry[i].len, entry[i].addr);
+				k_printf("%x %x\n", (k_uint32_t)entry[i].addr >> 12,
+						(k_uint32_t)entry[i].len >> 12);
+				k_memory_zone_dma_add(entry[i].addr >> 12, entry[i].len >> 12);
 			}
-		}
-	}
+
+	// QEMU doesn't report APIC BIOS e820 memory map.
+	k_memory_zone_dma_add(0xfee00000 >> 12, 1);
 
 	return K_ERROR_NONE;
 }
-#endif
 
 k_error_t k_get_fb_info(struct k_multiboot_info *mbi, struct k_fb_info *fb)
 {
@@ -158,14 +162,7 @@ k_error_t k_main(k_uint32_t eax, k_uint32_t ebx)
 	k_paging_build_frame_array(K_KB(mbi->mem_upper) >> 12);
 	k_buddy_init(K_ALIGN_UP(K_OFFSET_FROM(k_normal_frames, K_FRAME_ARRAY_SIZE), 0x1000));
 
-#if 0
-	k_reserve_reserved_pages(mbi);
-
 	k_paging_reserve_pages(k_initramfs_start, k_initramfs_length);
-
-	// QEMU doesn't report APIC BIOS e820 memory map.
-	k_paging_reserve_pages(0xfee00000, 0x1000);
-#endif
 
 	k_x86_init(NULL, NULL, k_initramfs_start, k_initramfs_length);
 

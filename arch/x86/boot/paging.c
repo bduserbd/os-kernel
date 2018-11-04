@@ -9,24 +9,6 @@ k_pde_t *k_page_table = NULL;
 unsigned long k_total_normal_frames = 0;
 struct k_frame *k_normal_frames = NULL;
 
-void *k_p2v(const void *physical)
-{
-	unsigned long frame, offset;
-
-	offset = (unsigned long)physical & 0xfff;
-	frame = (unsigned long)physical >> 12;
-
-	if (frame > k_total_normal_frames)
-		return NULL;
-
-	return (void *)((unsigned long)k_normal_frames[frame].virtual + offset);
-}
-
-unsigned long k_p2v_l(unsigned long physical)
-{
-	return (unsigned long)k_p2v((const void *)physical);
-}
-
 static inline void k_paging_flush_tlb(void)
 {
 	k_uint32_t reg;
@@ -130,15 +112,17 @@ void k_paging_reserve_pages_ptr(k_pde_t *k_pde, k_uint32_t start, k_uint32_t ran
 		}
 
 		if (high_memory) {
-			if (dma)
-				physical = dma + a - (start & ~0xfff);
-			else
-				physical = a - K_IMAGE_BASE;
-
 			pte = (k_pte_t *)(K_IMAGE_BASE + (pde[table] & ~0xfff));
 
-			if (k_normal_frames)
-				k_normal_frames[physical >> 12].virtual = (void *)((table << 22) + (page << 12));
+			if (dma)
+				physical = dma + a - (start & ~0xfff);
+			else {
+				physical = a - K_IMAGE_BASE;
+
+				if (k_normal_frames)
+					k_normal_frames[physical >> 12].virtual =
+						(void *)((table << 22) + (page << 12));
+			}
 		} else {
 			physical = a;
 			pte = (k_pte_t *)((pde[table] & ~0xfff));

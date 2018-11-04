@@ -22,6 +22,7 @@ struct k_memory_zone {
 };
 
 void k_memory_zone_init(struct k_frame *, unsigned long, unsigned long);
+void k_memory_zone_dma_add(unsigned long, unsigned long);
 
 #endif
 

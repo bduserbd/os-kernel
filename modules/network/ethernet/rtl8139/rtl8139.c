@@ -47,8 +47,6 @@ static k_error_t k_rtl8139_init(struct k_rtl8139 *rtl8139)
 	k_rtl8139_outb(rtl8139, K_RTL8139_CR, K_RTL8139_CR_RST);
 	while (k_rtl8139_inb(rtl8139, K_RTL8139_CR) & K_RTL8139_CR_RST) ;
 
-	k_printf("%x ", rtl8139);
-
 	for (i = 0; i < 6; i++) {
 		rtl8139->mac[i] = k_rtl8139_inb(rtl8139, K_RTL8139_IDR + i);
 		k_printf("%x:", rtl8139->mac[i]);

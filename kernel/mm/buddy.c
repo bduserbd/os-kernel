@@ -3,10 +3,10 @@
 
 static struct k_buddy_node *k_group = NULL;
 static struct k_buddy_node *k_node = NULL;
-static k_uint8_t *k_heap = NULL;
 
-void k_paging_reserve_pages(k_uint32_t start, k_uint32_t range);
-void k_paging_map_dma(unsigned long, unsigned long, unsigned long);
+k_uint8_t *k_heap = NULL;
+
+void k_paging_reserve_pages(k_uint32_t, k_uint32_t);
 
 static struct k_buddy_node *k_buddy_get(struct k_buddy_node *node)
 {
@@ -144,23 +144,6 @@ void *k_buddy_alloc(k_size_t size)
 
 	log2 = K_BUDDY_MAX_BLOCK_LOG2 - k_buddy_best_fit_group(size);
 	k_paging_reserve_pages((k_uint32_t)ptr, 1 << log2);
-
-	return ptr;
-}
-
-void *k_buddy_alloc_dma(k_size_t size, unsigned long dma)
-{
-	void *ptr;
-
-	if (size & (size - 1))
-		return NULL;
-
-	ptr = k_buddy_alloc(size);
-	if (!ptr)
-		return NULL;
-
-	k_printf("%x %x %x\n", ptr, dma, size);
-	k_paging_map_dma((unsigned long)ptr, dma, size);
 
 	return ptr;
 }

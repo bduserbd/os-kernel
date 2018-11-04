@@ -62,7 +62,7 @@ static void k_acpi_parse_madt(struct k_acpi_madt *madt)
 	for (i = 0; i < K_CONFIG_CPUS; i++)
 		k_acpi.ids[i].valid = false;
 
-	k_acpi.lapic_address = madt->lapic_address;
+	k_acpi.lapic_address = k_p2v_l(madt->lapic_address);
 
 	for (type = &madt->entries[0], length = *(k_uint8_t *)(type + 1);
 		type - (k_uint8_t *)madt < madt->sdt.length;
@@ -117,7 +117,7 @@ static void k_acpi_parse_xsdt(struct k_acpi_xsdt *xsdt)
 
 	for (i = 0; i < (xsdt->sdt.length - K_OFFSETOF(struct k_acpi_xsdt, entries)) /
 		sizeof(k_uint64_t); i++) {
-		sdt = (void *)*(k_uint32_t *)&xsdt->entries[i];
+		sdt = (void *)k_p2v_l(*(k_uint32_t *)&xsdt->entries[i]);
 
 		if (!k_memcmp(sdt->signature, K_ACPI_MADT_SIGNATURE, 4))
 			k_acpi_parse_madt((struct k_acpi_madt *)sdt);
@@ -141,7 +141,7 @@ static void k_acpi_parse_rsdt(struct k_acpi_rsdt *rsdt)
 
 	for (i = 0; i < (rsdt->sdt.length - K_OFFSETOF(struct k_acpi_rsdt, entries)) /
 		sizeof(k_uint32_t); i++) {
-		sdt = (void *)*(k_uint32_t *)&rsdt->entries[i];
+		sdt = (void *)k_p2v_l(*(k_uint32_t *)&rsdt->entries[i]);
 
 		if (!k_memcmp(sdt->signature, K_ACPI_MADT_SIGNATURE, 4))
 			k_acpi_parse_madt((struct k_acpi_madt *)sdt);
@@ -231,12 +231,12 @@ void k_acpi_get_info(void *_rsdp)
 	}
 
 	if (rsdp->revision == 0x0)
-		k_acpi_parse_rsdt((struct k_acpi_rsdt *)rsdp->rsdt_address);
+		k_acpi_parse_rsdt((struct k_acpi_rsdt *)k_p2v_l(rsdp->rsdt_address));
 	else {
 		if (rsdp->xsdt_address)
-			k_acpi_parse_xsdt((struct k_acpi_xsdt *)(k_uint32_t)rsdp->xsdt_address);
+			k_acpi_parse_xsdt((struct k_acpi_xsdt *)k_p2v_l(rsdp->xsdt_address));
 		else
-			k_acpi_parse_rsdt((struct k_acpi_rsdt *)rsdp->rsdt_address);
+			k_acpi_parse_rsdt((struct k_acpi_rsdt *)k_p2v_l(rsdp->rsdt_address));
 	}
 
 	k_acpi.found = true;
