@@ -3,6 +3,7 @@
 #include "include/idt.h"
 #include "include/8259a.h"
 #include "kernel/include/mm/buddy.h"
+#include "kernel/include/mm/zone.h"
 #include "kernel/include/grub/multiboot2.h"
 #include "kernel/include/fb/shell.h"
 #include "kernel/include/string.h"
@@ -12,6 +13,8 @@ extern __u8 __k_end[];
 
 extern unsigned long *k_multiboot_magic_ptr;
 extern unsigned long *k_multiboot_info_ptr;
+
+static unsigned long k_multiboot_info_size = 0;
 
 static unsigned long k_initramfs_start = 0;
 static unsigned long k_initramfs_length = 0;
@@ -75,18 +78,21 @@ k_error_t k_is_valid_multiboot(void)
 
 k_uint32_t k_alloc_boot_page_table(void)
 {
-	k_uint32_t ebx;
+	k_uint32_t ebx, mbi_size;
 	k_uint32_t page_table;
 	k_uint32_t initramfs[2];
 	k_error_t error;
 
 	ebx = K_VALUE_PHYSICAL_ADDRESS(&k_multiboot_info_ptr);
+	mbi_size = *(k_uint32_t *)ebx;
 
 	page_table = K_ALIGN_UP(K_MAX(K_PHYSICAL_ADDRESS((k_uint32_t)__k_end),
-			ebx + *(k_uint32_t *)ebx), 0x1000);
+			ebx + mbi_size), 0x1000);
+
+	K_VALUE_PHYSICAL_ADDRESS(&k_multiboot_info_size) = mbi_size;
 
 	error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_MODULE,
-			k_get_initramfs, initramfs);
+			(void *)K_PHYSICAL_ADDRESS(k_get_initramfs), initramfs);
 	if (error)
 		return 0;
 
@@ -96,29 +102,7 @@ k_uint32_t k_alloc_boot_page_table(void)
 	return K_ALIGN_UP(K_MAX(page_table, initramfs[0] + initramfs[1]), 0x1000);
 }
 
-#if 0
-static k_error_t k_reserve_reserved_pages(void *tag, void *data)
-{
-	k_uint32_t i;
-	struct k_multiboot2_tag_mmap *mmaptag;
-	struct k_multiboot2_mmap_entry *entry;
-
-	mmaptag = tag;
-
-	if (mmaptag->entry_size != sizeof(*entry))
-		return K_ERROR_NOT_FOUND;
-
-	entry = &mmaptag->entries[0];
-	for (i = 0; i < (mmaptag->size - sizeof(struct k_multiboot2_tag_mmap)) /
-			mmaptag->entry_size; i++, entry++)
-		if (entry->type == K_MULTIBOOT2_MEMORY_RESERVED ||
-				entry->type == K_MULTIBOOT2_MEMORY_ACPI_RECLAIMABLE)
-			if (entry->addr + entry->len > (1 << 20))
-				k_paging_reserve_pages(entry->addr & 0xffffffff, entry->len & 0xffffffff);
-
-	return K_ERROR_NONE;
-}
-
+/* Functions from here are called when vitual memory is initialized. */
 static k_error_t k_get_smbios(void *tag, void *data)
 {
 	struct k_multiboot2_tag_smbios *smbiostag;
@@ -157,6 +141,41 @@ static k_error_t k_get_new_acpi(void *tag, void *data)
 	return K_ERROR_NONE;
 }
 
+static k_error_t k_get_basic_memory_info(void *tag, void *data)
+{
+	struct k_multiboot2_tag_basic_meminfo *meminfo;
+
+	meminfo = tag;
+
+	*(k_uint32_t *)data = meminfo->mem_upper;
+
+	return K_ERROR_NONE;
+}
+
+#if 0
+static k_error_t k_reserve_reserved_pages(void *tag, void *data)
+{
+	k_uint32_t i;
+	struct k_multiboot2_tag_mmap *mmaptag;
+	struct k_multiboot2_mmap_entry *entry;
+
+	mmaptag = tag;
+
+	if (mmaptag->entry_size != sizeof(*entry))
+		return K_ERROR_NOT_FOUND;
+
+	entry = &mmaptag->entries[0];
+	for (i = 0; i < (mmaptag->size - sizeof(struct k_multiboot2_tag_mmap)) /
+			mmaptag->entry_size; i++, entry++)
+		if (entry->type == K_MULTIBOOT2_MEMORY_RESERVED ||
+				entry->type == K_MULTIBOOT2_MEMORY_ACPI_RECLAIMABLE)
+			if (entry->addr + entry->len > (1 << 20))
+				k_paging_reserve_pages(entry->addr & 0xffffffff, entry->len & 0xffffffff);
+
+	return K_ERROR_NONE;
+}
+#endif
+
 static k_error_t k_reserve_reserved_pages_efi(void *tag, void *data)
 {
 	int i;
@@ -170,13 +189,11 @@ static k_error_t k_reserve_reserved_pages_efi(void *tag, void *data)
 
 	entry = &mmaptag->efi_mmap[0];
 	for (i = 0; i < (mmaptag->size - sizeof(struct k_multiboot2_tag_efi_mmap)) /
-			mmaptag->descr_size; i++, entry++) {
+			mmaptag->descr_size; i++, entry++)
 		if (entry->type == K_EFI_RESERVED_MEMORY_TYPE ||
 				entry->type == K_EFI_ACPI_RECLAIM_MEMORY ||
 				entry->type == K_EFI_ACPI_MEMORY_NVS)
-			k_paging_reserve_pages(entry->physical_start, entry->number_of_pages << 12);
-
-	}
+			k_memory_zone_dma_add(entry->physical_start >> 12, entry->number_of_pages);
 
 	return K_ERROR_NONE;
 }
@@ -213,14 +230,6 @@ k_error_t k_get_fb_info(void *tag, void *data)
 		fb->reserved.position = 24;
 		fb->reserved.mask = 0xff;
 
-		k_paging_reserve_pages(fb->framebuffer, fb->height * fb->pitch);
-
-		break;
-
-	case K_MULTIBOOT2_FRAMEBUFFER_TYPE_EGA_TEXT:
-		fb->width = fbtag->width;
-		fb->height = fbtag->height;
-
 		break;
 
 	default:
@@ -230,58 +239,84 @@ k_error_t k_get_fb_info(void *tag, void *data)
 	return K_ERROR_NONE;
 }
 
-#endif
-
 void k_print_set_output_callback(void (*)(const char *));
 
-k_error_t k_main(k_uint32_t eax, k_uint32_t ebx)
+k_error_t k_reserve_reserved_pages(void)
 {
-#if 0
 	k_error_t error;
-	k_uint32_t page_table, heap;
+	k_uint32_t ebx;
 	struct k_fb_info fb;
-	void *smbios = (void *)-1;
-	void *rsdp = NULL;
 
-	k_paging_table_set_start(page_table);
+	ebx = (k_uint32_t)k_multiboot_info_ptr;
 
-	k_paging_reserve_pages(0x8000, 0x1000);
-	k_paging_reserve_pages((k_uint32_t)__k_start, __k_end - __k_start);
-	k_paging_reserve_pages(ebx, *(k_uint32_t *)ebx);
-	k_paging_reserve_pages(initramfs[0], initramfs[1]);
+#if 0
 	error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_MMAP, k_reserve_reserved_pages, NULL);
 	if (error)
 		return;
+#endif
 
-	error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_EFI_MMAP, k_reserve_reserved_pages_efi, NULL);
+	error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_EFI_MMAP,
+			k_reserve_reserved_pages_efi, NULL);
 	if (error)
-		return;
-
-	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_SMBIOS, k_get_smbios, &smbios);
-
-	error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_ACPI_OLD, k_get_old_acpi, &rsdp);
-	if (error)
-		k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_ACPI_NEW, k_get_new_acpi, &rsdp);
-
-	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_FRAMEBUFFER, k_get_fb_info, &fb);
+		return error;
 
 	// QEMU doesn't report APIC BIOS e820 memory map.
-	k_paging_reserve_pages(0xfee00000, 0x1000);
+	k_memory_zone_dma_add(0xfee00000 >> 12, 1);
 
-	heap = page_table + 0x1000 + 0x400 * 0x1000;
-	k_buddy_init(heap);
+	/* Set also graphics. */
+	error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_FRAMEBUFFER,
+			k_get_fb_info, &fb);
+	if (error)
+		return error;
+
+	k_memory_zone_dma_add(fb.framebuffer >> 12, (fb.height * fb.pitch) >> 12);
 
 	k_fb_set_info(&fb);
 	k_shell_init();
 	k_print_set_output_callback(k_shell_puts);
 
+	return K_ERROR_NONE;
+}
+
+k_error_t k_main(void)
+{
+	k_uint32_t ebx;
+	k_uint32_t mem_upper;
+	k_error_t error;
+	void *smbios = (void *)-1;
+	void *rsdp = NULL;
+
+	//k_paging_reserve_pages(K_VIRTUAL_ADDRESS(0x8000), 0x1000);
+
+	ebx = (k_uint32_t)k_multiboot_info_ptr;
+	k_paging_reserve_pages(ebx, k_multiboot_info_size);
+
+	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_SMBIOS, k_get_smbios, &smbios);
+
+	error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_ACPI_OLD,
+			k_get_old_acpi, &rsdp);
+	if (error) {
+		error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_ACPI_NEW,
+				k_get_new_acpi, &rsdp);
+		if (error)
+			return error;
+	}
+
+	error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_BASIC_MEMINFO,
+			k_get_basic_memory_info, &mem_upper);
+	if (error)
+		return error;
+
+	k_paging_build_frame_array(K_KB(mem_upper) >> 12);
+	k_buddy_init(K_ALIGN_UP(K_OFFSET_FROM(k_normal_frames, K_FRAME_ARRAY_SIZE), 0x1000));
+
+	/* Page faults and so aren't printed until graphics are set. */
 	k_pic_init();
 	k_idt_init();
 
-	k_paging_init();
+	k_paging_reserve_pages(k_initramfs_start, k_initramfs_length);
 
-	k_x86_init(smbios, rsdp, initramfs[0], initramfs[1]);
-#endif
+	k_x86_init(smbios, rsdp, k_initramfs_start, k_initramfs_length);
 
 	return K_ERROR_FAILURE;
 }

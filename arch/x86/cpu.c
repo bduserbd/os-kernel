@@ -279,7 +279,5 @@ void k_cpu_get_info(void)
 	k_cpu_get_processor_name(&k_boot_cpu);
 
 	k_cpu_get_cache_info(&k_boot_cpu);
-
-	k_cpu_print_info(&k_boot_cpu);
 }
 

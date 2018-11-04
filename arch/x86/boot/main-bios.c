@@ -4,7 +4,6 @@
 #include "include/idt.h"
 #include "include/8259a.h"
 #include "kernel/include/mm/buddy.h"
-#include "kernel/include/mm/mm.h"
 #include "kernel/include/mm/zone.h"
 #include "kernel/include/grub/multiboot.h"
 #include "kernel/include/fb/shell.h"
@@ -139,7 +138,7 @@ k_error_t k_get_fb_info(struct k_multiboot_info *mbi, struct k_fb_info *fb)
 
 void k_print_set_output_callback(void (*)(const char *));
 
-k_error_t k_main(k_uint32_t eax, k_uint32_t ebx)
+k_error_t k_main(void)
 {
 	k_error_t error;
 	struct k_multiboot_info *mbi;

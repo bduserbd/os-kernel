@@ -109,6 +109,8 @@ struct k_cpu_x86 {
 extern struct k_cpu_x86 k_boot_cpu;
 
 void k_cpu_get_info(void);
+void k_cpu_print_info(struct k_cpu_x86 *);
+
 int k_cpu_eflag(k_uint32_t);
 void k_cpuid(k_uint32_t, k_uint32_t *, k_uint32_t *, k_uint32_t *, k_uint32_t *);
 

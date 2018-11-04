@@ -21,6 +21,17 @@ void k_x86_init(void *smbios, void *rsdp,
 
 	k_slab_init();
 
+	k_memory_zone_init(k_normal_frames, 0, k_total_normal_frames);
+	error = k_reserve_reserved_pages();
+	if (error)
+		return;
+
+	k_cpu_print_info(&k_boot_cpu);
+
+#ifdef K_CONFIG_BIOS
+	k_mp_get_info();
+#endif
+
 #if 0
 	k_printf("%x ", k_malloc(4));
 	k_printf("%x ", k_malloc(7));
@@ -32,15 +43,6 @@ void k_x86_init(void *smbios, void *rsdp,
 	k_printf("%x ", k_malloc(780));
 	k_printf("%x ", k_malloc(16));
 	k_printf("\n");
-#endif
-
-	k_memory_zone_init(k_normal_frames, 0, k_total_normal_frames);
-	error = k_reserve_reserved_pages();
-	if (error)
-		return;
-
-#ifdef K_CONFIG_BIOS
-	k_mp_get_info();
 #endif
 
 	k_acpi_get_info(rsdp);
