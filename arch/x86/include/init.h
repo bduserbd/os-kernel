@@ -12,6 +12,7 @@
 #endif
 
 void k_x86_init(void *, void *, k_uint32_t, k_uint32_t);
+k_error_t k_reserve_reserved_pages(void);
 
 #endif
 

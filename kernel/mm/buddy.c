@@ -3,12 +3,10 @@
 
 static struct k_buddy_node *k_group = NULL;
 static struct k_buddy_node *k_node = NULL;
-static k_uint8_t *k_heap = NULL;
 
-void __attribute__((weak)) k_paging_reserve_pages(k_uint32_t start, k_uint32_t range)
-{
+k_uint8_t *k_heap = NULL;
 
-}
+void k_paging_reserve_pages(k_uint32_t, k_uint32_t);
 
 static struct k_buddy_node *k_buddy_get(struct k_buddy_node *node)
 {
@@ -91,7 +89,7 @@ void k_buddy_free(void *ptr)
 	k_group[order].next = a;
 }
 
-void *k_buddy_alloc(k_size_t size)
+static void *k_buddy_alloc_unmapped(k_size_t size)
 {
 	int i;
 	int group;
@@ -135,6 +133,21 @@ void *k_buddy_alloc(k_size_t size)
 	}
 }
 
+void *k_buddy_alloc(k_size_t size)
+{
+	int log2;
+	void *ptr;
+
+	ptr = k_buddy_alloc_unmapped(size);
+	if (!ptr)
+		return NULL;
+
+	log2 = K_BUDDY_MAX_BLOCK_LOG2 - k_buddy_best_fit_group(size);
+	k_paging_reserve_pages((k_uint32_t)ptr, 1 << log2);
+
+	return ptr;
+}
+
 void k_buddy_init(k_uint32_t heap)
 {
 	int i;
@@ -152,7 +165,7 @@ void k_buddy_init(k_uint32_t heap)
 
 	k_heap = (void *)K_ALIGN_UP((k_uint32_t)k_node + K_BUDDY_LIST_SIZE,
 			1 << K_BUDDY_MIN_BLOCK_LOG2);
-	k_paging_reserve_pages((k_uint32_t)k_heap, 1 << K_BUDDY_MAX_BLOCK_LOG2);
+	//k_paging_reserve_pages((k_uint32_t)k_heap, 1 << K_BUDDY_MAX_BLOCK_LOG2);
 
 	k_node[0].status = K_BUDDY_NODE_SPLIT;
 	k_node[0].order = K_BUDDY_MAX_BLOCK_LOG2;

@@ -49,13 +49,20 @@
 /* Offsets into the configuration space. */
 #define K_PCI_CONFIG_REG_VENDOR_ID	0x00
 #define K_PCI_CONFIG_REG_DEVICE_ID	0x02
+
 #define K_PCI_CONFIG_REG_COMMAND	0x04
+# define K_PCI_CONFIG_REG_COMMAND_IO_SPACE	(1 << 0)
+# define K_PCI_CONFIG_REG_COMMAND_MEMORY_SPACE	(1 << 1)
+# define K_PCI_CONFIG_REG_COMMAND_BUS_MASTER	(1 << 2)
+
 #define K_PCI_CONFIG_REG_STATUS		0x06
 #define K_PCI_CONFIG_REG_REVISION_ID	0x08
+
 #define K_PCI_CONFIG_REG_CLASS_CODE		0x09
 # define K_PCI_CONFIG_REG_PROG_IF		0x09
 # define K_PCI_CONFIG_REG_SUBCLASS		0x0a
 # define K_PCI_CONFIG_REG_BASECLASS		0x0b
+
 #define K_PCI_CONFIG_REG_CACHELINE_SIZE	0x0c
 #define K_PCI_CONFIG_REG_LATENCY_TIMER	0x0d
 #define K_PCI_CONFIG_REG_HEADER_TYPE	0x0e
@@ -93,7 +100,7 @@
 #define K_PCI_MAKE_CONFIG_ADDRESS(bus, dev, func, reg)	\
 	((1 << 31) | (bus << 16) | (dev << 11) | (func << 8) | reg)
 
-/* Read PCI configuration address registers */ 
+/* Read & write PCI configuration address registers */ 
 static inline k_uint8_t k_pci_read_config_byte(k_uint8_t bus, k_uint8_t dev, k_uint8_t func,
 		k_uint8_t reg)
 {
@@ -118,6 +125,27 @@ static inline k_uint32_t k_pci_read_config_long(k_uint8_t bus, k_uint8_t dev, k_
 	return k_inl(K_PCI_CONFIG_DATA);
 }
 
+static inline void k_pci_write_config_byte(k_uint8_t bus, k_uint8_t dev, k_uint8_t func,
+		k_uint8_t reg, k_uint8_t data)
+{
+	k_outl(K_PCI_MAKE_CONFIG_ADDRESS(bus, dev, func, reg), K_PCI_CONFIG_ADDRESS);
+	k_outb(data, K_PCI_CONFIG_DATA);
+}
+
+static inline void k_pci_write_config_word(k_uint8_t bus, k_uint8_t dev, k_uint8_t func,
+		k_uint8_t reg, k_uint16_t data)
+{
+	k_outl(K_PCI_MAKE_CONFIG_ADDRESS(bus, dev, func, reg), K_PCI_CONFIG_ADDRESS);
+	k_outw(data, K_PCI_CONFIG_DATA);
+}
+
+static inline void k_pci_write_config_long(k_uint8_t bus, k_uint8_t dev, k_uint8_t func,
+		k_uint8_t reg, k_uint32_t data)
+{
+	k_outl(K_PCI_MAKE_CONFIG_ADDRESS(bus, dev, func, reg), K_PCI_CONFIG_ADDRESS);
+	k_outl(data, K_PCI_CONFIG_DATA);
+}
+
 struct k_pci_index {
 	k_uint32_t bus;
 	k_uint32_t dev;
@@ -128,6 +156,8 @@ typedef k_error_t (*pci_device_hook_t)(struct k_pci_index);
 
 void k_pci_iterate_devices(pci_device_hook_t);
 k_error_t k_pci_check_device_class(struct k_pci_index, int, int, int);
+
+void k_pci_set_bus_mastering(struct k_pci_index);
 
 #endif
 

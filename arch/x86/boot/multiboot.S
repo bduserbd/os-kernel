@@ -8,7 +8,6 @@ header_start:
 	.long	K_MULTIBOOT_HEADER_MAGIC
 	.long	0
 	.long	-(K_MULTIBOOT_HEADER_MAGIC + 0)
-
 header_end:
 
 	.text

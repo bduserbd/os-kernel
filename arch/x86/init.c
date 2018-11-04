@@ -4,6 +4,7 @@
 #include "include/smbios.h"
 #include "include/8253.h"
 #include "include/video.h"
+#include "include/paging.h"
 #include "kernel/include/acpi/acpi.h"
 #include "kernel/include/mm/mm.h"
 #include "kernel/include/modules/loader.h"
@@ -14,9 +15,22 @@
 void k_x86_init(void *smbios, void *rsdp,
 		k_uint32_t initramfs_start, k_uint32_t initramfs_length)
 {
+	k_error_t error;
+
 	k_cpu_get_info();
 
 	k_slab_init();
+
+	k_memory_zone_init(k_normal_frames, 0, k_total_normal_frames);
+	error = k_reserve_reserved_pages();
+	if (error)
+		return;
+
+	k_cpu_print_info(&k_boot_cpu);
+
+#ifdef K_CONFIG_BIOS
+	k_mp_get_info();
+#endif
 
 #if 0
 	k_printf("%x ", k_malloc(4));
@@ -31,9 +45,6 @@ void k_x86_init(void *smbios, void *rsdp,
 	k_printf("\n");
 #endif
 
-#ifdef K_CONFIG_BIOS
-	k_mp_get_info();
-#endif
 	k_acpi_get_info(rsdp);
 	k_smbios_get_info(smbios);
 
@@ -42,8 +53,10 @@ void k_x86_init(void *smbios, void *rsdp,
 
 	k_lapic_init();
 
+#if 0
 #ifdef K_CONFIG_SMP
 	k_smp_init();
+#endif
 #endif
 
 	k_loader_init();

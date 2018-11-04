@@ -34,25 +34,39 @@ void k_pci_iterate_devices(pci_device_hook_t hook)
 }
 K_EXPORT_FUNC(k_pci_iterate_devices);
 
-k_error_t k_pci_check_device_class(struct k_pci_index i,
+k_error_t k_pci_check_device_class(struct k_pci_index index,
 		int class, int subclass, int interface)
 {
 	if (class != -1)
-		if (class != k_pci_read_config_byte(i.bus, i.dev, i.func,
+		if (class != k_pci_read_config_byte(index.bus, index.dev, index.func,
 					K_PCI_CONFIG_REG_BASECLASS))
 			return K_ERROR_FAILURE;
 
 	if (subclass != -1)
-		if (subclass != k_pci_read_config_byte(i.bus, i.dev, i.func,
+		if (subclass != k_pci_read_config_byte(index.bus, index.dev, index.func,
 					K_PCI_CONFIG_REG_SUBCLASS))
 			return K_ERROR_FAILURE;
 
 	if (interface != -1)
-		if (interface != k_pci_read_config_byte(i.bus, i.dev, i.func,
+		if (interface != k_pci_read_config_byte(index.bus, index.dev, index.func,
 					K_PCI_CONFIG_REG_PROG_IF))
 			return K_ERROR_FAILURE;
 
 	return K_ERROR_NONE;
 }
 K_EXPORT_FUNC(k_pci_check_device_class);
+
+void k_pci_set_bus_mastering(struct k_pci_index index)
+{
+	k_uint16_t command;
+
+	command = k_pci_read_config_word(index.bus, index.dev, index.func,
+			K_PCI_CONFIG_REG_COMMAND);
+	if ((command & K_PCI_CONFIG_REG_COMMAND_BUS_MASTER) == 0) {
+		command |= K_PCI_CONFIG_REG_COMMAND_BUS_MASTER;
+		k_pci_write_config_word(index.bus, index.dev, index.func,
+				K_PCI_CONFIG_REG_COMMAND, command);
+	}
+}
+K_EXPORT_FUNC(k_pci_set_bus_mastering);
 

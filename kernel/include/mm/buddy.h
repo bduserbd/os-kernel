@@ -32,6 +32,8 @@ struct k_buddy_node {
 	struct k_buddy_node *next, *prev;
 } __attribute__((packed));
 
+extern k_uint8_t *k_heap;
+
 void k_buddy_init(k_uint32_t);
 void *k_buddy_alloc(k_size_t);
 void k_buddy_free(void *);

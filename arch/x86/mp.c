@@ -1,4 +1,5 @@
 #include "include/mp.h"
+#include "kernel/include/mm/mm.h"
 
 static k_error_t k_mp_checksum(void *ptr, int length)
 {
@@ -43,13 +44,13 @@ static struct k_mp_floating_pointer *k_mp_get_floating_pointer(void)
 
 	ptr = NULL;
 
-	ebda = *(k_uint16_t *)0x40e;
+	ebda = *(k_uint16_t *)k_p2v_l(0x40e);
 	if (ebda)
-		ptr = (void *)k_mp_scan_address_range(ebda << 4, 0x400);
+		ptr = (void *)k_mp_scan_address_range(k_p2v_l(ebda << 4), 0x400);
 
 	if (!ptr)
-		(void)((ptr = (void *)k_mp_scan_address_range(639 * 0x400, 0x400)) ||
-			(ptr = (void *)k_mp_scan_address_range(0xf0000, 0x10000)));
+		(void)((ptr = (void *)k_mp_scan_address_range(k_p2v_l(639 * 0x400), 0x400)) ||
+			(ptr = (void *)k_mp_scan_address_range(k_p2v_l(0xf0000), 0x10000)));
 
 	if (!ptr)
 		return NULL;
@@ -75,7 +76,7 @@ void k_mp_get_info(void)
 	if (!ptr)
 		return;
 
-	config = (void *)ptr->configuration_table_pointer;
+	config = (void *)k_p2v_l(ptr->configuration_table_pointer);
 	if (config->signature != K_SMP_CONFIGURATION_TABLE_SIGNATURE)
 		return;
 

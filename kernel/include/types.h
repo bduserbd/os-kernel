@@ -50,6 +50,8 @@ typedef s32	k_ssize_t;
 
 #define K_OFFSETOF(st, m)	((k_size_t)&(((st *)0)->m))
 
+#define K_OFFSET_FROM(address, offset)	((unsigned long)address + offset)
+
 #define K_ALIGN_UP(n, align)	\
 	(((n) + (typeof(n))(align) - 1) & ~((typeof(n))(align) - 1))
 

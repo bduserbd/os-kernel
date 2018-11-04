@@ -1,6 +1,7 @@
 #include "include/fb/fb.h"
 #include "include/fb/font.h"
 #include "include/mm/buddy.h"
+#include "include/mm/mm.h"
 #include "include/string.h"
 
 static struct {
@@ -208,6 +209,7 @@ void k_fb_update_framebuffer(void)
 void k_fb_set_info(struct k_fb_info *fb)
 {
 	k_memcpy(&k_fb.info, fb, sizeof(struct k_fb_info));
+	k_fb.info.framebuffer = k_p2v_l(k_fb.info.framebuffer);
 
 	k_fb_reset_dirty_area();
 
