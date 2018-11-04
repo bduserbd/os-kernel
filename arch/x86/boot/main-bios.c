@@ -4,6 +4,7 @@
 #include "include/idt.h"
 #include "include/8259a.h"
 #include "kernel/include/mm/buddy.h"
+#include "kernel/include/mm/mm.h"
 #include "kernel/include/mm/zone.h"
 #include "kernel/include/grub/multiboot.h"
 #include "kernel/include/fb/shell.h"
