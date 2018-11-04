@@ -119,7 +119,6 @@ struct k_multiboot2_tag_new_acpi {
 	k_uint8_t rsdp[0];
 } __attribute__((packed));
 
-#ifdef K_CONFIG_UEFI
 struct k_multiboot2_tag_efi_mmap {
 	k_uint32_t type;
 	k_uint32_t size;
@@ -127,7 +126,6 @@ struct k_multiboot2_tag_efi_mmap {
 	k_uint32_t descr_vers;
 	struct k_efi_memory_descriptor efi_mmap[0];
 } __attribute__((packed));
-#endif
 
 #endif
 

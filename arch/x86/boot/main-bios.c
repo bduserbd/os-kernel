@@ -40,7 +40,8 @@ k_error_t k_get_initramfs(struct k_multiboot_info *mbi,
 		if (s[0] == 'i' && s[1] == 'n' && s[2] == 'i' && s[3] == 't' &&
 				s[4] == 'r' && s[5] == 'a' && s[6] == 'm' &&
 				s[7] == 'f' && s[8] == 's' &&
-				s[9] == '.' && s[10] == 'i' && s[11] == 'm' && s[12] == 'g') {
+				s[9] == '.' && s[10] == 'i' && s[11] == 'm' && s[12] == 'g' &&
+				s[13] == 0) {
 			*initramfs_start = mod[i].mod_start;
 			*initramfs_length = mod[i].mod_end - *initramfs_start;
 

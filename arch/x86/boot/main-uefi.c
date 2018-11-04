@@ -1,4 +1,5 @@
 #include "include/init.h"
+#include "include/paging.h"
 #include "include/idt.h"
 #include "include/8259a.h"
 #include "kernel/include/mm/buddy.h"
@@ -9,10 +10,93 @@
 extern __u8 __k_start[];
 extern __u8 __k_end[];
 
-void k_paging_init(void);
-void k_paging_table_set_start(k_uint32_t);
-void k_paging_reserve_pages(k_uint32_t, k_uint32_t);
+extern unsigned long *k_multiboot_magic_ptr;
+extern unsigned long *k_multiboot_info_ptr;
 
+static unsigned long k_initramfs_start = 0;
+static unsigned long k_initramfs_length = 0;
+
+k_error_t k_scan_multiboot_tags(k_uint32_t ebx, int type, k_error_t (*callback)
+		(void *, void *), void *data)
+{
+	struct k_multiboot2_tag *tag;
+
+	tag = (struct k_multiboot2_tag *)(ebx + 8);
+
+	while (tag->type != K_MULTIBOOT2_TAG_TYPE_END) {
+		if (tag->type == type)
+			return callback((void *)tag, data);
+
+		tag = (struct k_multiboot2_tag *)((k_uint8_t *)tag + ((tag->size + 0x7) & ~0x7));
+	}
+
+	return K_ERROR_NOT_FOUND;
+}
+
+/* Functions from here are called when high virtual memory isn't set. */
+k_error_t k_get_initramfs(void *tag, void *data)
+{
+	char *s;
+	k_uint32_t *initramfs;
+	struct k_multiboot2_tag_module *moduletag;
+
+	moduletag = tag;
+	initramfs = data;
+
+	s = moduletag->cmdline;
+
+	if (s[0] == 'i' && s[1] == 'n' && s[2] == 'i' && s[3] == 't' &&
+			s[4] == 'r' && s[5] == 'a' && s[6] == 'm' &&
+			s[7] == 'f' && s[8] == 's' &&
+			s[9] == '.' && s[10] == 'i' && s[11] == 'm' && s[12] == 'g' &&
+			s[13] == 0) {
+		initramfs[0] = moduletag->mod_start;
+		initramfs[1] = moduletag->mod_end - initramfs[0];
+
+		return K_ERROR_NONE;
+	} else {
+		initramfs[0] = initramfs[1] = 0x0;
+
+		return K_ERROR_NOT_FOUND;
+	}
+}
+
+k_error_t k_is_valid_multiboot(void)
+{
+	unsigned long magic;
+
+	magic = K_VALUE_PHYSICAL_ADDRESS(&k_multiboot_magic_ptr);
+
+	if (magic == K_MULTIBOOT2_BOOTLOADER_MAGIC)
+		return K_ERROR_NONE;
+	else
+		return K_ERROR_INVALID_PARAMETER;
+}
+
+k_uint32_t k_alloc_boot_page_table(void)
+{
+	k_uint32_t ebx;
+	k_uint32_t page_table;
+	k_uint32_t initramfs[2];
+	k_error_t error;
+
+	ebx = K_VALUE_PHYSICAL_ADDRESS(&k_multiboot_info_ptr);
+
+	page_table = K_ALIGN_UP(K_MAX(K_PHYSICAL_ADDRESS((k_uint32_t)__k_end),
+			ebx + *(k_uint32_t *)ebx), 0x1000);
+
+	error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_MODULE,
+			k_get_initramfs, initramfs);
+	if (error)
+		return 0;
+
+	K_VALUE_PHYSICAL_ADDRESS(&k_initramfs_start) = K_VIRTUAL_ADDRESS(initramfs[0]);
+	K_VALUE_PHYSICAL_ADDRESS(&k_initramfs_length) = initramfs[1];
+
+	return K_ALIGN_UP(K_MAX(page_table, initramfs[0] + initramfs[1]), 0x1000);
+}
+
+#if 0
 static k_error_t k_reserve_reserved_pages(void *tag, void *data)
 {
 	k_uint32_t i;
@@ -97,28 +181,6 @@ static k_error_t k_reserve_reserved_pages_efi(void *tag, void *data)
 	return K_ERROR_NONE;
 }
 
-k_error_t k_get_initramfs(void *tag, void *data)
-{
-	k_uint32_t *initramfs;
-	struct k_multiboot2_tag_module *moduletag;
-
-	moduletag = tag;
-	initramfs = data;
-
-#define INITRAMFS	"initramfs.img"
-
-	if (!k_strncmp(moduletag->cmdline, INITRAMFS, sizeof(INITRAMFS) - 1)) {
-		initramfs[0] = moduletag->mod_start;
-		initramfs[1] = moduletag->mod_end - initramfs[0];
-
-		return K_ERROR_NONE;
-	} else {
-		initramfs[0] = initramfs[1] = 0x0;
-
-		return K_ERROR_NOT_FOUND;
-	}
-}
-
 k_error_t k_get_fb_info(void *tag, void *data)
 {
 	struct k_fb_info *fb;
@@ -168,42 +230,19 @@ k_error_t k_get_fb_info(void *tag, void *data)
 	return K_ERROR_NONE;
 }
 
-k_error_t k_scan_multiboot_tags(k_uint32_t ebx, int type, k_error_t (*callback)
-		(void *, void *), void *data)
-{
-	struct k_multiboot2_tag *tag;
-
-	tag = (struct k_multiboot2_tag *)(ebx + 8);
-
-	while (tag->type != K_MULTIBOOT2_TAG_TYPE_END) {
-		if (tag->type == type)
-			return callback((void *)tag, data);
-
-		tag = (struct k_multiboot2_tag *)((k_uint8_t *)tag + ((tag->size + 0x7) & ~0x7));
-	}
-
-	return K_ERROR_NOT_FOUND;
-}
+#endif
 
 void k_print_set_output_callback(void (*)(const char *));
 
-void k_main(k_uint32_t eax, k_uint32_t ebx)
+k_error_t k_main(k_uint32_t eax, k_uint32_t ebx)
 {
+#if 0
 	k_error_t error;
-	k_uint32_t page_table, heap, initramfs[2];
+	k_uint32_t page_table, heap;
 	struct k_fb_info fb;
 	void *smbios = (void *)-1;
 	void *rsdp = NULL;
 
-	if (eax != K_MULTIBOOT2_BOOTLOADER_MAGIC)
-		return;
-
-	page_table = K_ALIGN_UP(K_MAX((k_uint32_t)__k_end, ebx + *(k_uint32_t *)ebx), 0x1000);
-	error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_MODULE, k_get_initramfs, initramfs);
-	if (error)
-		return;
-
-	page_table = K_ALIGN_UP(K_MAX(page_table, initramfs[0] + initramfs[1]), 0x1000);
 	k_paging_table_set_start(page_table);
 
 	k_paging_reserve_pages(0x8000, 0x1000);
@@ -242,5 +281,8 @@ void k_main(k_uint32_t eax, k_uint32_t ebx)
 	k_paging_init();
 
 	k_x86_init(smbios, rsdp, initramfs[0], initramfs[1]);
+#endif
+
+	return K_ERROR_FAILURE;
 }
 
