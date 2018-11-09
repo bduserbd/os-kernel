@@ -78,15 +78,15 @@ static void k_acpi_parse_madt(struct k_acpi_madt *madt)
 			break;
 
 		case K_ACPI_MADT_IOAPIC:
-			//k_acpi_parse_ioapic((struct k_acpi_ioapic *)type);
+			k_acpi_parse_ioapic((struct k_acpi_ioapic *)type);
 			break;
 
 		case K_ACPI_MADT_INTERRUPT_OVERRIDE:
-			//k_acpi_parse_interrupt_override((struct k_acpi_interrupt_override *)type);
+			k_acpi_parse_interrupt_override((struct k_acpi_interrupt_override *)type);
 			break;
 
 		case K_ACPI_MADT_LAPIC_NMI:
-			//k_acpi_parse_lapic_nmi((struct k_acpi_lapic_nmi *)type);
+			k_acpi_parse_lapic_nmi((struct k_acpi_lapic_nmi *)type);
 			break;
 		}
 	}
@@ -96,10 +96,6 @@ static void k_acpi_parse_hpet(struct k_acpi_hpet *hpet)
 {
 	if (hpet->address.space_id != K_ACPI_ADDRESS_SPACE_ID_SYSTEM_MEMORY)
 		return;
-
-	//puthex(hpet->address.address);
-	//puthex(hpet->number);
-	//puthex(hpet->id);
 }
 
 static void k_acpi_parse_xsdt(struct k_acpi_xsdt *xsdt)

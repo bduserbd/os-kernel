@@ -2,7 +2,7 @@ OBJS += network.o
 
 CFLAGS = -I ../
 
-.PHONY: all
+.PHONY := all
 all: compile dirs
 
 compile:

@@ -12,6 +12,8 @@
 #include "kernel/include/irq/irq-info.h"
 #include "kernel/include/video/print.h"
 
+void k_init(void);
+
 void k_x86_init(void *smbios, void *rsdp,
 		k_uint32_t initramfs_start, k_uint32_t initramfs_length)
 {
@@ -66,5 +68,7 @@ void k_x86_init(void *smbios, void *rsdp,
 	for (int i = 0; i < 100000000; i++)
 		asm volatile("nop");
 	k_irq_unmask(0);
+
+	k_init();
 }
 
