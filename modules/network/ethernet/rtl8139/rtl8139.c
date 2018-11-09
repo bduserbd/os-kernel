@@ -31,6 +31,11 @@ static inline k_uint8_t k_rtl8139_inb(struct k_rtl8139 *rtl8139, int reg)
 	return k_inb(rtl8139->io + reg);
 }
 
+static inline k_uint16_t k_rtl8139_inw(struct k_rtl8139 *rtl8139, int reg)
+{
+	return k_inw(rtl8139->io + reg);
+}
+
 static inline void k_rtl8139_outb(struct k_rtl8139 *rtl8139, k_uint8_t data, int reg)
 {
 	k_outb(data, rtl8139->io + reg);
@@ -64,7 +69,20 @@ static k_error_t k_rtl8139_is_supported(struct k_pci_index index)
 
 static k_error_t k_rtl8139_irq_handler(unsigned int irq, void *device)
 {
-	k_printf("#");
+	k_uint16_t isr;
+	struct k_rtl8139 *rtl8139;
+
+	rtl8139 = device;
+
+	isr = k_rtl8139_inw(rtl8139, K_RTL8139_ISR);
+
+	if (isr & K_RTL8139_ISR_ROK) {
+		k_uint16_t cbr = k_rtl8139_inw(rtl8139, K_RTL8139_CBR);
+		k_printf("%x,", cbr);
+
+		k_rtl8139_outw(rtl8139, K_RTL8139_ISR_ROK, K_RTL8139_ISR);
+	} else
+		k_printf("@");
 
 	return K_ERROR_NONE_IRQ;
 }

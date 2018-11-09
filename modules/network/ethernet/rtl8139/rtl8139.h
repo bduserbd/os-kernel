@@ -11,6 +11,7 @@ enum {
 	K_RTL8139_RBSTART	= 0x30,
 	K_RTL8139_CR		= 0x37,
 	K_RTL8139_CAPR		= 0x38,
+	K_RTL8139_CBR		= 0x3a,
 	K_RTL8139_IMR		= 0x3c,
 	K_RTL8139_ISR		= 0x3e,
 	K_RTL8139_RCR		= 0x44,
@@ -28,6 +29,12 @@ enum {
 enum {
 	K_RTL8139_IMR_ROK	= (1 << 0),
 	K_RTL8139_IMR_TOK	= (1 << 2),
+};
+
+/* RTL8139 Interrupt Status Register. */
+enum {
+	K_RTL8139_ISR_ROK	= (1 << 0),
+	K_RTL8139_ISR_TOK	= (1 << 2),
 };
 
 /* RTL8139 Receive Configuration Register. */
