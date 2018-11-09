@@ -10,9 +10,9 @@ K_MODULE_NAME("RTL8139");
 
 struct k_rtl8139 {
 	unsigned long io;
-	k_uint8_t mac[6];
-
 	unsigned int irq;
+
+	k_uint8_t mac[6];
 
 	k_uint8_t *rx_buffer;
 
@@ -71,15 +71,20 @@ static k_error_t k_rtl8139_irq_handler(unsigned int irq, void *device)
 {
 	k_uint16_t isr;
 	struct k_rtl8139 *rtl8139;
+	static int x = 0;
 
 	rtl8139 = device;
 
 	isr = k_rtl8139_inw(rtl8139, K_RTL8139_ISR);
 
 	if (isr & K_RTL8139_ISR_ROK) {
-		k_uint16_t cbr = k_rtl8139_inw(rtl8139, K_RTL8139_CBR);
-		k_printf("%x,", cbr);
+		if (x == 0) {
+			k_uint16_t cbr = k_rtl8139_inw(rtl8139, K_RTL8139_CBR);
+			for (int i = 0; i < cbr; i++)
+				k_printf("%x ", rtl8139->rx_buffer[i]);
+		}
 
+		x++;
 		k_rtl8139_outw(rtl8139, K_RTL8139_ISR_ROK, K_RTL8139_ISR);
 	} else
 		k_printf("@");
@@ -90,7 +95,6 @@ static k_error_t k_rtl8139_irq_handler(unsigned int irq, void *device)
 static k_error_t k_rtl8139_init(struct k_rtl8139 *rtl8139)
 {
 	int i;
-	k_error_t error;
 
 	k_rtl8139_outb(rtl8139, 0x0, K_RTL8139_CONFIG1);
 
@@ -116,11 +120,6 @@ static k_error_t k_rtl8139_init(struct k_rtl8139 *rtl8139)
 				K_RTL8139_RCR_AM | K_RTL8139_RCR_AB |
 				K_RTL8139_RCR_WRAP |K_RTL8139_RCR_RBLEN_8KB_16BYTES,
 				K_RTL8139_RCR);
-
-	error = k_irq_request(rtl8139->irq, k_rtl8139_irq_handler, K_IRQ_FLAGS_SHARED,
-			rtl8139);
-	if (error)
-		return error;
 
 	k_rtl8139_outb(rtl8139, K_RTL8139_CR_TE | K_RTL8139_CR_RE, K_RTL8139_CR);
 
@@ -160,12 +159,31 @@ static k_error_t k_rtl8139_pci_init(struct k_pci_index index)
 	if (error)
 		return error;
 
+	k_rtl8139_add(rtl8139);
+
+	error = k_irq_request(rtl8139->irq, k_rtl8139_irq_handler, K_IRQ_FLAGS_SHARED,
+			rtl8139);
+	if (error)
+		return error;
+
 	return K_ERROR_NONE;
 }
 
 K_MODULE_INIT()
 {
+	struct k_rtl8139 *rtl8139;
+
 	k_pci_iterate_devices(k_rtl8139_pci_init);
+
+	for (rtl8139 = k_rtl8139_list; rtl8139; rtl8139 = rtl8139->next) {
+		struct k_network_card *card = k_malloc(sizeof(struct k_network_card));
+		if (!card)
+			return;
+
+		card->data = rtl8139;
+
+		k_network_card_register(card);
+	}
 }
 
 K_MODULE_UNINIT()

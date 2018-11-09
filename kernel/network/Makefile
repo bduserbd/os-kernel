@@ -1,9 +1,13 @@
-OBJS += fb.o
-OBJS += shell.o font.o
+OBJS += network.o
 
 CFLAGS = -I ../
 
 .PHONY: all
-all:
+all: compile dirs
+
+compile:
 	$(V)$(MAKE) $(BUILD) TARGETS="$(OBJS)" CFLAGS="$(CFLAGS)"
+
+dirs:
+	$(V)$(MAKE) -C ipv4/
 
