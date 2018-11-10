@@ -12,6 +12,8 @@ struct k_network_card_operations {
 };
 
 struct k_network_card {
+	k_uint8_t hw_address[6];
+
 	struct k_network_card_operations *ops;
 
 	void *data;

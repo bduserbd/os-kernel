@@ -2,6 +2,7 @@
 #define K_ETHERNET_H
 
 #include "kernel/include/types.h"
+#include "kernel/include/network/buffer.h"
 
 #define K_MAC_LENGTH	6
 
@@ -13,6 +14,12 @@ struct k_ethernet_header {
 	__u8	mac_src[K_MAC_LENGTH];
 	__u16	protocol;
 } __attribute__((packed));
+
+void k_ethernet_build_packet(struct k_network_buffer *, k_uint16_t,
+		k_uint8_t [K_MAC_LENGTH], k_uint8_t [K_MAC_LENGTH]);
+
+void k_ethernet_build_broadcast_packet(struct k_network_buffer *, k_uint16_t,
+		k_uint8_t [K_MAC_LENGTH]);
 
 #endif
 

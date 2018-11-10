@@ -2,6 +2,7 @@
 #include "kernel/include/modules/export.h"
 #include "kernel/include/pci/pci.h"
 #include "kernel/include/network/card.h"
+#include "kernel/include/string.h"
 #include "kernel/include/mm/mm.h"
 #include "kernel/include/irq/irq.h"
 #include "kernel/include/video/print.h"
@@ -217,6 +218,7 @@ K_MODULE_INIT()
 		if (!card)
 			return;
 
+		k_memcpy(card->hw_address, rtl8139->mac, 6);
 		card->ops = &k_rtl8139_ops;
 		card->data = rtl8139;
 

@@ -61,5 +61,66 @@ typedef s32	k_ssize_t;
 #define K_KB(n)	(n << 10)
 #define K_MB(n)	(n << 20)
 
+static inline k_uint16_t swap16(k_uint16_t v)
+{
+	return ((v & 0xff) << 8) | (v >> 8);
+}
+
+static inline k_uint32_t swap32(k_uint32_t v)
+{
+	return  ((v & 0xff) << 24)		|
+		(((v >> 8) & 0xff) << 16)	|
+		(((v >> 16) & 0xff) << 8)	|
+		(v >> 24);
+}
+
+static inline k_uint64_t swap64(k_uint64_t v)
+{
+	return  ((v & 0xff) << 56)		|
+		(((v >> 8) & 0xff) << 48)	|
+		(((v >> 16) & 0xff) << 40)	|
+		(((v >> 24) & 0xff) << 32)	|
+		(((v >> 32) & 0xff) << 24)	|
+		(((v >> 40) & 0xff) << 16)	|
+		(((v >> 48) & 0xff) << 8)	|
+		((v >> 58) & 0xff);
+}
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+
+#define k_le16_to_cpu(v)	(v)
+#define k_le32_to_cpu(v)	(v)
+#define k_le64_to_cpu(v)	(v)
+#define k_be16_to_cpu(v)	swap16(v)
+#define k_be32_to_cpu(v)	swap32(v)
+#define k_be64_to_cpu(v)	swap64(v)
+
+#define k_cpu_to_le16(v)	(v)
+#define k_cpu_to_le32(v)	(v)
+#define k_cpu_to_le64(v)	(v)
+#define k_cpu_to_be16(v)	swap16(v)
+#define k_cpu_to_be32(v)	swap32(v)
+#define k_cpu_to_be64(v)	swap64(v)
+
+#endif
+
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+
+#define k_le16_to_cpu(v)	swap16(v)
+#define k_le32_to_cpu(v)	swap32(v)
+#define k_le64_to_cpu(v)	swap64(v)
+#define k_be16_to_cpu(v)	(v)
+#define k_be32_to_cpu(v)	(v)
+#define k_be64_to_cpu(v)	(v)
+
+#define k_cpu_to_le16(v)	swap16(v)
+#define k_cpu_to_le32(v)	swap32(v)
+#define k_cpu_to_le64(v)	swap64(v)
+#define k_cpu_to_be16(v)	(v)
+#define k_cpu_to_be32(v)	(v)
+#define k_cpu_to_be64(v)	(v)
+
+#endif
+
 #endif
 

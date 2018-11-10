@@ -22,16 +22,17 @@ void k_ipv4_init(void)
 
 	buffer->end = buffer->start + sizeof(struct k_ethernet_header);
 
-	k_memset(buffer->start, 'A', sizeof(struct k_ethernet_header));
+	for (int n = 0; n < 2; n++) {
+		for (int j = 0; j < 10; j++)
+			for (int i = 0; i < 100000000; i++)
+				asm volatile("nop");
 
-	for (int j = 0; j < 10; j++)
-		for (int i = 0; i < 100000000; i++)
-			asm volatile("nop");
+		for (card = k_network_cards; card; card = card->next) {
+			k_ethernet_build_broadcast_packet(buffer, K_ETHERNET_PROTOCOL_IP,
+					card->hw_address);
 
-	k_printf("Here");
-
-	for (card = k_network_cards; card; card = card->next) {
-		card->ops->transmit(card, buffer);
+			card->ops->transmit(card, buffer);
+		}
 	}
 }
 
