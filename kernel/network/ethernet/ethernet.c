@@ -11,7 +11,9 @@ void k_ethernet_build_packet(struct k_network_buffer *buffer, k_uint16_t protoco
 {
 	struct k_ethernet_header *ethernet;
 
-	ethernet = (void *)buffer->start;
+	k_network_buffer_adjust(buffer, sizeof(struct k_ethernet_header));
+
+	ethernet = (void *)buffer->packet_start;
 
 	k_memcpy(ethernet->mac_src, mac_src, K_MAC_LENGTH);
 	k_memcpy(ethernet->mac_dest, mac_dest, K_MAC_LENGTH);

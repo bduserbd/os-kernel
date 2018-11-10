@@ -16,11 +16,14 @@ void k_ipv4_init(void)
 	if (!buffer)
 		return;
 
-	buffer->start = k_malloc(sizeof(struct k_ethernet_header));
+#define SIZE	(sizeof(struct k_ethernet_header) + sizeof(struct k_ipv4_header))
+
+	buffer->start = k_malloc(SIZE);
 	if (!buffer->start)
 		return;
 
-	buffer->end = buffer->start + sizeof(struct k_ethernet_header);
+	buffer->end = buffer->start + SIZE;
+	buffer->packet_start = buffer->packet_end = buffer->end;
 
 	for (int n = 0; n < 2; n++) {
 		for (int j = 0; j < 10; j++)
@@ -28,8 +31,7 @@ void k_ipv4_init(void)
 				asm volatile("nop");
 
 		for (card = k_network_cards; card; card = card->next) {
-			k_ethernet_build_broadcast_packet(buffer, K_ETHERNET_PROTOCOL_IP,
-					card->hw_address);
+			k_ipv4_build_packet(buffer, card->hw_address);
 
 			card->ops->transmit(card, buffer);
 		}

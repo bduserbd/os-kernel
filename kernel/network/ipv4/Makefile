@@ -1,4 +1,5 @@
 OBJS += init.o
+OBJS += ipv4.o
 
 CFLAGS = -I ../../
 
