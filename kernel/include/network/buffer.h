@@ -4,8 +4,7 @@
 #include "kernel/include/types.h"
 
 struct k_network_buffer {
-	unsigned int length;
-	k_uint8_t *buf;
+	k_uint8_t *start, *end;
 
 	struct k_network_buffer *next, *prev;
 };

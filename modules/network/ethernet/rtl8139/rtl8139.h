@@ -26,6 +26,13 @@ enum {
 	K_RTL8139_CONFIG1	= 0x52,
 };
 
+/* RTL8139 Transmit Status Register. */
+enum {
+	K_RTL8139_TSD_OWN	= (0 << 13),
+};
+
+#define K_RTL8139_TSD_SIZE(size)	((size) & 0x1fff)
+
 /* RTL8139 Command Register. */
 enum {
 	K_RTL8139_CR_TE		= (1 << 2),

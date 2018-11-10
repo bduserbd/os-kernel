@@ -3,12 +3,17 @@
 
 #include "kernel/include/types.h"
 #include "kernel/include/error.h"
+#include "kernel/include/network/buffer.h"
+
+struct k_network_card;
 
 struct k_network_card_operations {
-	k_error_t (*transmit)();
+	k_error_t (*transmit)(struct k_network_card *, struct k_network_buffer *);
 };
 
 struct k_network_card {
+	struct k_network_card_operations *ops;
+
 	void *data;
 
 	struct k_network_card *next;

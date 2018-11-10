@@ -28,7 +28,7 @@ void k_x86_init(void *smbios, void *rsdp,
 	if (error)
 		return;
 
-	k_cpu_print_info(&k_boot_cpu);
+	//k_cpu_print_info(&k_boot_cpu);
 
 #ifdef K_CONFIG_BIOS
 	k_mp_get_info();
@@ -64,10 +64,12 @@ void k_x86_init(void *smbios, void *rsdp,
 	k_loader_init();
 	k_initramfs_get_info(initramfs_start, initramfs_length);
 
+#if 0
 	k_irq_mask(0);
 	for (int i = 0; i < 100000000; i++)
 		asm volatile("nop");
 	k_irq_unmask(0);
+#endif
 
 	k_init();
 }

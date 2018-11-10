@@ -6,7 +6,7 @@
 #define K_BOOTP_REQUEST	1
 #define K_BOOTP_REPLY	2
 
-static k_uint8_t k_dhcp_magic_cookie[4] = { 99, 130, 83, 99 };
+//static k_uint8_t k_dhcp_magic_cookie[4] = { 99, 130, 83, 99 };
 
 #define K_OPTION_PAD		0
 #define K_OPTION_DHCP_MSG_TYPE	53

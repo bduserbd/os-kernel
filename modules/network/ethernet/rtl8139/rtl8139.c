@@ -14,6 +14,8 @@ struct k_rtl8139 {
 
 	k_uint8_t mac[6];
 
+	int transmit;
+
 	k_uint8_t *rx_buffer;
 
 	struct k_rtl8139 *next;
@@ -36,6 +38,11 @@ static inline k_uint16_t k_rtl8139_inw(struct k_rtl8139 *rtl8139, int reg)
 	return k_inw(rtl8139->io + reg);
 }
 
+static inline k_uint32_t k_rtl8139_inl(struct k_rtl8139 *rtl8139, int reg)
+{
+	return k_inl(rtl8139->io + reg);
+}
+
 static inline void k_rtl8139_outb(struct k_rtl8139 *rtl8139, k_uint8_t data, int reg)
 {
 	k_outb(data, rtl8139->io + reg);
@@ -49,6 +56,26 @@ static inline void k_rtl8139_outw(struct k_rtl8139 *rtl8139, k_uint16_t data, in
 static inline void k_rtl8139_outl(struct k_rtl8139 *rtl8139, k_uint32_t data, int reg)
 {
 	k_outl(data, rtl8139->io + reg);
+}
+
+static k_error_t k_rtl8139_transmit(struct k_network_card *card, struct k_network_buffer *buffer)
+{
+	int offset;
+	struct k_rtl8139 *rtl8139;
+
+	rtl8139 = card->data;
+
+	offset = rtl8139->transmit << 2;
+
+	k_rtl8139_outl(rtl8139, k_v2p_l((unsigned long)buffer->start), K_RTL8139_TSAD0 + offset);
+
+	k_rtl8139_outl(rtl8139, K_RTL8139_TSD_SIZE(buffer->end - buffer->start) |
+				K_RTL8139_TSD_OWN, K_RTL8139_TSD0 + offset);
+
+	rtl8139->transmit++;
+	rtl8139->transmit &= 0x3;
+
+	return K_ERROR_NONE;
 }
 
 static k_error_t k_rtl8139_is_supported(struct k_pci_index index)
@@ -86,8 +113,13 @@ static k_error_t k_rtl8139_irq_handler(unsigned int irq, void *device)
 
 		x++;
 		k_rtl8139_outw(rtl8139, K_RTL8139_ISR_ROK, K_RTL8139_ISR);
-	} else
+
+	}
+
+	if (isr & K_RTL8139_ISR_TOK) {
 		k_printf("@");
+		k_rtl8139_outw(rtl8139, K_RTL8139_ISR_TOK, K_RTL8139_ISR);
+	}
 
 	return K_ERROR_NONE_IRQ;
 }
@@ -107,11 +139,12 @@ static k_error_t k_rtl8139_init(struct k_rtl8139 *rtl8139)
 	}
 	k_printf("\n");
 
+	rtl8139->transmit = 0;
+
 	rtl8139->rx_buffer = k_malloc(K_KB(8) + 16 + 1500);
 	if (!rtl8139->rx_buffer)
 		return K_ERROR_MEMORY_ALLOCATION_FAILED;
 
-	k_printf("%x:%x", rtl8139->rx_buffer, k_v2p(rtl8139->rx_buffer));
 	k_rtl8139_outl(rtl8139, k_v2p_l((unsigned long)rtl8139->rx_buffer), K_RTL8139_RBSTART);
 
 	k_rtl8139_outw(rtl8139, K_RTL8139_IMR_ROK | K_RTL8139_IMR_TOK, K_RTL8139_IMR);
@@ -169,6 +202,10 @@ static k_error_t k_rtl8139_pci_init(struct k_pci_index index)
 	return K_ERROR_NONE;
 }
 
+static struct k_network_card_operations k_rtl8139_ops = {
+	.transmit = k_rtl8139_transmit,
+};
+
 K_MODULE_INIT()
 {
 	struct k_rtl8139 *rtl8139;
@@ -180,6 +217,7 @@ K_MODULE_INIT()
 		if (!card)
 			return;
 
+		card->ops = &k_rtl8139_ops;
 		card->data = rtl8139;
 
 		k_network_card_register(card);
