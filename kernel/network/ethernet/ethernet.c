@@ -2,7 +2,7 @@
 #include "include/network/protocol/ethernet.h"
 #include "include/string.h"
 
-static k_uint8_t k_ethernet_broadcast_address[K_MAC_LENGTH] = {
+k_uint8_t k_ethernet_broadcast_address[K_MAC_LENGTH] = {
 	[0 ... K_MAC_LENGTH - 1] = 0xff,
 };
 

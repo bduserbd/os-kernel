@@ -1,14 +1,14 @@
 #include "include/network/network.h"
-#include "include/network/protocol/ipv4.h"
-#include "include/network/protocol/ethernet.h"
+#include "include/network/protocol/address-cache.h"
 
 static k_uint16_t k_ipv4_checksum(struct k_ipv4_header *ipv4)
 {
 	return 0;
 }
 
-void k_ipv4_build_packet(struct k_network_buffer *buffer, k_uint8_t mac[K_MAC_LENGTH])
+void k_ipv4_build_packet(struct k_network_buffer *buffer, k_ipv4_t ip)
 {
+	k_uint8_t mac[K_MAC_LENGTH];
 	struct k_ipv4_header *ipv4;
 
 	k_network_buffer_adjust(buffer, sizeof(struct k_ipv4_header));
@@ -24,10 +24,12 @@ void k_ipv4_build_packet(struct k_network_buffer *buffer, k_uint8_t mac[K_MAC_LE
 	ipv4->ttl = K_IPV4_TTL;
 	ipv4->protocol = K_IPV4_PROTOCOL_UDP;
 	ipv4->checksum = 0;
-	ipv4->src_ip = k_cpu_to_be32(0x0);
-	ipv4->src_ip = k_cpu_to_be32(0xffffffff);
+	ipv4->src_ip = K_IPV4(0, 0, 0, 0);
+	ipv4->dest_ip = ip;
 
 	ipv4->checksum = k_ipv4_checksum(ipv4);
+
+	k_address_cache_resolve(buffer->card, ipv4->src_ip, mac);
 
 	k_ethernet_build_broadcast_packet(buffer, K_ETHERNET_PROTOCOL_IP, mac);
 }

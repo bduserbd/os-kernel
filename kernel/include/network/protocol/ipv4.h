@@ -39,7 +39,14 @@ struct k_ipv4_header {
 	__u32	dest_ip;
 } __attribute__((packed));
 
-void k_ipv4_build_packet(struct k_network_buffer *, k_uint8_t [6]);
+#define K_IPV4(a, b, c, d)	\
+	k_cpu_to_be32((a << 24) | (b << 16) | (c << 8) | (d << 0))
+
+#define K_IPV4_BROADCAST	K_IPV4(0xff, 0xff, 0xff, 0xff)
+
+typedef k_uint32_t	k_ipv4_t;
+
+void k_ipv4_build_packet(struct k_network_buffer *, k_ipv4_t);
 
 #endif
 

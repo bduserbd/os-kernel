@@ -3,10 +3,14 @@
 
 #include "kernel/include/types.h"
 
+struct k_network_card;
+
 struct k_network_buffer {
 	k_uint8_t *start, *end;
 
 	k_uint8_t *packet_start, *packet_end;
+
+	struct k_network_card *card;
 
 	struct k_network_buffer *next, *prev;
 };

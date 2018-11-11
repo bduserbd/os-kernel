@@ -1,5 +1,6 @@
 #include "include/network/network.h"
 #include "include/network/protocol/ethernet.h"
+#include "include/network/protocol/address-cache.h"
 #include "include/network/protocol/ipv4.h"
 #include "include/network/protocol/dhcp.h"
 #include "include/network/protocol/udp.h"
@@ -16,7 +17,16 @@ void k_ipv4_init(void)
 	if (!buffer)
 		return;
 
-#define SIZE	(sizeof(struct k_ethernet_header) + sizeof(struct k_ipv4_header))
+#define SIZE					\
+	(sizeof(struct k_ethernet_header) +	\
+	sizeof(struct k_ipv4_header))
+
+//	sizeof(struct k_udp_header))
+
+#define SLEEP							\
+		for (int j = 0; j < 10; j++)			\
+			for (int i = 0; i < 100000000; i++)	\
+				asm volatile("nop");
 
 	buffer->start = k_malloc(SIZE);
 	if (!buffer->start)
@@ -25,14 +35,17 @@ void k_ipv4_init(void)
 	buffer->end = buffer->start + SIZE;
 	buffer->packet_start = buffer->packet_end = buffer->end;
 
-	for (int n = 0; n < 2; n++) {
-		for (int j = 0; j < 10; j++)
-			for (int i = 0; i < 100000000; i++)
-				asm volatile("nop");
+	for (card = k_network_cards; card; card = card->next) {
+		k_address_cache_create(card);
 
-		for (card = k_network_cards; card; card = card->next) {
-			k_ipv4_build_packet(buffer, card->hw_address);
+		k_address_cache_new_entry(card, K_IPV4(0, 0, 0, 0), card->hw_address);
+		k_address_cache_new_entry(card, K_IPV4_BROADCAST, k_ethernet_broadcast_address);
 
+		buffer->card = card;
+		k_ipv4_build_packet(buffer, K_IPV4_BROADCAST);
+
+		SLEEP
+		for (int i = 0; i < 7; i++) {
 			card->ops->transmit(card, buffer);
 		}
 	}
