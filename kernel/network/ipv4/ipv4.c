@@ -1,4 +1,3 @@
-#include "include/network/network.h"
 #include "include/network/protocol/address-cache.h"
 
 static k_uint16_t k_ipv4_checksum(struct k_ipv4_header *ipv4)

@@ -19,9 +19,8 @@ void k_ipv4_init(void)
 
 #define SIZE					\
 	(sizeof(struct k_ethernet_header) +	\
-	sizeof(struct k_ipv4_header))
-
-//	sizeof(struct k_udp_header))
+	sizeof(struct k_ipv4_header) +		\
+	sizeof(struct k_udp_header))
 
 #define SLEEP							\
 		for (int j = 0; j < 10; j++)			\
@@ -42,7 +41,8 @@ void k_ipv4_init(void)
 		k_address_cache_new_entry(card, K_IPV4_BROADCAST, k_ethernet_broadcast_address);
 
 		buffer->card = card;
-		k_ipv4_build_packet(buffer, K_IPV4_BROADCAST);
+		k_udp_build_packet(buffer, K_PORT_DHCP_CLIENT, K_PORT_DHCP_SERVER,
+				K_IPV4_BROADCAST);
 
 		SLEEP
 		for (int i = 0; i < 7; i++) {
