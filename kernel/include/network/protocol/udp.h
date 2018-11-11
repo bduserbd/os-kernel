@@ -12,7 +12,8 @@ struct k_udp_header {
 	__u16	checksum;
 } __attribute__((packed));
 
-void k_udp_build_packet(struct k_network_buffer *, k_port_t, k_port_t, k_ipv4_t);
+void k_udp_build_packet(struct k_network_buffer *, k_uint16_t, k_port_t, k_port_t,
+		k_ipv4_t);
 
 #endif
 

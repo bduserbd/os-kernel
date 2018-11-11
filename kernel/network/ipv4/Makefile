@@ -1,7 +1,8 @@
 OBJS += init.o
+OBJS += address-cache.o
 OBJS += ipv4.o
 OBJS += udp.o
-OBJS += address-cache.o
+OBJS += dhcp.o
 
 CFLAGS = -I ../../
 

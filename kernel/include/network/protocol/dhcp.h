@@ -1,12 +1,16 @@
 #ifndef K_DHCP_H
 #define K_DHCP_H
 
-#include "kernel/include/types.h"
+#include "kernel/include/network/network.h"
+#include "kernel/include/network/protocol/udp.h"
 
 #define K_BOOTP_REQUEST	1
 #define K_BOOTP_REPLY	2
 
-//static k_uint8_t k_dhcp_magic_cookie[4] = { 99, 130, 83, 99 };
+#define K_HARDWARE_TYPE_ETHERNET	1
+
+#define K_DHCP_FLAGS_BROADCAST	(1 << 15)
+#define K_DHCP_FLAGS_UNICAST	(0 << 15)
 
 #define K_OPTION_PAD		0
 #define K_OPTION_DHCP_MSG_TYPE	53
@@ -37,6 +41,8 @@ struct k_dhcp_header {
 	__u8	boot_file[128];
 	__u8	options[0];
 } __attribute__((packed));
+
+void k_dhcp_build_packet(struct k_network_buffer *, int);
 
 #endif
 
