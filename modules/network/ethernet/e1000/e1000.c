@@ -17,11 +17,31 @@ static const struct {
 struct k_e1000 {
 	unsigned long dma, virtual;
 	unsigned int irq;
+
+	k_uint8_t mac[6];
+
+	struct k_e1000 *next;
 };
+
+static inline void k_e1000_set_reg(struct k_e1000 *e1000, int reg, k_uint32_t data)
+{
+	*(volatile k_uint32_t *)(e1000->virtual + reg) = data;
+}
 
 static inline k_uint32_t k_e1000_get_reg(struct k_e1000 *e1000, int reg)
 {
 	return *(volatile k_uint32_t *)(e1000->virtual + reg);
+}
+
+static k_uint16_t k_e1000_eeprom_get_reg(struct k_e1000 *e1000, int reg)
+{
+	k_uint32_t eerd;
+
+	k_e1000_set_reg(e1000, K_E1000_EERD, K_E1000_EERD_START | K_E1000_EERD_ADDR(reg));
+
+	while (!((eerd = k_e1000_get_reg(e1000, K_E1000_EERD)) & K_E1000_EERD_DONE)) ;
+
+	return K_E1000_EERD_DATA(eerd);
 }
 
 static k_error_t k_e1000_is_supported(struct k_pci_index index)
@@ -49,12 +69,31 @@ static k_error_t k_e1000_is_supported(struct k_pci_index index)
 		return K_ERROR_NOT_FOUND;
 }
 
+static int k_e1000_eeprom_valid(struct k_e1000 *e1000)
+{
+	return K_E1000_EEPROM_INIT_CONTROL1_SIGNATURE_VALID(k_e1000_eeprom_get_reg(e1000,
+			K_E1000_EEPROM_INIT_CONTROL1));
+}
+
+static void k_e1000_get_mac_address(struct k_e1000 *e1000)
+{
+	*(k_uint16_t *)&e1000->mac[0] = (k_e1000_eeprom_get_reg(e1000, K_E1000_ETHERNET_ADDRESS0));
+	*(k_uint16_t *)&e1000->mac[2] = (k_e1000_eeprom_get_reg(e1000, K_E1000_ETHERNET_ADDRESS1));
+	*(k_uint16_t *)&e1000->mac[4] = (k_e1000_eeprom_get_reg(e1000, K_E1000_ETHERNET_ADDRESS2));
+
+	for (int i = 0; i < 6; i++)
+		k_printf("%x", e1000->mac[i]);
+}
+
 static k_error_t k_e1000_init(struct k_e1000 *e1000)
 {
 	k_memory_zone_dma_add(e1000->dma >> 12, 1);
 	e1000->virtual = k_p2v_l(e1000->dma);
 
-	k_printf("%x\n", k_e1000_get_reg(e1000, K_E1000_CTRL));
+	if (!k_e1000_eeprom_valid(e1000))
+		return K_ERROR_BAD_CHECKSUM;
+
+	k_e1000_get_mac_address(e1000);
 
 	return K_ERROR_NONE;
 }
