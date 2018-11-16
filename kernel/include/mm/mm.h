@@ -14,5 +14,7 @@ unsigned long k_p2v_l(unsigned long);
 void *k_v2p(const void *);
 unsigned long k_v2p_l(unsigned long);
 
+void k_memory_zone_dma_add(unsigned long, unsigned long);
+
 #endif
 

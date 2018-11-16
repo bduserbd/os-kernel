@@ -92,6 +92,7 @@ void k_memory_zone_dma_add(unsigned long start_frame, unsigned long total_frames
 
 	k_memory_zone_register(zone);
 }
+K_EXPORT_FUNC(k_memory_zone_dma_add);
 
 void k_memory_zone_init(struct k_frame *k_normal_frames, unsigned long start_frame,
 		unsigned long total_frames)

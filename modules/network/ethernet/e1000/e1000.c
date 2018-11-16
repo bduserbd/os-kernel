@@ -1,6 +1,8 @@
+#include "e1000.h"
 #include "kernel/include/modules/export.h"
 #include "kernel/include/pci/pci.h"
 #include "kernel/include/video/print.h"
+#include "kernel/include/mm/mm.h"
 
 K_MODULE_NAME("E1000");
 
@@ -11,6 +13,16 @@ static const struct {
 	{ 0x8086, 0x100e },
 	{ 0 },
 };
+
+struct k_e1000 {
+	unsigned long dma, virtual;
+	unsigned int irq;
+};
+
+static inline k_uint32_t k_e1000_get_reg(struct k_e1000 *e1000, int reg)
+{
+	return *(volatile k_uint32_t *)(e1000->virtual + reg);
+}
 
 static k_error_t k_e1000_is_supported(struct k_pci_index index)
 {
@@ -37,10 +49,22 @@ static k_error_t k_e1000_is_supported(struct k_pci_index index)
 		return K_ERROR_NOT_FOUND;
 }
 
+static k_error_t k_e1000_init(struct k_e1000 *e1000)
+{
+	k_memory_zone_dma_add(e1000->dma >> 12, 1);
+	e1000->virtual = k_p2v_l(e1000->dma);
+
+	k_printf("%x\n", k_e1000_get_reg(e1000, K_E1000_CTRL));
+
+	return K_ERROR_NONE;
+}
+
 static k_error_t k_e1000_pci_init(struct k_pci_index index)
 {
-	//k_uint8_t irq;
+	k_uint8_t irq;
 	k_error_t error;
+	k_uint32_t bar0;
+	struct k_e1000 *e1000;
 
 	error = k_pci_check_device_class(index, K_PCI_BASE_CLASS_NETWORK,
 			K_PCI_SUBCLASS_NETWORK_ETHERNET, -1);
@@ -51,8 +75,22 @@ static k_error_t k_e1000_pci_init(struct k_pci_index index)
 	if (error)
 		return error;
 
-	//irq = k_pci_read_config_byte(index.bus, index.dev, index.func, K_PCI_CONFIG_REG_IRQ);
-	//k_printf("%x\n", irq);
+	bar0 = k_pci_read_config_long(index.bus, index.dev, index.func, K_PCI_CONFIG_REG_BAR0);
+	if (bar0 & ((1 << 0) | (2 << 1)))
+		return K_ERROR_INVALID_DEVICE;
+
+	irq = k_pci_read_config_byte(index.bus, index.dev, index.func, K_PCI_CONFIG_REG_IRQ);
+
+	e1000 = k_malloc(sizeof(struct k_e1000));
+	if (!e1000)
+		return K_ERROR_MEMORY_ALLOCATION_FAILED;
+
+	e1000->dma = bar0 & ~0xf;
+	e1000->irq = irq;
+
+	error = k_e1000_init(e1000);
+	if (error)
+		return error;
 
 	return K_ERROR_NONE;
 }
