@@ -1,5 +1,6 @@
 #include "include/mm/buddy.h"
 #include "include/string.h"
+#include "include/modules/export-symbol.h"
 
 static struct k_buddy_node *k_group = NULL;
 static struct k_buddy_node *k_node = NULL;
@@ -33,7 +34,7 @@ static k_uint8_t *k_buddy_node_to_address(struct k_buddy_node *node)
 	return k_heap + ((node - k_node) << K_BUDDY_MIN_BLOCK_LOG2);
 }
 
-static struct k_buddy_node *k_buddy_address_to_node(void *ptr)
+static struct k_buddy_node *k_buddy_address_to_node(const void *ptr)
 {
 	unsigned long a;
 
@@ -49,7 +50,7 @@ static struct k_buddy_node *k_buddy_address_to_node(void *ptr)
 	return &k_node[(a - (unsigned long)k_heap) >> K_BUDDY_MIN_BLOCK_LOG2];
 }
 
-void k_buddy_free(void *ptr)
+void k_buddy_free(const void *ptr)
 {
 	k_uint8_t order;
 	struct k_buddy_node *a, *b;
@@ -88,6 +89,7 @@ void k_buddy_free(void *ptr)
 	a->prev = &k_group[order];
 	k_group[order].next = a;
 }
+K_EXPORT_FUNC(k_buddy_free);
 
 static void *k_buddy_alloc_unmapped(k_size_t size)
 {
@@ -147,6 +149,7 @@ void *k_buddy_alloc(k_size_t size)
 
 	return ptr;
 }
+K_EXPORT_FUNC(k_buddy_alloc);
 
 void k_buddy_init(k_uint32_t heap)
 {
