@@ -111,10 +111,13 @@ static k_error_t k_e1000_transmit(struct k_network_card *card, struct k_network_
 	tdesc->buffer = k_v2p_l((unsigned long)buffer->start);
 	tdesc->length = buffer->end - buffer->start;
 	tdesc->cmd = K_E1000_TDESC_CMD_EOP | K_E1000_TDESC_CMD_IFCS | K_E1000_TDESC_CMD_RS;
+	tdesc->status = 0;
 
 	e1000->transmit_index = (e1000->transmit_index + 1) % K_E1000_TX_RING_ENTRIES;
 
 	k_e1000_set_reg(e1000, K_E1000_TDT, e1000->transmit_index);
+
+	k_printf("Here");
 
 	return K_ERROR_NONE;
 }
@@ -143,11 +146,15 @@ static k_error_t k_e1000_irq_handler(unsigned int irq, void *device)
 
 	icr = k_e1000_get_reg(e1000, K_E1000_ICR);
 
+	if (icr & K_E1000_ICR_LCS)
+		return K_ERROR_NONE_IRQ;
+
 	if (icr & K_E1000_ICR_RXT0) {
 		error = k_e1000_handle_receive(e1000);
 		if (error)
 			return error;
-	}
+	} else
+		k_printf("ICR:%x", icr);
 
 	return K_ERROR_NONE_IRQ;
 }
@@ -187,7 +194,7 @@ static k_error_t k_e1000_receive_init(struct k_e1000 *e1000)
 	k_e1000_set_reg(e1000, K_E1000_RDH, 0);
 	k_e1000_set_reg(e1000, K_E1000_RDT, K_E1000_RX_RING_ENTRIES - 1);
 
-	k_e1000_set_reg(e1000, K_E1000_RCTL, K_E1000_RCTL_EN | K_E1000_RCTL_MPE |
+	k_e1000_set_reg(e1000, K_E1000_RCTL, K_E1000_RCTL_MPE |
 						K_E1000_RCTL_LBM | K_E1000_RCTL_RDMTS_1_8 |
 						K_E1000_RCTL_BAM | K_E1000_RCTL_BSIZE_4096);
 
@@ -226,10 +233,11 @@ static k_error_t k_e1000_set_link(struct k_e1000 *e1000)
 {
 	k_e1000_set_reg(e1000, K_E1000_CTRL, K_E1000_CTRL_ASDE | K_E1000_CTRL_SLU);
 
-	k_e1000_set_reg(e1000, K_E1000_IMS, K_E1000_IMS_LSC | K_E1000_IMS_RXSEQ |
-						K_E1000_IMS_RXDMT0 | K_E1000_IMS_RXO |
-						K_E1000_IMS_RXT0 | K_E1000_IMS_MDAC |
-						K_E1000_IMS_PHYINT | K_E1000_IMS_GPI);
+	k_e1000_set_reg(e1000, K_E1000_IMS, K_E1000_IMS_TXDW | K_E1000_IMS_LSC |
+						K_E1000_IMS_RXSEQ | K_E1000_IMS_RXDMT0 |
+						K_E1000_IMS_RXO | K_E1000_IMS_RXT0 |
+						K_E1000_IMS_MDAC | K_E1000_IMS_PHYINT |
+						K_E1000_IMS_GPI);
 
 	k_e1000_get_reg(e1000, K_E1000_ICR);
 
@@ -260,6 +268,8 @@ static k_error_t k_e1000_init(struct k_e1000 *e1000)
 	error = k_e1000_set_link(e1000);
 	if (error)
 		return error;
+
+	k_e1000_set_reg(e1000, K_E1000_RCTL, K_E1000_RCTL_EN);
 
 	for (int i = 0; i < 6; i++)
 		k_printf("%x", e1000->mac[i]);

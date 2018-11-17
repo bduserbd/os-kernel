@@ -10,8 +10,21 @@ static void k_dhcp_build_options(struct k_dhcp_header *dhcp, int options_length)
 
 	dhcp->options[4] = 53;
 	dhcp->options[5] = 1;
-	dhcp->options[6] = 3;
-	dhcp->options[7] = 0xff;
+	dhcp->options[6] = 1;
+
+	dhcp->options[7] = 12;
+	dhcp->options[8] = 1;
+	dhcp->options[9] = 'b';
+
+	dhcp->options[10] = 55;
+	dhcp->options[11] = 5;
+	dhcp->options[12] = 1;
+	dhcp->options[13] = 28;
+	dhcp->options[14] = 3;
+	dhcp->options[15] = 15;
+	dhcp->options[16] = 12;
+
+	dhcp->options[17] = 0xff;
 }
 
 void k_dhcp_build_packet(struct k_network_buffer *buffer, int options_length)

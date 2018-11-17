@@ -44,6 +44,8 @@ enum {
 
 /* E1000 Interrupt Mask Set/Read Register. */
 enum {
+	K_E1000_IMS_TXDW	= (1 << 0),
+	K_E1000_IMS_TXQE	= (1 << 1),
 	K_E1000_IMS_LSC		= (1 << 2),
 	K_E1000_IMS_RXSEQ	= (1 << 3),
 	K_E1000_IMS_RXDMT0	= (1 << 4),
