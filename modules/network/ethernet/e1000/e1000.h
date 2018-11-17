@@ -12,16 +12,22 @@ enum {
 	K_E1000_IMS	= 0xd0,
 	K_E1000_IMC	= 0xd8,
 	K_E1000_RCTL	= 0x100,
+	K_E1000_TCTL	= 0x400,
 	K_E1000_RDBAL	= 0x2800,
 	K_E1000_RDBAH	= 0x2804,
 	K_E1000_RDLEN	= 0x2808,
 	K_E1000_RDH	= 0x2810,
 	K_E1000_RDT	= 0x2818,
+	K_E1000_TDBAL	= 0x3800,
+	K_E1000_TDBAH	= 0x3804,
+	K_E1000_TDLEN	= 0x3808,
+	K_E1000_TDH	= 0x3810,
+	K_E1000_TDT	= 0x3818,
 };
 
 /* E1000 Receive Control Register. */
 enum {
-	K_E1000_RCTL_EN			= (1 << 0),
+	K_E1000_RCTL_EN			= (1 << 1),
 	K_E1000_RCTL_UPE		= (1 << 3),
 	K_E1000_RCTL_MPE		= (1 << 4),
 	K_E1000_RCTL_LBM		= (0 << 6),
@@ -39,6 +45,15 @@ enum {
 	K_E1000_RCTL_BSIZE_16384	= (1 << 16) | K_E1000_RCTL_BSEX,
 };
 
+/* E1000 Transmit Control Register. */
+enum {
+	K_E1000_TCTL_EN			= (1 << 1),
+	K_E1000_TCTL_PSP		= (1 << 3),
+	K_E1000_TCTL_CT			= (0xf << 4),
+	K_E1000_TCTL_COLD_HALF_DUPLEX	= (0x200 << 12),
+	K_E1000_TCTL_COLD_FULL_DUPLEX	= (0x40 << 12),
+};
+
 /* E1000 Receive Descriptor. */
 struct k_e1000_rdesc {
 	__u64	buffer;
@@ -54,6 +69,43 @@ enum {
 	K_E1000_RDESC_STATUS_DD		= (1 << 0),
 	K_E1000_RDESC_STATUS_EOP	= (1 << 1),
 };
+
+/* E1000 Transmit Descriptor. */
+struct k_e1000_tdesc {
+	__u64	buffer;
+	__u16	length;
+	__u8	cso;
+	__u8	cmd;
+	__u8	status;
+	__u8	css;
+	__u16	special;
+} __attribute__((packed));
+
+/* E1000 Transmit Descriptor Command. */
+enum {
+	K_E1000_TDESC_CMD_EOP	= (1 << 0),
+};
+
+/* E1000 Transmit Descriptor Status. */
+enum {
+	K_E1000_TDESC_STATUS_DD	= (1 << 0),
+};
+
+/* E1000 TCP/IP Context Descriptor Layout. */
+struct k_e1000_context {
+	__u8	ipcss;
+	__u8	ipcso;
+	__u16	ipcse;
+	__u8	tucss;
+	__u8	tucso;
+	__u16	tucse;
+	__u32	paylen : 20;
+	__u32	dtyp : 4;
+	__u32	tucmd : 8;
+	__u8	status;
+	__u8	hdrlen;
+	__u16	mss;
+} __attribute__((packed));
 
 /* E1000 EEPROM Read Register. */
 enum {

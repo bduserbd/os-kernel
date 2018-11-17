@@ -16,8 +16,12 @@ static const struct {
 };
 
 #define K_E1000_BUFFER_SIZE	0x1000
+
 #define K_E1000_RX_RING_SIZE	0x1000
 #define K_E1000_RX_RING_ENTRIES	(K_E1000_RX_RING_SIZE / sizeof(struct k_e1000_rdesc))
+
+#define K_E1000_TX_RING_SIZE	0x1000
+#define K_E1000_TX_RING_ENTRIES	(K_E1000_TX_RING_SIZE / sizeof(struct k_e1000_tdesc))
 
 struct k_e1000 {
 	unsigned long dma, virtual;
@@ -25,8 +29,9 @@ struct k_e1000 {
 
 	k_uint8_t mac[6];
 
-	void **rx_buffer;
 	volatile struct k_e1000_rdesc *rx_ring;
+
+	volatile struct k_e1000_tdesc *tx_ring;
 
 	struct k_e1000 *next;
 };
@@ -116,7 +121,7 @@ static k_error_t k_e1000_receive_init(struct k_e1000 *e1000)
 		return K_ERROR_MEMORY_ALLOCATION_FAILED;
 
 	for (i = 0; i < K_E1000_RX_RING_ENTRIES; i++) {
-		e1000->rx_ring[i].buffer = k_p2v_l(k_buddy_alloc(K_E1000_BUFFER_SIZE));
+		e1000->rx_ring[i].buffer = 0; //k_p2v_l(k_buddy_alloc(K_E1000_BUFFER_SIZE));
 		e1000->rx_ring[i].status = 0;
 	}
 
@@ -132,12 +137,36 @@ static k_error_t k_e1000_receive_init(struct k_e1000 *e1000)
 	return K_ERROR_NONE;
 }
 
+static k_error_t k_e1000_transmit_init(struct k_e1000 *e1000)
+{
+	int i;
+
+	e1000->tx_ring = k_buddy_alloc(K_E1000_TX_RING_SIZE);
+	if (!e1000->tx_ring)
+		return K_ERROR_MEMORY_ALLOCATION_FAILED;
+
+	for (i = 0; i < K_E1000_TX_RING_ENTRIES; i++) {
+		e1000->tx_ring[i].buffer = 0;
+		e1000->tx_ring[i].cmd = 0;
+	}
+
+	k_e1000_set_reg(e1000, K_E1000_TDBAL, k_v2p_l((unsigned long)e1000->tx_ring));
+	k_e1000_set_reg(e1000, K_E1000_TDLEN, K_E1000_TX_RING_SIZE);
+	k_e1000_set_reg(e1000, K_E1000_TDH, 0);
+	k_e1000_set_reg(e1000, K_E1000_TDT, K_E1000_TX_RING_ENTRIES);
+
+	k_e1000_set_reg(e1000, K_E1000_TCTL, K_E1000_TCTL_EN | K_E1000_TCTL_PSP |
+						K_E1000_TCTL_CT | K_E1000_TCTL_COLD_FULL_DUPLEX);
+
+	return K_ERROR_NONE;
+}
+
 static k_error_t k_e1000_init(struct k_e1000 *e1000)
 {
 	k_error_t error;
 
 	/* Number of page frames the register address space requires. */
-	k_memory_zone_dma_add(e1000->dma >> 12, 3);
+	k_memory_zone_dma_add(e1000->dma >> 12, 4);
 	e1000->virtual = k_p2v_l(e1000->dma);
 
 	if (!k_e1000_eeprom_valid(e1000))
@@ -146,6 +175,10 @@ static k_error_t k_e1000_init(struct k_e1000 *e1000)
 	k_e1000_get_mac_address(e1000);
 
 	error = k_e1000_receive_init(e1000);
+	if (error)
+		return error;
+
+	error = k_e1000_transmit_init(e1000);
 	if (error)
 		return error;
 
