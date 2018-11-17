@@ -42,7 +42,7 @@ BUILD_CFLAGS += -Wall -m32
 BUILD_CFLAGS += -I $(CURDIR)
 BUILD_CFLAGS += -Wno-main -nostdlib -fno-builtin -fno-strict-aliasing
 BUILD_CFLAGS += $(BUILD_CPPFLAGS)
-BUILD_CFLAGS += -g
+BUILD_CFLAGS += -O2 -g
 
 BUILD_LDFLAGS += -T $(BUILD_LD_SCRIPT) -melf_i386 -n
 

@@ -47,8 +47,8 @@ void k_ipv4_init(void)
 		buffer->card = card;
 		k_dhcp_build_packet(buffer, options_length);
 
-		SLEEP
-		for (int i = 0; i < 7; i++) {
+		//SLEEP
+		for (int i = 0; i < 1; i++) {
 			card->ops->transmit(card, buffer);
 		}
 	}

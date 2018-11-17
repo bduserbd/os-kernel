@@ -22,7 +22,7 @@ k_error_t k_loader(const k_uint8_t *buf, k_size_t size)
 {
 	char *mod_name;
 	Elf(Ehdr) *elf;
-	struct k_module *mod;
+	struct k_module *mod = NULL;
 	k_error_t error;
 
 	if (!buf || !size) {

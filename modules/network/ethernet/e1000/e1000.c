@@ -1,16 +1,18 @@
 #include "e1000.h"
+#include "kernel/include/network/network.h"
 #include "kernel/include/modules/export.h"
 #include "kernel/include/pci/pci.h"
 #include "kernel/include/video/print.h"
 #include "kernel/include/mm/mm.h"
 #include "kernel/include/irq/irq.h"
+#include "kernel/include/string.h"
 
-K_MODULE_NAME("E1000");
+K_MODULE_NAME("Intel(R) PRO/1000 (E1000)");
 
 static const struct {
 	k_uint16_t vendor_id;
 	k_uint16_t device_id;
-} k_e1000_supported_cards[] = {
+} k_e1000_pci_supported_cards[] = {
 	{ 0x8086, 0x100e },
 	{ 0 },
 };
@@ -29,12 +31,21 @@ struct k_e1000 {
 
 	k_uint8_t mac[6];
 
+	int receive_index;
 	volatile struct k_e1000_rdesc *rx_ring;
 
+	int transmit_index;
 	volatile struct k_e1000_tdesc *tx_ring;
 
 	struct k_e1000 *next;
 };
+static struct k_e1000 *k_e1000_list = NULL;
+
+static inline void k_e1000_add(struct k_e1000 *e1000)
+{
+	e1000->next = k_e1000_list;
+	k_e1000_list = e1000;
+}
 
 static inline void k_e1000_set_reg(struct k_e1000 *e1000, int reg, k_uint32_t data)
 {
@@ -69,9 +80,9 @@ static k_error_t k_e1000_is_supported(struct k_pci_index index)
 			K_PCI_CONFIG_REG_DEVICE_ID);
 
 	found = false;
-	for (i = 0; k_e1000_supported_cards[i].vendor_id; i++)
-		if (k_e1000_supported_cards[i].vendor_id == vendor_id &&
-				k_e1000_supported_cards[i].device_id == device_id) {
+	for (i = 0; k_e1000_pci_supported_cards[i].vendor_id; i++)
+		if (k_e1000_pci_supported_cards[i].vendor_id == vendor_id &&
+				k_e1000_pci_supported_cards[i].device_id == device_id) {
 			found = true;
 			break;
 		}
@@ -88,9 +99,55 @@ static int k_e1000_eeprom_valid(struct k_e1000 *e1000)
 			K_E1000_EEPROM_INIT_CONTROL1));
 }
 
+static k_error_t k_e1000_transmit(struct k_network_card *card, struct k_network_buffer *buffer)
+{
+	struct k_e1000 *e1000;
+	volatile struct k_e1000_tdesc *tdesc;
+
+	e1000 = card->data;
+
+	tdesc = &e1000->tx_ring[e1000->transmit_index];
+
+	tdesc->buffer = k_v2p_l((unsigned long)buffer->start);
+	tdesc->length = buffer->end - buffer->start;
+	tdesc->cmd = K_E1000_TDESC_CMD_EOP | K_E1000_TDESC_CMD_IFCS | K_E1000_TDESC_CMD_RS;
+
+	e1000->transmit_index = (e1000->transmit_index + 1) % K_E1000_TX_RING_ENTRIES;
+
+	k_e1000_set_reg(e1000, K_E1000_TDT, e1000->transmit_index);
+
+	return K_ERROR_NONE;
+}
+
+static k_error_t k_e1000_handle_receive(struct k_e1000 *e1000)
+{
+	while (e1000->rx_ring[e1000->receive_index].status & K_E1000_RDESC_STATUS_DD) {
+		k_printf("%x ", e1000->rx_ring[e1000->receive_index].length);
+
+		e1000->rx_ring[e1000->receive_index].status = 0;
+
+		k_e1000_set_reg(e1000, K_E1000_RDT, e1000->receive_index);
+		e1000->receive_index = (e1000->receive_index + 1) % K_E1000_RX_RING_ENTRIES;
+	}
+
+	return K_ERROR_NONE;
+}
+
 static k_error_t k_e1000_irq_handler(unsigned int irq, void *device)
 {
-	k_printf("@");
+	k_uint32_t icr;
+	struct k_e1000 *e1000;
+	k_error_t error;
+
+	e1000 = device;
+
+	icr = k_e1000_get_reg(e1000, K_E1000_ICR);
+
+	if (icr & K_E1000_ICR_RXT0) {
+		error = k_e1000_handle_receive(e1000);
+		if (error)
+			return error;
+	}
 
 	return K_ERROR_NONE_IRQ;
 }
@@ -121,18 +178,20 @@ static k_error_t k_e1000_receive_init(struct k_e1000 *e1000)
 		return K_ERROR_MEMORY_ALLOCATION_FAILED;
 
 	for (i = 0; i < K_E1000_RX_RING_ENTRIES; i++) {
-		e1000->rx_ring[i].buffer = 0; //k_p2v_l(k_buddy_alloc(K_E1000_BUFFER_SIZE));
+		e1000->rx_ring[i].buffer = k_v2p_l((unsigned long)k_buddy_alloc(K_E1000_BUFFER_SIZE));
 		e1000->rx_ring[i].status = 0;
 	}
 
 	k_e1000_set_reg(e1000, K_E1000_RDBAL, k_v2p_l((unsigned long)e1000->rx_ring));
 	k_e1000_set_reg(e1000, K_E1000_RDLEN, K_E1000_RX_RING_SIZE);
 	k_e1000_set_reg(e1000, K_E1000_RDH, 0);
-	k_e1000_set_reg(e1000, K_E1000_RDT, K_E1000_RX_RING_ENTRIES);
+	k_e1000_set_reg(e1000, K_E1000_RDT, K_E1000_RX_RING_ENTRIES - 1);
 
 	k_e1000_set_reg(e1000, K_E1000_RCTL, K_E1000_RCTL_EN | K_E1000_RCTL_MPE |
 						K_E1000_RCTL_LBM | K_E1000_RCTL_RDMTS_1_8 |
 						K_E1000_RCTL_BAM | K_E1000_RCTL_BSIZE_4096);
+
+	e1000->receive_index = 0;
 
 	return K_ERROR_NONE;
 }
@@ -153,10 +212,26 @@ static k_error_t k_e1000_transmit_init(struct k_e1000 *e1000)
 	k_e1000_set_reg(e1000, K_E1000_TDBAL, k_v2p_l((unsigned long)e1000->tx_ring));
 	k_e1000_set_reg(e1000, K_E1000_TDLEN, K_E1000_TX_RING_SIZE);
 	k_e1000_set_reg(e1000, K_E1000_TDH, 0);
-	k_e1000_set_reg(e1000, K_E1000_TDT, K_E1000_TX_RING_ENTRIES);
+	k_e1000_set_reg(e1000, K_E1000_TDT, 0);
 
 	k_e1000_set_reg(e1000, K_E1000_TCTL, K_E1000_TCTL_EN | K_E1000_TCTL_PSP |
 						K_E1000_TCTL_CT | K_E1000_TCTL_COLD_FULL_DUPLEX);
+
+	e1000->transmit_index = 0;
+
+	return K_ERROR_NONE;
+}
+
+static k_error_t k_e1000_set_link(struct k_e1000 *e1000)
+{
+	k_e1000_set_reg(e1000, K_E1000_CTRL, K_E1000_CTRL_ASDE | K_E1000_CTRL_SLU);
+
+	k_e1000_set_reg(e1000, K_E1000_IMS, K_E1000_IMS_LSC | K_E1000_IMS_RXSEQ |
+						K_E1000_IMS_RXDMT0 | K_E1000_IMS_RXO |
+						K_E1000_IMS_RXT0 | K_E1000_IMS_MDAC |
+						K_E1000_IMS_PHYINT | K_E1000_IMS_GPI);
+
+	k_e1000_get_reg(e1000, K_E1000_ICR);
 
 	return K_ERROR_NONE;
 }
@@ -182,8 +257,13 @@ static k_error_t k_e1000_init(struct k_e1000 *e1000)
 	if (error)
 		return error;
 
+	error = k_e1000_set_link(e1000);
+	if (error)
+		return error;
+
 	for (int i = 0; i < 6; i++)
 		k_printf("%x", e1000->mac[i]);
+	k_printf("\n");
 
 	return K_ERROR_NONE;
 }
@@ -223,6 +303,8 @@ static k_error_t k_e1000_pci_init(struct k_pci_index index)
 	if (error)
 		return error;
 
+	k_e1000_add(e1000);
+
 	error = k_irq_request(e1000->irq, k_e1000_irq_handler, K_IRQ_FLAGS_SHARED, e1000);
 	if (error)
 		return error;
@@ -230,9 +312,27 @@ static k_error_t k_e1000_pci_init(struct k_pci_index index)
 	return K_ERROR_NONE;
 }
 
+static struct k_network_card_operations k_e1000_ops = {
+	.transmit = k_e1000_transmit,
+};
+
 K_MODULE_INIT()
 {
+	struct k_e1000 *e1000;
+
 	k_pci_iterate_devices(k_e1000_pci_init);
+
+	for (e1000 = k_e1000_list; e1000; e1000 = e1000->next) {
+		struct k_network_card *card = k_malloc(sizeof(struct k_network_card));
+		if (!card)
+			return;
+
+		k_memcpy(card->hw_address, e1000->mac, 6);
+		card->ops = &k_e1000_ops;
+		card->data = e1000;
+
+		k_network_card_register(card);
+	}
 }
 
 K_MODULE_UNINIT()

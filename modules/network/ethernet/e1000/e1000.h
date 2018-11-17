@@ -25,6 +25,35 @@ enum {
 	K_E1000_TDT	= 0x3818,
 };
 
+/* E1000 Device Control Register. */
+enum {
+	K_E1000_CTRL_ASDE	= (1 << 5),
+	K_E1000_CTRL_SLU	= (1 << 6),
+};
+
+/* E1000 Interrupt Cause Read Register. */
+enum {
+	K_E1000_ICR_LCS		= (1 << 2),
+	K_E1000_ICR_RXSEQ	= (1 << 3),
+	K_E1000_ICR_RXDMT0	= (1 << 4),
+	K_E1000_ICR_RXO		= (1 << 6),
+	K_E1000_ICR_RXT0	= (1 << 7),
+	K_E1000_ICR_MDAC	= (1 << 9),
+	K_E1000_ICR_PHYINT	= (1 << 12),
+};
+
+/* E1000 Interrupt Mask Set/Read Register. */
+enum {
+	K_E1000_IMS_LSC		= (1 << 2),
+	K_E1000_IMS_RXSEQ	= (1 << 3),
+	K_E1000_IMS_RXDMT0	= (1 << 4),
+	K_E1000_IMS_RXO		= (1 << 6),
+	K_E1000_IMS_RXT0	= (1 << 7),
+	K_E1000_IMS_MDAC	= (1 << 9),
+	K_E1000_IMS_PHYINT	= (1 << 12),
+	K_E1000_IMS_GPI		= (3 << 13),
+};
+
 /* E1000 Receive Control Register. */
 enum {
 	K_E1000_RCTL_EN			= (1 << 1),
@@ -84,6 +113,9 @@ struct k_e1000_tdesc {
 /* E1000 Transmit Descriptor Command. */
 enum {
 	K_E1000_TDESC_CMD_EOP	= (1 << 0),
+	K_E1000_TDESC_CMD_IFCS	= (1 << 1),
+	K_E1000_TDESC_CMD_RS	= (1 << 3),
+	K_E1000_TDESC_CMD_IDE	= (1 << 7),
 };
 
 /* E1000 Transmit Descriptor Status. */
