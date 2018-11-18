@@ -17,7 +17,7 @@ void k_ipv4_init(void)
 	if (!buffer)
 		return;
 
-	int options_length = 256;
+	int options_length = 64;
 
 #define SIZE					\
 	(sizeof(struct k_ethernet_header) +	\

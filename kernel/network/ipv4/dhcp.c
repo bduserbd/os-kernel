@@ -6,25 +6,43 @@ static k_uint8_t k_dhcp_magic_cookie[4] = { 99, 130, 83, 99 };
 
 static void k_dhcp_build_options(struct k_dhcp_header *dhcp, int options_length)
 {
+	int i = 4;
+#define I	(i++)
+
 	k_memcpy(dhcp->options, k_dhcp_magic_cookie, sizeof(k_dhcp_magic_cookie));
 
-	dhcp->options[4] = 53;
-	dhcp->options[5] = 1;
-	dhcp->options[6] = 1;
+	dhcp->options[I] = 53;
+	dhcp->options[I] = 1;
+	dhcp->options[I] = 1;
 
-	dhcp->options[7] = 12;
-	dhcp->options[8] = 1;
-	dhcp->options[9] = 'b';
+	dhcp->options[I] = 50; dhcp->options[I] = 4;
+	dhcp->options[I] = 192; dhcp->options[I] = 168;
+	dhcp->options[I] = 0; dhcp->options[I] = 150;
 
-	dhcp->options[10] = 55;
-	dhcp->options[11] = 5;
-	dhcp->options[12] = 1;
-	dhcp->options[13] = 28;
-	dhcp->options[14] = 3;
-	dhcp->options[15] = 15;
-	dhcp->options[16] = 12;
+	dhcp->options[I] = 12; dhcp->options[I] = 1; dhcp->options[I] = 'b';
 
-	dhcp->options[17] = 0xff;
+	dhcp->options[I] = 55;
+	dhcp->options[I] = 18;
+	dhcp->options[I] = 1;
+	dhcp->options[I] = 28;
+	dhcp->options[I] = 2;
+	dhcp->options[I] = 3;
+	dhcp->options[I] = 15;
+	dhcp->options[I] = 6;
+	dhcp->options[I] = 119;
+	dhcp->options[I] = 12;
+	dhcp->options[I] = 44;
+	dhcp->options[I] = 47;
+	dhcp->options[I] = 26;
+	dhcp->options[I] = 121;
+	dhcp->options[I] = 42;
+	dhcp->options[I] = 121;
+	dhcp->options[I] = 249;
+	dhcp->options[I] = 33;
+	dhcp->options[I] = 252;
+	dhcp->options[I] = 42;
+
+	dhcp->options[I] = 0xff;
 }
 
 void k_dhcp_build_packet(struct k_network_buffer *buffer, int options_length)
@@ -41,7 +59,7 @@ void k_dhcp_build_packet(struct k_network_buffer *buffer, int options_length)
 	dhcp->hops = 0;
 	dhcp->xid = k_cpu_to_be32(0);
 	dhcp->secs = k_cpu_to_be16(0);
-	dhcp->flags = k_cpu_to_be16(K_DHCP_FLAGS_BROADCAST);
+	dhcp->flags = k_cpu_to_be16(K_DHCP_FLAGS_UNICAST);
 
 	dhcp->client_ip = K_IPV4(0, 0, 0, 0);
 	dhcp->your_ip = K_IPV4(0, 0, 0, 0);

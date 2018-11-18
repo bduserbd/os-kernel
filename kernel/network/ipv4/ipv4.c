@@ -5,7 +5,8 @@ static k_uint16_t k_ipv4_checksum(struct k_ipv4_header *ipv4)
 	return 0;
 }
 
-void k_ipv4_build_packet(struct k_network_buffer *buffer, k_ipv4_t ip)
+void k_ipv4_build_packet(struct k_network_buffer *buffer, k_uint16_t payload_length,
+		k_ipv4_t ip)
 {
 	k_uint8_t mac[K_MAC_LENGTH];
 	struct k_ipv4_header *ipv4;
@@ -16,8 +17,8 @@ void k_ipv4_build_packet(struct k_network_buffer *buffer, k_ipv4_t ip)
 
 	ipv4->version = K_IPV4_VERSION;
 	ipv4->ihl = sizeof(struct k_ipv4_header) >> 2;
-	ipv4->tos = K_IPV4_TOS_IMMEDIATE | K_IPV4_TOS_R;
-	ipv4->total_length = 0;
+	ipv4->tos = K_IPV4_TOS_T;
+	ipv4->total_length = k_cpu_to_be16(sizeof(struct k_ipv4_header) + payload_length);
 	ipv4->id = 0;
 	ipv4->fragment_offset = 0;
 	ipv4->ttl = K_IPV4_TTL;
