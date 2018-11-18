@@ -19,7 +19,7 @@
 #define K_IPV4_TOS_T	(1 << 4)
 #define K_IPV4_TOS_R	(1 << 5)
 
-#define K_IPV4_TTL	64
+#define K_IPV4_TTL	128
 
 #define K_IPV4_PROTOCOL_ICMP	1
 #define K_IPV4_PROTOCOL_TCP	6

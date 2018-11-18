@@ -2,7 +2,31 @@
 
 static k_uint16_t k_ipv4_checksum(struct k_ipv4_header *ipv4)
 {
-	return 0;
+	k_uint32_t sum;
+	k_size_t length;
+	const k_uint16_t *buf;
+
+	length = ipv4->ihl << 2;
+
+	buf = (void *)ipv4;
+
+	sum = 0;
+	while (length > 1) {
+		sum += *buf++;
+
+		if (sum & (1 << 31))
+			sum = (sum & 0xffff) + (sum >> 16);
+
+		length -= 2;
+	}
+
+	if (length & 1)
+		sum += *(k_uint8_t *)buf;
+
+	while (sum >> 16)
+		sum = (sum & 0xffff) + (sum >> 16);
+
+	return (k_uint16_t)~sum;
 }
 
 void k_ipv4_build_packet(struct k_network_buffer *buffer, k_uint16_t payload_length,
