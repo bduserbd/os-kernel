@@ -15,10 +15,6 @@ static void k_dhcp_build_options(struct k_dhcp_header *dhcp, int options_length)
 	dhcp->options[I] = 1;
 	dhcp->options[I] = 1;
 
-	dhcp->options[I] = 50; dhcp->options[I] = 4;
-	dhcp->options[I] = 192; dhcp->options[I] = 168;
-	dhcp->options[I] = 0; dhcp->options[I] = 150;
-
 	dhcp->options[I] = 12; dhcp->options[I] = 1; dhcp->options[I] = 'b';
 
 	dhcp->options[I] = 55;
