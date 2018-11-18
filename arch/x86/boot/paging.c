@@ -1,8 +1,9 @@
 #include "include/paging.h"
 #include "include/cr0.h"
 #include "include/cpu.h"
-#include "kernel/include/video/print.h"
 #include "kernel/include/string.h"
+#include "kernel/include/modules/export-symbol.h"
+#include "kernel/include/video/print.h"
 
 k_pde_t *k_page_table = NULL;
 
@@ -57,7 +58,7 @@ void k_paging_remove_identity_map(void)
 	while (1) {
 		k_uint32_t table = (a >> 22) & 0x3ff;
 
-		if (k_page_table[table] & K_PTE_P) {
+		if (k_page_table[table] & K_PDE_P) {
 			k_uint32_t pde = k_page_table[table];
 			k_page_table[table] = 0x0;
 			k_memset((void *)(K_IMAGE_BASE + (pde & ~0xfff)), 0, 0x1000);
@@ -71,6 +72,31 @@ void k_paging_remove_identity_map(void)
 
 	k_paging_flush_tlb();
 }
+
+void *k_v2p(const void *virtual)
+{
+	k_pte_t *pte;
+	unsigned long table, page, offset;
+
+	table = ((unsigned long)virtual >> 22) & 0x3ff;
+	page = ((unsigned long)virtual >> 12) & 0x3ff;
+	offset = (unsigned long)virtual & 0xfff;
+
+	if (k_page_table[table] & K_PDE_P) {
+		pte = (k_pte_t *)(K_IMAGE_BASE + (k_page_table[table] & ~0xfff));
+		if (pte[page] & K_PTE_P)
+			return (void *)((pte[page] & ~0xfff) + offset);
+	}
+
+	return NULL;
+}
+K_EXPORT_FUNC(k_v2p);
+
+unsigned long k_v2p_l(unsigned long virtual)
+{
+	return (unsigned long)k_v2p((const void *)virtual);
+}
+K_EXPORT_FUNC(k_v2p_l);
 
 void k_paging_reserve_pages_ptr(k_pde_t *k_pde, k_uint32_t start, k_uint32_t range,
 		int high_memory, unsigned long dma)
@@ -97,7 +123,7 @@ void k_paging_reserve_pages_ptr(k_pde_t *k_pde, k_uint32_t start, k_uint32_t ran
 		k_uint32_t table = (a >> 22) & 0x3ff;
 		k_uint32_t page = (a >> 12) & 0x3ff;
 
-		if ((pde[table] & K_PTE_P) == 0) {
+		if ((pde[table] & K_PDE_P) == 0) {
 			if (high_memory) {
 				pde[table] = ((k_uint32_t)k_pde - K_IMAGE_BASE + 
 						0x1000 + table * 0x1000) | K_PDE_P | K_PDE_RW;
@@ -162,7 +188,7 @@ void k_paging_identity_map(void)
 	while (1) {
 		k_uint32_t table1 = (a >> 22) & 0x3ff;
 
-		if (pde[table1] & K_PTE_P) {
+		if (pde[table1] & K_PDE_P) {
 			k_uint32_t table2 = table1 + (K_IMAGE_BASE >> 22);
 
 			pde[table2] = ((k_uint32_t)pde + 0x1000 + table2 * 0x1000) |

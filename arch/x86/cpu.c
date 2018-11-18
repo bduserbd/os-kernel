@@ -24,12 +24,21 @@ int k_cpu_eflag(k_uint32_t flags)
 	return !!((a ^ b) & flags);
 }
 
-void k_cpuid(k_uint32_t function, k_uint32_t *eax, k_uint32_t *ebx,
+void k_cpuid_count(k_uint32_t function, k_uint32_t *eax, k_uint32_t *ebx,
 		k_uint32_t *ecx, k_uint32_t *edx)
 {
 	asm volatile("cpuid"
 		: "=a" (*eax), "=c" (*ecx), "=d" (*edx), "=b" (*ebx)
 		: "a" (function), "c" (*ecx)
+		: "memory");
+}
+
+void k_cpuid(k_uint32_t function, k_uint32_t *eax, k_uint32_t *ebx,
+		k_uint32_t *ecx, k_uint32_t *edx)
+{
+	asm volatile("cpuid"
+		: "=a" (*eax), "=c" (*ecx), "=d" (*edx), "=b" (*ebx)
+		: "a" (function)
 		: "memory");
 }
 
@@ -175,7 +184,7 @@ void k_cpu_get_cache_info(struct k_cpu_x86 *cpu)
 
 		while (1) {
 			ecx = count;
-			k_cpuid(0x00000004, &eax, &ebx, &ecx, &edx);
+			k_cpuid_count(0x00000004, &eax, &ebx, &ecx, &edx);
 			if (K_CPUID_CACHE_TYPE(eax) == K_CPUID_CACHE_TYPE_NULL)
 				break;
 

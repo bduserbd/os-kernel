@@ -36,7 +36,7 @@ extern k_uint8_t *k_heap;
 
 void k_buddy_init(k_uint32_t);
 void *k_buddy_alloc(k_size_t);
-void k_buddy_free(void *);
+void k_buddy_free(const void *);
 
 #endif
 
