@@ -1,9 +1,10 @@
 #include "include/8253.h"
 #include "kernel/include/irq/irq.h"
 #include "kernel/include/io/io.h"
+#include "kernel/include/task/task.h"
 #include "kernel/include/video/print.h"
 
-static k_error_t k_pit_irq_handler(unsigned int irq, void *device)
+static k_error_t k_pit_irq_handler(unsigned int irq, void *parameter)
 {
 	static int ticks = 0;
 
@@ -12,6 +13,8 @@ static k_error_t k_pit_irq_handler(unsigned int irq, void *device)
 		//k_printf("$");
 		ticks = 0;
 	}
+
+	k_task_switch(parameter);
 
 	return K_ERROR_NONE;
 }

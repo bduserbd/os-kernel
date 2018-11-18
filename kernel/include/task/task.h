@@ -1,0 +1,33 @@
+#ifndef K_TASK_H
+#define K_TASK_H
+
+#include "kernel/include/types.h"
+
+#define K_TASK_FIRST_PID	0
+
+typedef k_uint16_t	k_pid_t;
+
+enum {
+	K_TASK_STATE_UNINITIALIZED,
+	K_TASK_STATE_RUNNING,
+	K_TASK_STATE_SLEEPING,
+};
+
+struct k_task {
+	k_pid_t pid;
+
+	int state;
+
+	void *arch;
+
+	struct k_task *next;
+};
+
+extern struct k_task *k_task;
+
+void k_task_init(void);
+void k_task_create(void *);
+void k_task_switch(void *);
+
+#endif
+

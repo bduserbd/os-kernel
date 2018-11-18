@@ -1,4 +1,5 @@
 #include "include/idt.h"
+#include "include/registers.h"
 #include "kernel/include/irq/irq-info.h"
 #include "kernel/include/io/io.h"
 #include "kernel/include/video/print.h"
@@ -24,13 +25,7 @@ static void (*k_irq_handler_arr[16])(void) = {
 	k_irq_handler12, k_irq_handler13, k_irq_handler14, k_irq_handler15,
 };
 
-struct k_int_regs {
-	k_uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
-	k_uint32_t interrupt;
-	k_uint32_t error_code, eip, cs, eflags;
-} __attribute__((packed));
-
-static void k_int_print_regs(struct k_int_regs *regs)
+static void k_int_print_regs(struct k_int_registers *regs)
 {
 	k_printf("EDI: %x ESI: %x EBP: %x ESP: %x\n"
 			"EBX: %x EDX: %x ECX: %x EAX: %x\n"
@@ -41,7 +36,7 @@ static void k_int_print_regs(struct k_int_regs *regs)
 			regs->interrupt, regs->error_code, regs->eip, regs->cs, regs->eflags);
 }
 
-void k_int_handler(struct k_int_regs regs)
+void k_int_handler(struct k_int_registers regs)
 {
 	k_int_print_regs(&regs);
 
@@ -57,7 +52,7 @@ void k_int_handler(struct k_int_regs regs)
 	}
 }
 
-void k_irq_handler(struct k_int_regs regs)
+void k_irq_handler(struct k_int_registers regs)
 {
 	unsigned int irq;
 
@@ -67,7 +62,10 @@ void k_irq_handler(struct k_int_regs regs)
 
 	k_irq_ack(irq);
 
-	k_irq_execute_handler(irq);
+	if (irq == 0)
+		k_irq_execute_handler_custom(irq, &regs);
+	else
+		k_irq_execute_handler(irq);
 }
 
 static void k_idt_set_gate(int i, k_uint32_t offset, int type)
