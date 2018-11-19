@@ -13,10 +13,14 @@ enum {
 	K_TASK_STATE_SLEEPING,
 };
 
+#define K_TASK_STACK_SIZE	0x1000
+
 struct k_task {
 	k_pid_t pid;
 
 	int state;
+
+	void *stack;
 
 	void *arch;
 

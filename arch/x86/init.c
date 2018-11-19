@@ -51,7 +51,6 @@ void k_x86_init(void *smbios, void *rsdp,
 	k_smbios_get_info(smbios);
 
 	k_pit_init();
-	asm volatile("sti");
 
 	k_lapic_init();
 
