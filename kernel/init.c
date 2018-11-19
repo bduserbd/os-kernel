@@ -4,13 +4,11 @@
 
 void foo(void)
 {
-	asm volatile("sti");
-
 	while (1) {
-		for (int i = 0; i < 10000000; i++)
+		for (int i = 0; i < 1000000; i++)
 			asm volatile("nop");
 
-		k_printf("#");
+		k_puts("#");
 	}
 }
 

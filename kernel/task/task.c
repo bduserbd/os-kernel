@@ -50,8 +50,6 @@ void k_task_switch(void *context)
 
 	k_task_arch_switch_context(k_task, context, k_task->next);
 
-	k_task = k_task->next;
-
 	//k_printf("%x ", k_task);
 }
 
