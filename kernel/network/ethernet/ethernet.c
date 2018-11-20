@@ -26,3 +26,8 @@ void k_ethernet_build_broadcast_packet(struct k_network_buffer *buffer, k_uint16
 	k_ethernet_build_packet(buffer, protocol, mac_src, k_ethernet_broadcast_address);
 }
 
+k_error_t k_ethernet_rx(struct k_network_buffer *buffer)
+{
+	return K_ERROR_NONE;
+}
+

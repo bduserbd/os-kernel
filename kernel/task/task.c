@@ -65,7 +65,10 @@ void k_task_switch(void *context)
 		return;
 
 	a = k_task;
+	a->state = K_TASK_STATE_SLEEPING;
+
 	b = k_task->next;
+	b->state = K_TASK_STATE_RUNNING;
 
 	k_task = k_task->next;
 

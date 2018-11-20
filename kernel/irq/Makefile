@@ -1,4 +1,5 @@
 OBJS += irq.o
+OBJS += late-irq.o
 
 CFLAGS = -I ../
 

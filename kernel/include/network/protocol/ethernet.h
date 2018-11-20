@@ -2,6 +2,7 @@
 #define K_ETHERNET_H
 
 #include "kernel/include/types.h"
+#include "kernel/include/error.h"
 #include "kernel/include/network/buffer.h"
 
 #define K_MAC_LENGTH	6
@@ -24,6 +25,8 @@ void k_ethernet_build_packet(struct k_network_buffer *, k_uint16_t,
 
 void k_ethernet_build_broadcast_packet(struct k_network_buffer *, k_uint16_t,
 		k_uint8_t [K_MAC_LENGTH]);
+
+k_error_t k_ethernet_rx(struct k_network_buffer *);
 
 #endif
 

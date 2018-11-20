@@ -1,5 +1,5 @@
-#ifndef K_NETWORK_BUFFER
-#define K_NETWORK_BUFFER
+#ifndef K_NETWORK_BUFFER_H
+#define K_NETWORK_BUFFER_H
 
 #include "kernel/include/types.h"
 

@@ -45,6 +45,8 @@ static void k_task_arch_save_context(struct k_task *task, struct k_int_registers
 	((struct k_registers *)task->arch)->esi = regs->esi;
 }
 
+void k_task_arch_set_new_context(void *);
+
 /* Right now, the context here is the pointer to the registers pushed
    in interrupt handler. */
 void k_task_arch_switch_context(struct k_task *task, void *context,
