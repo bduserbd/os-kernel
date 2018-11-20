@@ -31,6 +31,8 @@ struct k_e1000 {
 
 	k_uint8_t mac[6];
 
+	int link_up;
+
 	int receive_index;
 	volatile struct k_e1000_rdesc *rx_ring;
 
@@ -106,6 +108,9 @@ static k_error_t k_e1000_transmit(struct k_network_card *card, struct k_network_
 
 	e1000 = card->data;
 
+	if (!e1000->link_up)
+		return K_ERROR_NETWORK_LINK_NOT_SET;
+
 	tdesc = &e1000->tx_ring[e1000->transmit_index];
 
 	tdesc->buffer = k_v2p_l((unsigned long)buffer->start);
@@ -146,8 +151,10 @@ static k_error_t k_e1000_irq_handler(unsigned int irq, void *device)
 
 	icr = k_e1000_get_reg(e1000, K_E1000_ICR);
 
-	if (icr & K_E1000_ICR_LCS)
+	if (icr & K_E1000_ICR_LCS) {
+		e1000->link_up = true;
 		return K_ERROR_NONE_IRQ;
+	}
 
 	if (icr & K_E1000_ICR_RXT0) {
 		error = k_e1000_handle_receive(e1000);
@@ -231,6 +238,8 @@ static k_error_t k_e1000_transmit_init(struct k_e1000 *e1000)
 
 static k_error_t k_e1000_set_link(struct k_e1000 *e1000)
 {
+	e1000->link_up = false;
+
 	k_e1000_set_reg(e1000, K_E1000_CTRL, K_E1000_CTRL_ASDE | K_E1000_CTRL_SLU);
 
 	k_e1000_set_reg(e1000, K_E1000_IMS, K_E1000_IMS_TXDW | K_E1000_IMS_LSC |

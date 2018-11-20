@@ -3,7 +3,7 @@
 #include "kernel/include/mm/mm.h"
 #include "kernel/include/string.h"
 
-void *k_task_arch_info_alloc(void *callback, void *stack)
+void *k_task_arch_info_alloc(k_task_entry_point_t func, void *stack, void *parameter)
 {
 	struct k_registers *regs;
 
@@ -13,9 +13,16 @@ void *k_task_arch_info_alloc(void *callback, void *stack)
 
 	k_memset(regs, 0, sizeof(struct k_registers));
 
-	regs->eip = (k_uint32_t)callback;
-	regs->esp = (k_uint32_t)stack;
-	regs->ebp = regs->esp;
+	if (func) {
+		regs->eip = (k_uint32_t)func;
+
+		k_uint32_t real_esp = (k_uint32_t)stack - sizeof(k_uint32_t);
+
+		*(k_uint32_t *)(real_esp) = (k_uint32_t)parameter;
+
+		regs->esp = real_esp - sizeof(k_uint32_t);
+		regs->ebp = regs->esp;
+	}
 
 	return regs;
 }
@@ -46,8 +53,6 @@ void k_task_arch_switch_context(struct k_task *task, void *context,
 	struct k_int_registers *regs;
 
 	regs = context;
-
-	k_task = k_task->next;
 
 	k_task_arch_save_context(task, regs);
 	k_task_arch_set_new_context(next_task->arch);
