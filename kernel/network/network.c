@@ -25,7 +25,15 @@ K_EXPORT_FUNC(k_network_rx);
 
 static k_error_t k_network_rx_handler(void)
 {
-	k_printf("*");
+	struct k_network_buffer *buffer;
+
+	asm volatile("cli");
+
+	for (buffer = k_network_rx_packets; buffer; buffer = buffer->next) {
+		buffer->card->packet->callback(buffer);
+	}
+
+	asm volatile("sti");
 
 	return K_ERROR_NONE;
 }

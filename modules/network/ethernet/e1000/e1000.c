@@ -348,8 +348,13 @@ static struct k_network_card_operations k_e1000_ops = {
 K_MODULE_INIT()
 {
 	struct k_e1000 *e1000;
+	struct k_network_packet *packet;
 
 	k_pci_iterate_devices(k_e1000_pci_init);
+
+	packet = k_network_packet_get(K_NETWORK_PACKET_ETHERNET);
+	if (!packet)
+		return;
 
 	for (e1000 = k_e1000_list; e1000; e1000 = e1000->next) {
 		struct k_network_card *card = k_malloc(sizeof(struct k_network_card));
@@ -359,6 +364,7 @@ K_MODULE_INIT()
 		k_memcpy(card->hw_address, e1000->mac, 6);
 		card->ops = &k_e1000_ops;
 		card->data = e1000;
+		card->packet = packet;
 
 		e1000->card = card;
 

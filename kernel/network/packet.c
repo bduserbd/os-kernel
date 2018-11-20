@@ -1,6 +1,7 @@
 #include "include/network/packet.h"
 #include "include/network/protocol/ethernet.h"
 #include "include/mm/mm.h"
+#include "include/modules/export-symbol.h"
 
 static struct k_network_packet k_network_packet_supported[] = {
 	{
@@ -21,3 +22,5 @@ struct k_network_packet *k_network_packet_get(int type)
 
 	return NULL;
 }
+K_EXPORT_FUNC(k_network_packet_get);
+

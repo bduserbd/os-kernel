@@ -21,7 +21,11 @@ k_error_t k_late_irq_raise(unsigned int late_irq)
 	if (!k_late_irq_handlers[late_irq])
 		return K_ERROR_UNINITIALIZED;
 
+	asm volatile("cli");
+
 	k_late_irq_bits |= (1 << late_irq);
+
+	asm volatile("sti");
 
 	return K_ERROR_NONE;
 }
@@ -31,8 +35,11 @@ k_error_t k_late_irq_task(void *parameter)
 	int i;
 
 	while (1) {
+		//asm volatile("cli");
 		if (!k_late_irq_bits)
 			continue;
+
+		//asm volatile("sti");
 
 		for (i = 0; i < 32; i++)
 			if (k_late_irq_bits & (1 << i)) {

@@ -28,6 +28,8 @@ void k_ethernet_build_broadcast_packet(struct k_network_buffer *buffer, k_uint16
 
 k_error_t k_ethernet_rx(struct k_network_buffer *buffer)
 {
+	k_printf("Ethernet");
+
 	return K_ERROR_NONE;
 }
 
