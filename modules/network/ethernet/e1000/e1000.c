@@ -142,10 +142,15 @@ static k_error_t k_e1000_handle_receive(struct k_e1000 *e1000)
 
 		buffer->card = e1000->card;
 
-		buffer->start = (void *)k_p2v_l((unsigned long)e1000->rx_ring[e1000->receive_index].buffer);
-		buffer->end = buffer->start + e1000->rx_ring[e1000->receive_index].length;
+		unsigned int length = e1000->rx_ring[e1000->receive_index].length;
 
-		k_printf("%x", buffer->end - buffer->start);
+		buffer->start = k_malloc(length);
+		if (!buffer->start)
+			return K_ERROR_MEMORY_ALLOCATION_FAILED;
+
+		k_memcpy(buffer->start, k_p2v((void *)e1000->rx_ring[e1000->receive_index].buffer), length);
+
+		buffer->end = buffer->start + length;
 
 		error = k_network_rx(buffer);
 		if (error)

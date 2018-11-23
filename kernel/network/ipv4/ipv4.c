@@ -58,3 +58,26 @@ void k_ipv4_build_packet(struct k_network_buffer *buffer, k_uint16_t payload_len
 	k_ethernet_build_broadcast_packet(buffer, K_ETHERNET_PROTOCOL_IP, mac);
 }
 
+static k_error_t k_ipv4_check(struct k_network_buffer *buffer)
+{
+	k_network_buffer_adjust_up(buffer, sizeof(struct k_ipv4_header));
+
+	if (k_ipv4_checksum((struct k_ipv4_header *)buffer->packet_start) == 0x0)
+		return K_ERROR_NONE;
+	else
+		return K_ERROR_BAD_CHECKSUM;
+}
+
+k_error_t k_ipv4_rx(struct k_network_buffer *buffer)
+{
+	k_error_t error;
+
+	error = k_ipv4_check(buffer);
+	if (error)
+		return error;
+
+	k_printf("Here again");
+
+	return K_ERROR_NONE;
+}
+

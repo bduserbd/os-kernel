@@ -47,6 +47,7 @@ struct k_ipv4_header {
 typedef k_uint32_t	k_ipv4_t;
 
 void k_ipv4_build_packet(struct k_network_buffer *, k_uint16_t, k_ipv4_t);
+k_error_t k_ipv4_rx(struct k_network_buffer *);
 
 #endif
 
