@@ -4,7 +4,6 @@
 #include "kernel/include/types.h"
 #include "kernel/include/error.h"
 #include "kernel/include/network/buffer.h"
-#include "kernel/include/network/protocol/ipv4.h"
 
 #define K_MAC_LENGTH	6
 

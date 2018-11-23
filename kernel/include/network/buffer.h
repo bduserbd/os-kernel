@@ -10,6 +10,8 @@ struct k_network_buffer {
 
 	k_uint8_t *packet_start, *packet_end;
 
+	void *data;
+
 	struct k_network_card *card;
 
 	struct k_network_buffer *next, *prev;

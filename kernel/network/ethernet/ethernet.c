@@ -1,5 +1,8 @@
 #include "include/network/network.h"
 #include "include/network/protocol/ethernet.h"
+#include "include/network/protocol/ipv4.h"
+#include "include/mm/mm.h"
+#include "include/network/ipv4/ipv4.h"
 #include "include/string.h"
 
 k_uint8_t k_ethernet_broadcast_address[K_MAC_LENGTH] = {
@@ -74,6 +77,16 @@ k_error_t k_ethernet_rx(struct k_network_buffer *buffer)
 
 	switch (k_be16_to_cpu(ethernet->protocol)) {
 	case K_ETHERNET_PROTOCOL_IP:
+		buffer->data = k_malloc(sizeof(struct k_ipv4_info));
+		if (!buffer->data)
+			return K_ERROR_MEMORY_ALLOCATION_FAILED;
+
+		k_memcpy(((struct k_ipv4_info *)buffer->data)->mac_src, ethernet->mac_src,
+				K_MAC_LENGTH);
+
+		k_memcpy(((struct k_ipv4_info *)buffer->data)->mac_dest, ethernet->mac_dest,
+				K_MAC_LENGTH);
+
 		error = k_ipv4_rx(buffer);
 		if (error)
 			return error;

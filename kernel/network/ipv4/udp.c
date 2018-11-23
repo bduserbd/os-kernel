@@ -1,7 +1,7 @@
 #include "include/network/protocol/udp.h"
+#include "include/network/ipv4/ipv4.h"
 
-static k_uint16_t k_udp_checksum(struct k_udp_header *udp, k_ipv4_t src_ip,
-		k_ipv4_t dest_ip)
+static k_uint16_t k_udp_checksum(struct k_udp_header *udp, k_ipv4_t ip_src, k_ipv4_t ip_dest)
 {
 	k_uint32_t sum;
 	k_size_t length;
@@ -10,8 +10,8 @@ static k_uint16_t k_udp_checksum(struct k_udp_header *udp, k_ipv4_t src_ip,
 	length = k_be16_to_cpu(udp->length);
 
 	buf = (void *)udp;
-	a = (void *)&src_ip;
-	b = (void *)&dest_ip;
+	a = (void *)&ip_src;
+	b = (void *)&ip_dest;
 
 	sum = 0;
 	while (length > 1) {
@@ -40,7 +40,7 @@ static k_uint16_t k_udp_checksum(struct k_udp_header *udp, k_ipv4_t src_ip,
 }
 
 void k_udp_build_packet(struct k_network_buffer *buffer, k_uint16_t payload_length,
-		k_port_t src_port, k_port_t dest_port, k_ipv4_t ip)
+		k_port_t port_src, k_port_t port_dest, k_ipv4_t ip)
 {
 	k_uint16_t length;
 	struct k_udp_header *udp;
@@ -49,8 +49,8 @@ void k_udp_build_packet(struct k_network_buffer *buffer, k_uint16_t payload_leng
 
 	udp = (void *)buffer->packet_start;
 
-	udp->src_port = k_cpu_to_be16(src_port);
-	udp->dest_port = k_cpu_to_be16(dest_port);
+	udp->port_src = k_cpu_to_be16(port_src);
+	udp->port_dest = k_cpu_to_be16(port_dest);
 
 	length = sizeof(struct k_udp_header) + payload_length;
 	udp->length = k_cpu_to_be16(length);
@@ -59,5 +59,41 @@ void k_udp_build_packet(struct k_network_buffer *buffer, k_uint16_t payload_leng
 	udp->checksum = k_udp_checksum(udp, K_IPV4(0, 0, 0, 0), ip);
 
 	k_ipv4_build_packet(buffer, length, ip);
+}
+
+static k_error_t k_udp_check(struct k_network_buffer *buffer)
+{
+	k_uint16_t checksum, rx_checksum;
+	struct k_udp_header *udp;
+
+	k_network_buffer_adjust_up(buffer, sizeof(struct k_udp_header));
+
+	udp = (void *)buffer->packet_start;
+
+	rx_checksum = udp->checksum;
+	udp->checksum = 0;
+
+	checksum = k_udp_checksum(udp, ((struct k_ipv4_info *)buffer->data)->ip_src,
+			((struct k_ipv4_info *)buffer->data)->ip_dest);
+
+	udp->checksum = rx_checksum;
+
+	if (rx_checksum != checksum)
+		return K_ERROR_BAD_CHECKSUM;
+
+	return K_ERROR_NONE;
+}
+
+k_error_t k_udp_rx(struct k_network_buffer *buffer)
+{
+	k_error_t error;
+
+	error = k_udp_check(buffer);
+	if (error)
+		return error;
+
+	k_printf("Pass");
+
+	return K_ERROR_NONE;
 }
 

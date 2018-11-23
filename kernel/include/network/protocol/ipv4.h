@@ -35,8 +35,8 @@ struct k_ipv4_header {
 	__u8	ttl;
 	__u8	protocol;
 	__u16	checksum;
-	__u32	src_ip;
-	__u32	dest_ip;
+	__u32	ip_src;
+	__u32	ip_dest;
 } __attribute__((packed));
 
 #define K_IPV4(a, b, c, d)	\

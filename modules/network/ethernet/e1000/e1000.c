@@ -148,7 +148,9 @@ static k_error_t k_e1000_handle_receive(struct k_e1000 *e1000)
 		if (!buffer->start)
 			return K_ERROR_MEMORY_ALLOCATION_FAILED;
 
-		k_memcpy(buffer->start, k_p2v((void *)e1000->rx_ring[e1000->receive_index].buffer), length);
+		k_memcpy(buffer->start,
+				k_p2v((void *)(unsigned long)e1000->rx_ring[e1000->receive_index].buffer),
+				length);
 
 		buffer->end = buffer->start + length;
 
