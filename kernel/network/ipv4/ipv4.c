@@ -96,6 +96,9 @@ k_error_t k_ipv4_rx(struct k_network_buffer *buffer)
 
 	ipv4 = (void *)buffer->packet_start;
 
+	((struct k_ipv4_info *)buffer->data)->ip_src = ipv4->ip_src;
+	((struct k_ipv4_info *)buffer->data)->ip_dest = ipv4->ip_dest;
+
 	switch (ipv4->protocol) {
 	case K_IPV4_PROTOCOL_ICMP:
 		break;
@@ -104,9 +107,6 @@ k_error_t k_ipv4_rx(struct k_network_buffer *buffer)
 		break;
 
 	case K_IPV4_PROTOCOL_UDP:
-		((struct k_ipv4_info *)buffer->data)->ip_src = ipv4->ip_src;
-		((struct k_ipv4_info *)buffer->data)->ip_dest = ipv4->ip_dest;
-
 		error = k_udp_rx(buffer);
 		if (error)
 			return error;

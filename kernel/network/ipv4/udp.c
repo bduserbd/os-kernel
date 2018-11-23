@@ -87,12 +87,34 @@ static k_error_t k_udp_check(struct k_network_buffer *buffer)
 k_error_t k_udp_rx(struct k_network_buffer *buffer)
 {
 	k_error_t error;
+	struct k_udp_header *udp;
 
 	error = k_udp_check(buffer);
 	if (error)
 		return error;
 
-	k_printf("Pass");
+	udp = (void *)buffer->start;
+
+	((struct k_ipv4_info *)buffer->data)->port_src = udp->port_src;
+	((struct k_ipv4_info *)buffer->data)->port_dest = udp->port_dest;
+
+	switch (udp->port_dest) {
+	case K_PORT_DNS:
+		break;
+
+	case K_PORT_DHCP_CLIENT:
+		if (udp->port_src != K_PORT_DHCP_SERVER)
+			return K_ERROR_INVALID_PARAMETER;
+
+		error = k_dhcp_rx(buffer);
+		if (error)
+			return error;
+
+		break;
+
+	default:
+		return K_ERROR_UNSUPPORTED;
+	}
 
 	return K_ERROR_NONE;
 }

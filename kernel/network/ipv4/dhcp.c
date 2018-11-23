@@ -73,3 +73,8 @@ void k_dhcp_build_packet(struct k_network_buffer *buffer, int options_length)
 			K_PORT_DHCP_CLIENT, K_PORT_DHCP_SERVER, K_IPV4_BROADCAST);
 }
 
+k_error_t k_dhcp_rx(struct k_network_buffer *buffer)
+{
+	return K_ERROR_NONE;
+}
+
