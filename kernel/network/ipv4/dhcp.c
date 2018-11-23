@@ -75,6 +75,8 @@ void k_dhcp_build_packet(struct k_network_buffer *buffer, int options_length)
 
 k_error_t k_dhcp_rx(struct k_network_buffer *buffer)
 {
+	k_printf("DHCP");
+
 	return K_ERROR_NONE;
 }
 

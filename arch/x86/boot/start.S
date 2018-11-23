@@ -84,8 +84,10 @@ die:
 	.p2align 3
 first_gdt:
 	K_GDT_ENTRY
-	K_GDT_ENTRY base=0x0 limit=0xfffff type=0xa s=1 p=1 db=1 g=1
-	K_GDT_ENTRY base=0x0 limit=0xfffff type=0x2 s=1 p=1 db=1 g=1
+	K_GDT_ENTRY base=0x0 limit=0xfffff type=0xa s=1 dpl=0 p=1 db=1 g=1
+	K_GDT_ENTRY base=0x0 limit=0xfffff type=0x2 s=1 dpl=0 p=1 db=1 g=1
+	K_GDT_ENTRY base=0x0 limit=0xfffff type=0xa s=1 dpl=3 p=1 db=1 g=1
+	K_GDT_ENTRY base=0x0 limit=0xfffff type=0x2 s=1 dpl=3 p=1 db=1 g=1
 first_gdt_end:
 
 	.p2align 3

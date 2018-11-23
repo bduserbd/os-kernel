@@ -93,17 +93,17 @@ k_error_t k_udp_rx(struct k_network_buffer *buffer)
 	if (error)
 		return error;
 
-	udp = (void *)buffer->start;
+	udp = (void *)buffer->packet_start;
 
-	((struct k_ipv4_info *)buffer->data)->port_src = udp->port_src;
-	((struct k_ipv4_info *)buffer->data)->port_dest = udp->port_dest;
+	((struct k_ipv4_info *)buffer->data)->port_src = k_be16_to_cpu(udp->port_src);
+	((struct k_ipv4_info *)buffer->data)->port_dest = k_be16_to_cpu(udp->port_dest);
 
-	switch (udp->port_dest) {
+	switch (k_be16_to_cpu(udp->port_dest)) {
 	case K_PORT_DNS:
 		break;
 
 	case K_PORT_DHCP_CLIENT:
-		if (udp->port_src != K_PORT_DHCP_SERVER)
+		if (k_be16_to_cpu(udp->port_src) != K_PORT_DHCP_SERVER)
 			return K_ERROR_INVALID_PARAMETER;
 
 		error = k_dhcp_rx(buffer);
