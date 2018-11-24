@@ -3,6 +3,8 @@
 #include "include/irq/late-irq.h"
 #include "include/video/print.h"
 
+void k_user_mode_init(void);
+
 void k_init(void)
 {
 	k_task_init();
@@ -11,5 +13,7 @@ void k_init(void)
 
 	k_task_create(k_late_irq_task, NULL);
 	k_network_init();
+
+	k_user_mode_init();
 }
 
