@@ -62,6 +62,13 @@ void k_gdt_init(void)
 	k_gdt_reg.address = (k_uint32_t)&k_gdt;
 
 	asm volatile("lgdt %0" : : "m" (k_gdt_reg));
+
+	asm volatile(
+		"mov	%0, %%ax	\n"
+		"ltr	%%ax"
+		: :
+		"i" (K_GDT_TSS_SELECTOR | 3)
+	);
 }
 
 k_error_t k_tss_init(void)
