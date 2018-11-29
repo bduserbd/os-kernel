@@ -108,6 +108,10 @@ k_multiboot_magic_ptr:
 k_multiboot_info_ptr:
 	.long	0
 
+	.p2align 5
+	.section ".user", "a"
+	.skip	K_CONFIG_USER_MODE_EXECUTABLE
+
 /* The kernel stack. */
 	.p2align 5
 	.section ".kernel_stack", "a"

@@ -25,7 +25,7 @@ static void k_user_mode_switch(void (*callback)(void *))
 	for (;;) ;
 }
 
-void k_user_mode_init(void (*callback)(void *))
+void k_user_mode_arch_init(void (*callback)(void *))
 {
 	k_error_t error;
 

@@ -20,4 +20,5 @@ dirs:
 	$(V)$(MAKE) -C network/
 	$(V)$(MAKE) -C modules/
 	$(V)$(MAKE) -C initramfs/
+	$(V)$(MAKE) -C user-mode/
 

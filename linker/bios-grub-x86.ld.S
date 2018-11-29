@@ -49,6 +49,13 @@ SECTIONS {
 		__k_symtab_end = .;
 	}
 
+	.user : AT (ADDR(.user) - K_IMAGE_BASE)
+	{
+		__k_user_start = .;
+		*(.user)
+		__k_user_end = .;
+	}
+
 #ifdef K_CONFIG_SMP
 	__k_ap_start = .;
 	.ap_start : AT (ADDR(.ap_start) - K_IMAGE_BASE)
