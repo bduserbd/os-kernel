@@ -1,4 +1,6 @@
 #include "include/network/protocol/address-cache.h"
+#include "include/network/protocol/udp.h"
+#include "include/network/ipv4/ipv4.h"
 
 static k_uint16_t k_ipv4_checksum(struct k_ipv4_header *ipv4)
 {
@@ -48,13 +50,73 @@ void k_ipv4_build_packet(struct k_network_buffer *buffer, k_uint16_t payload_len
 	ipv4->ttl = K_IPV4_TTL;
 	ipv4->protocol = K_IPV4_PROTOCOL_UDP;
 	ipv4->checksum = 0;
-	ipv4->src_ip = K_IPV4(0, 0, 0, 0);
-	ipv4->dest_ip = ip;
+	ipv4->ip_src = K_IPV4(0, 0, 0, 0);
+	ipv4->ip_dest = ip;
 
 	ipv4->checksum = k_ipv4_checksum(ipv4);
 
-	k_address_cache_resolve(buffer->card, ipv4->src_ip, mac);
+	k_address_cache_resolve(buffer->card, ipv4->ip_src, mac);
 
 	k_ethernet_build_broadcast_packet(buffer, K_ETHERNET_PROTOCOL_IP, mac);
+}
+
+static k_error_t k_ipv4_check(struct k_network_buffer *buffer)
+{
+	k_uint16_t checksum, rx_checksum;
+	struct k_ipv4_header *ipv4;
+
+	k_network_buffer_adjust_up(buffer, sizeof(struct k_ipv4_header));
+
+	ipv4 = (void *)buffer->packet_start;
+
+	rx_checksum = ipv4->checksum;
+	ipv4->checksum = 0;
+
+	checksum = k_ipv4_checksum(ipv4);
+
+	ipv4->checksum = rx_checksum;
+
+	if (rx_checksum != checksum)
+		return K_ERROR_BAD_CHECKSUM;
+
+	if (ipv4->version != K_IPV4_VERSION || ipv4->ihl != 5)
+		return K_ERROR_INVALID_PARAMETER;
+
+	return K_ERROR_NONE;
+}
+
+k_error_t k_ipv4_rx(struct k_network_buffer *buffer)
+{
+	k_error_t error;
+	struct k_ipv4_header *ipv4;
+
+	error = k_ipv4_check(buffer);
+	if (error)
+		return error;
+
+	ipv4 = (void *)buffer->packet_start;
+
+	((struct k_ipv4_info *)buffer->data)->ip_src = ipv4->ip_src;
+	((struct k_ipv4_info *)buffer->data)->ip_dest = ipv4->ip_dest;
+
+	switch (ipv4->protocol) {
+	case K_IPV4_PROTOCOL_ICMP:
+		break;
+
+	case K_IPV4_PROTOCOL_TCP:
+		break;
+
+	case K_IPV4_PROTOCOL_UDP:
+		error = k_udp_rx(buffer);
+		if (error)
+			return error;
+
+		break;
+
+	default:
+		return K_ERROR_UNSUPPORTED;
+	}
+
+	return K_ERROR_NONE;
 }
 

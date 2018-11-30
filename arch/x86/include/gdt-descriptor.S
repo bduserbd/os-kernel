@@ -1,5 +1,5 @@
 # GDT entry.
-        .macro  K_GDT_ENTRY base=0 limit=0 type=0 s=0 p=0 db=0 g=0
+        .macro  K_GDT_ENTRY base=0 limit=0 type=0 s=0 dpl=0 p=0 db=0 g=0
 
         .word   (\limit & 0xffff)
         .word   (\base & 0xffff)

@@ -19,6 +19,8 @@ struct k_rtl8139 {
 
 	k_uint8_t *rx_buffer;
 
+	struct k_network_card *card;
+
 	struct k_rtl8139 *next;
 };
 static struct k_rtl8139 *k_rtl8139_list = NULL;
@@ -95,32 +97,52 @@ static k_error_t k_rtl8139_is_supported(struct k_pci_index index)
 	return K_ERROR_NONE;
 }
 
+static k_error_t k_rtl8139_handle_receive(struct k_rtl8139 *rtl8139)
+{
+	k_uint16_t cbr;
+	k_error_t error;
+	struct k_network_buffer *buffer;
+
+	cbr = k_rtl8139_inw(rtl8139, K_RTL8139_CBR);
+
+	buffer = k_malloc(sizeof(struct k_network_buffer));
+	if (!buffer)
+		return K_ERROR_MEMORY_ALLOCATION_FAILED;
+
+	buffer->start = k_malloc(cbr);
+	if (!buffer->start)
+		return K_ERROR_MEMORY_ALLOCATION_FAILED;
+
+	k_memcpy(buffer->start, rtl8139->rx_buffer, cbr);
+	buffer->end = buffer->start + cbr;
+
+	error = k_network_rx(buffer);
+	if (error)
+		return error;
+
+	return K_ERROR_NONE;
+}
+
 static k_error_t k_rtl8139_irq_handler(unsigned int irq, void *device)
 {
 	k_uint16_t isr;
 	struct k_rtl8139 *rtl8139;
-	static int x = 0;
+	k_error_t error;
 
 	rtl8139 = device;
 
 	isr = k_rtl8139_inw(rtl8139, K_RTL8139_ISR);
 
 	if (isr & K_RTL8139_ISR_ROK) {
-		if (x == 0) {
-			k_uint16_t cbr = k_rtl8139_inw(rtl8139, K_RTL8139_CBR);
-			for (int i = 0; i < cbr; i++)
-				k_printf("%x ", rtl8139->rx_buffer[i]);
-		}
-
-		x++;
 		k_rtl8139_outw(rtl8139, K_RTL8139_ISR_ROK, K_RTL8139_ISR);
 
+		error = k_rtl8139_handle_receive(rtl8139);
+		if (error)
+			return error;
 	}
 
-	if (isr & K_RTL8139_ISR_TOK) {
-		k_printf("@");
+	if (isr & K_RTL8139_ISR_TOK)
 		k_rtl8139_outw(rtl8139, K_RTL8139_ISR_TOK, K_RTL8139_ISR);
-	}
 
 	return K_ERROR_NONE_IRQ;
 }
@@ -221,6 +243,8 @@ K_MODULE_INIT()
 		k_memcpy(card->hw_address, rtl8139->mac, 6);
 		card->ops = &k_rtl8139_ops;
 		card->data = rtl8139;
+
+		rtl8139->card = card;
 
 		k_network_card_register(card);
 	}

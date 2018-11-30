@@ -1,17 +1,20 @@
 #include "include/8253.h"
 #include "kernel/include/irq/irq.h"
 #include "kernel/include/io/io.h"
+#include "kernel/include/task/task.h"
 #include "kernel/include/video/print.h"
 
-static k_error_t k_pit_irq_handler(unsigned int irq, void *device)
+static k_error_t k_pit_irq_handler(unsigned int irq, void *context)
 {
 	static int ticks = 0;
 
 	ticks++;
-	if (ticks == 500) {
-		//k_printf("$");
-		ticks = 0;
-	}
+	//if (ticks == 500) {
+	//	k_printf("$");
+	//	ticks = 0;
+	//}
+
+	k_task_switch(context);
 
 	return K_ERROR_NONE;
 }
@@ -19,7 +22,7 @@ static k_error_t k_pit_irq_handler(unsigned int irq, void *device)
 void k_pit_init(void)
 {
 	k_error_t error;
-	const k_uint16_t divisor = 0xff;
+	const k_uint16_t divisor = 0xffff;
 
 	error = k_irq_request(0, k_pit_irq_handler, 0, NULL);
 	if (error)

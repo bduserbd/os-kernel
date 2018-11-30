@@ -1,4 +1,5 @@
 OBJS += network.o
+OBJS += packet.o
 
 CFLAGS = -I ../
 

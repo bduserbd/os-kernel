@@ -35,8 +35,12 @@ struct k_buddy_node {
 extern k_uint8_t *k_heap;
 
 void k_buddy_init(k_uint32_t);
+
 void *k_buddy_alloc(k_size_t);
 void k_buddy_free(const void *);
+
+void *k_buddy_user_alloc(k_size_t);
+void k_buddy_user_free(const void *);
 
 #endif
 

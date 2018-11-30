@@ -11,8 +11,9 @@
 void k_ipv4_init(void)
 {
 	struct k_network_card *card;
-	struct k_network_buffer *buffer;
+	//struct k_network_buffer *buffer;
 
+#if 0
 	buffer = k_malloc(sizeof(struct k_network_buffer));
 	if (!buffer)
 		return;
@@ -26,17 +27,13 @@ void k_ipv4_init(void)
 	sizeof(struct k_dhcp_header) +		\
 	options_length)
 
-#define SLEEP							\
-		for (int j = 0; j < 10; j++)			\
-			for (int i = 0; i < 100000000; i++)	\
-				asm volatile("nop");
-
 	buffer->start = k_malloc(SIZE);
 	if (!buffer->start)
 		return;
 
 	buffer->end = buffer->start + SIZE;
 	buffer->packet_start = buffer->packet_end = buffer->end;
+#endif
 
 	for (card = k_network_cards; card; card = card->next) {
 		k_address_cache_create(card);
@@ -44,13 +41,10 @@ void k_ipv4_init(void)
 		k_address_cache_new_entry(card, K_IPV4(0, 0, 0, 0), card->hw_address);
 		k_address_cache_new_entry(card, K_IPV4_BROADCAST, k_ethernet_broadcast_address);
 
-		buffer->card = card;
-		k_dhcp_build_packet(buffer, options_length);
+		//buffer->card = card;
+		//k_dhcp_build_packet(buffer, options_length);
 
-		SLEEP
-		for (int i = 0; i < 1; i++) {
-			card->ops->transmit(card, buffer);
-		}
+		//while ((card->ops->transmit(card, buffer) == K_ERROR_NETWORK_LINK_NOT_SET)) ;
 	}
 }
 

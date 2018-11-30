@@ -43,6 +43,7 @@ struct k_dhcp_header {
 } __attribute__((packed));
 
 void k_dhcp_build_packet(struct k_network_buffer *, int);
+k_error_t k_dhcp_rx(struct k_network_buffer *);
 
 #endif
 

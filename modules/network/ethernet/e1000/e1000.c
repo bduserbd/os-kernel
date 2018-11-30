@@ -31,11 +31,15 @@ struct k_e1000 {
 
 	k_uint8_t mac[6];
 
+	int link_up;
+
 	int receive_index;
 	volatile struct k_e1000_rdesc *rx_ring;
 
 	int transmit_index;
 	volatile struct k_e1000_tdesc *tx_ring;
+
+	struct k_network_card *card;
 
 	struct k_e1000 *next;
 };
@@ -106,6 +110,9 @@ static k_error_t k_e1000_transmit(struct k_network_card *card, struct k_network_
 
 	e1000 = card->data;
 
+	if (!e1000->link_up)
+		return K_ERROR_NETWORK_LINK_NOT_SET;
+
 	tdesc = &e1000->tx_ring[e1000->transmit_index];
 
 	tdesc->buffer = k_v2p_l((unsigned long)buffer->start);
@@ -117,17 +124,39 @@ static k_error_t k_e1000_transmit(struct k_network_card *card, struct k_network_
 
 	k_e1000_set_reg(e1000, K_E1000_TDT, e1000->transmit_index);
 
-	k_printf("Here");
-
 	return K_ERROR_NONE;
 }
 
 static k_error_t k_e1000_handle_receive(struct k_e1000 *e1000)
 {
+	k_error_t error;
+
 	while (e1000->rx_ring[e1000->receive_index].status & K_E1000_RDESC_STATUS_DD) {
-		k_printf("%x ", e1000->rx_ring[e1000->receive_index].length);
+		struct k_network_buffer *buffer;
 
 		e1000->rx_ring[e1000->receive_index].status = 0;
+
+		buffer = k_malloc(sizeof(struct k_network_buffer));
+		if (!buffer)
+			return K_ERROR_MEMORY_ALLOCATION_FAILED;
+
+		buffer->card = e1000->card;
+
+		unsigned int length = e1000->rx_ring[e1000->receive_index].length;
+
+		buffer->start = k_malloc(length);
+		if (!buffer->start)
+			return K_ERROR_MEMORY_ALLOCATION_FAILED;
+
+		k_memcpy(buffer->start,
+				k_p2v((void *)(unsigned long)e1000->rx_ring[e1000->receive_index].buffer),
+				length);
+
+		buffer->end = buffer->start + length;
+
+		error = k_network_rx(buffer);
+		if (error)
+			return error;
 
 		k_e1000_set_reg(e1000, K_E1000_RDT, e1000->receive_index);
 		e1000->receive_index = (e1000->receive_index + 1) % K_E1000_RX_RING_ENTRIES;
@@ -147,14 +176,13 @@ static k_error_t k_e1000_irq_handler(unsigned int irq, void *device)
 	icr = k_e1000_get_reg(e1000, K_E1000_ICR);
 
 	if (icr & K_E1000_ICR_LCS)
-		return K_ERROR_NONE_IRQ;
+		e1000->link_up = true;
 
 	if (icr & K_E1000_ICR_RXT0) {
 		error = k_e1000_handle_receive(e1000);
 		if (error)
 			return error;
-	} else
-		k_printf("ICR:%x", icr);
+	}
 
 	return K_ERROR_NONE_IRQ;
 }
@@ -231,6 +259,8 @@ static k_error_t k_e1000_transmit_init(struct k_e1000 *e1000)
 
 static k_error_t k_e1000_set_link(struct k_e1000 *e1000)
 {
+	e1000->link_up = false;
+
 	k_e1000_set_reg(e1000, K_E1000_CTRL, K_E1000_CTRL_ASDE | K_E1000_CTRL_SLU);
 
 	k_e1000_set_reg(e1000, K_E1000_IMS, K_E1000_IMS_TXDW | K_E1000_IMS_LSC |
@@ -270,10 +300,6 @@ static k_error_t k_e1000_init(struct k_e1000 *e1000)
 		return error;
 
 	k_e1000_set_reg(e1000, K_E1000_RCTL, K_E1000_RCTL_EN);
-
-	for (int i = 0; i < 6; i++)
-		k_printf("%x", e1000->mac[i]);
-	k_printf("\n");
 
 	return K_ERROR_NONE;
 }
@@ -329,8 +355,13 @@ static struct k_network_card_operations k_e1000_ops = {
 K_MODULE_INIT()
 {
 	struct k_e1000 *e1000;
+	struct k_network_packet *packet;
 
 	k_pci_iterate_devices(k_e1000_pci_init);
+
+	packet = k_network_packet_get(K_NETWORK_PACKET_ETHERNET);
+	if (!packet)
+		return;
 
 	for (e1000 = k_e1000_list; e1000; e1000 = e1000->next) {
 		struct k_network_card *card = k_malloc(sizeof(struct k_network_card));
@@ -340,6 +371,9 @@ K_MODULE_INIT()
 		k_memcpy(card->hw_address, e1000->mac, 6);
 		card->ops = &k_e1000_ops;
 		card->data = e1000;
+		card->packet = packet;
+
+		e1000->card = card;
 
 		k_network_card_register(card);
 	}

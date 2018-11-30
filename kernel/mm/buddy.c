@@ -1,71 +1,90 @@
 #include "include/mm/buddy.h"
-#include "include/string.h"
 #include "include/modules/export-symbol.h"
+#include "include/string.h"
+#include "include/log2.h"
 
-static struct k_buddy_node *k_group = NULL;
-static struct k_buddy_node *k_node = NULL;
+extern unsigned long k_total_normal_frames;
+
+struct k_buddy {
+        k_uint8_t *heap;
+
+        unsigned int total_groups, group_size;
+
+        unsigned long list_size;
+
+        unsigned int min_block_log2;
+        unsigned int max_block_log2;
+
+        struct k_buddy_node *group;
+        struct k_buddy_node *node;
+};
 
 k_uint8_t *k_heap = NULL;
 
+static struct k_buddy k_buddy;
+
+/* Physical page frames. */
+static struct k_buddy k_user_buddy;
+
 void k_paging_reserve_pages(k_uint32_t, k_uint32_t);
 
-static struct k_buddy_node *k_buddy_get(struct k_buddy_node *node)
+static struct k_buddy_node *k_buddy_get(struct k_buddy *buddy, struct k_buddy_node *node)
 {
 	unsigned long a;
 
-	a = (node - k_node) << K_BUDDY_MIN_BLOCK_LOG2;
+	a = (node - buddy->node) << buddy->min_block_log2;
 
-	return &k_node[(a ^ (1 << node->order)) >> K_BUDDY_MIN_BLOCK_LOG2];
+	return &buddy->node[(a ^ (1 << node->order)) >> buddy->min_block_log2];
 }
 
-static int k_buddy_best_fit_group(k_size_t size)
+static int k_buddy_best_fit_group(struct k_buddy *buddy, k_size_t size)
 {
 	int i;
 
-	for (i = 0; i < K_BUDDY_TOTAL_GROUPS; i++)
-		if (size > (1  << (K_BUDDY_MAX_BLOCK_LOG2 - i - 1)))
+	for (i = 0; i < buddy->total_groups; i++)
+		if (size > (1  << (buddy->max_block_log2 - i - 1)))
 			return i;
 
 	return i - 1;
 }
 
-static k_uint8_t *k_buddy_node_to_address(struct k_buddy_node *node)
+static k_uint8_t *k_buddy_node_to_address(struct k_buddy *buddy, struct k_buddy_node *node)
 {
-	return k_heap + ((node - k_node) << K_BUDDY_MIN_BLOCK_LOG2);
+	return buddy->heap + ((node - buddy->node) << buddy->min_block_log2);
 }
 
-static struct k_buddy_node *k_buddy_address_to_node(const void *ptr)
+static struct k_buddy_node *k_buddy_address_to_node(struct k_buddy *buddy, const void *ptr)
 {
 	unsigned long a;
 
 	a = (unsigned long)ptr;
 
-	if (a & ((1 << K_BUDDY_MIN_BLOCK_LOG2) - 1))
+	if (a & ((1 << buddy->min_block_log2) - 1))
 		return NULL;
 
-	if (a < (unsigned long)k_heap ||
-			(unsigned long)k_heap + (1 << K_BUDDY_MAX_BLOCK_LOG2) < a)
+	if (a < (unsigned long)buddy->heap ||
+			(unsigned long)buddy->heap + (1 << buddy->max_block_log2) < a)
 		return NULL;
 
-	return &k_node[(a - (unsigned long)k_heap) >> K_BUDDY_MIN_BLOCK_LOG2];
+	return &buddy->node[(a - (unsigned long)buddy->heap) >> buddy->min_block_log2];
 }
 
-void k_buddy_free(const void *ptr)
+void k_buddy_free_generic(struct k_buddy *buddy, const void *ptr)
 {
 	k_uint8_t order;
 	struct k_buddy_node *a, *b;
 
-	if (k_group || k_node || k_heap)
+	if (buddy->group || buddy->node || buddy->heap)
 		return;
 
-	a = k_buddy_address_to_node(ptr);
+	a = k_buddy_address_to_node(buddy, ptr);
 	if (!a)
 		return;
 
 	order = a->order;
 
 	while (1) {
-		b = k_buddy_get(a);
+		b = k_buddy_get(buddy, a);
 
 		if (order == K_BUDDY_MAX_BLOCK_LOG2 ||
 				b->status == K_BUDDY_NODE_USED ||
@@ -82,37 +101,46 @@ void k_buddy_free(const void *ptr)
 	}
 
 	a->status = K_BUDDY_NODE_SPLIT;
-	b = k_group[order].next;
+	b = buddy->group[order].next;
 	a->next = b;
 	b->prev = a;
 	a->order = order;
-	a->prev = &k_group[order];
-	k_group[order].next = a;
+	a->prev = &buddy->group[order];
+	buddy->group[order].next = a;
+}
+
+void k_buddy_free(const void *ptr)
+{
+	return k_buddy_free_generic(&k_buddy, ptr);
 }
 K_EXPORT_FUNC(k_buddy_free);
 
-static void *k_buddy_alloc_unmapped(k_size_t size)
+void k_buddy_user_free(const void *ptr)
 {
-	int i;
-	int group;
+	return k_buddy_free_generic(&k_user_buddy, ptr);
+}
+
+static void *k_buddy_alloc_generic(struct k_buddy *buddy, k_size_t size)
+{
+	unsigned int i, group;
 	struct k_buddy_node *a, *b;
 
-	if (!k_group || !k_node || !k_heap)
+	if (!buddy->group || !buddy->node || !buddy->heap)
 		return NULL;
 
-	group = k_buddy_best_fit_group(size);
+	group = k_buddy_best_fit_group(buddy, size);
 
-	i = K_BUDDY_TOTAL_GROUPS;
+	i = buddy->total_groups;
 	while (1) {
 		i--;
 
-		if ((k_group[i].next == &k_group[i]) || (size > (1 << k_group[i].order)))
+		if ((buddy->group[i].next == &buddy->group[i]) || (size > (1 << buddy->group[i].order)))
 			continue;
 
-		a = k_group[i].next;
+		a = buddy->group[i].next;
 		b = a->next;
-		k_group[i].next = b;
-		b->prev = &k_group[i];
+		buddy->group[i].next = b;
+		b->prev = &buddy->group[i];
 
 		a->status = K_BUDDY_NODE_USED;		
 
@@ -121,17 +149,17 @@ static void *k_buddy_alloc_unmapped(k_size_t size)
 
 	while (1) {
 		if (i == group)
-			return k_buddy_node_to_address(a);
+			return k_buddy_node_to_address(buddy, a);
 
 		i++;
 		a->order--;
 
-		b = k_buddy_get(a);
+		b = k_buddy_get(buddy, a);
 		b->status = K_BUDDY_NODE_SPLIT;
 		b->order = a->order;
 
-		b->next = b->prev = &k_group[i];
-		k_group[i].next = k_group[i].prev = b;
+		b->next = b->prev = &buddy->group[i];
+		buddy->group[i].next = buddy->group[i].prev = b;
 	}
 }
 
@@ -140,48 +168,121 @@ void *k_buddy_alloc(k_size_t size)
 	int log2;
 	void *ptr;
 
-	ptr = k_buddy_alloc_unmapped(size);
+	ptr = k_buddy_alloc_generic(&k_buddy, size);
 	if (!ptr)
 		return NULL;
 
-	log2 = K_BUDDY_MAX_BLOCK_LOG2 - k_buddy_best_fit_group(size);
+	log2 = k_buddy.max_block_log2 - k_buddy_best_fit_group(&k_buddy, size);
 	k_paging_reserve_pages((k_uint32_t)ptr, 1 << log2);
 
 	return ptr;
 }
 K_EXPORT_FUNC(k_buddy_alloc);
 
-void k_buddy_init(k_uint32_t heap)
+void *k_buddy_user_alloc(k_size_t size)
+{
+	void *ptr;
+
+	ptr = k_buddy_alloc_generic(&k_user_buddy, size);
+	if (!ptr)
+		return NULL;
+
+	if (k_total_normal_frames <= ((unsigned long)ptr >> k_user_buddy.min_block_log2))
+		return NULL;
+
+	return ptr;
+}
+
+static void k_buddy_reorder_nodes(struct k_buddy *buddy)
 {
 	int i;
 
-	if (k_group || k_node || k_heap)
+	buddy->node[0].status = K_BUDDY_NODE_SPLIT;
+	buddy->node[0].order = buddy->max_block_log2;
+	buddy->node[0].next = buddy->node[0].prev = &buddy->group[0];
+
+	buddy->group[0].status = K_BUDDY_NODE_HEAD;
+	buddy->group[0].order = buddy->max_block_log2;
+	buddy->group[0].next = buddy->group[0].prev = &buddy->node[0];
+
+	for (i = 1; i < buddy->total_groups; i++) {
+		buddy->group[i].status = K_BUDDY_NODE_HEAD;
+		buddy->group[i].order = buddy->max_block_log2 - i;
+		buddy->group[i].next = buddy->group[i].prev = &buddy->group[i];
+	}
+}
+
+static void k_buddy_kernel_init(k_uint32_t heap)
+{
+	k_buddy.total_groups = K_BUDDY_TOTAL_GROUPS;
+	k_buddy.group_size = K_BUDDY_GROUP_SIZE;
+
+	k_buddy.list_size = K_BUDDY_LIST_SIZE;
+
+	k_buddy.min_block_log2 = K_BUDDY_MIN_BLOCK_LOG2;
+	k_buddy.max_block_log2 = K_BUDDY_MAX_BLOCK_LOG2;
+
+	k_buddy.group = (void *)heap;
+	k_paging_reserve_pages(heap, k_buddy.group_size);
+	k_memset(k_buddy.group, 0, k_buddy.group_size);
+
+	k_buddy.node = (void *)K_ALIGN_UP((k_uint32_t)k_buddy.group + k_buddy.group_size, 0x1000);
+	k_paging_reserve_pages((k_uint32_t)k_buddy.node, k_buddy.list_size);
+	k_memset(k_buddy.node, 0, k_buddy.list_size);
+
+	k_buddy.heap = (void *)K_ALIGN_UP((k_uint32_t)k_buddy.node + k_buddy.list_size,
+			1 << k_buddy.min_block_log2);
+
+	k_buddy_reorder_nodes(&k_buddy);
+
+	k_heap = k_buddy.heap;
+}
+
+static void k_buddy_user_init(void)
+{
+	unsigned int log2;
+	unsigned long left_frames;
+
+	k_user_buddy.min_block_log2 = k_buddy.min_block_log2;
+
+	left_frames = k_total_normal_frames -
+			((unsigned long)(k_buddy.heap - K_IMAGE_BASE) >>
+			k_user_buddy.min_block_log2);
+
+	log2 = k_log2(left_frames) + !!(left_frames & (left_frames - 1));
+
+	k_user_buddy.max_block_log2 = log2 + k_user_buddy.min_block_log2;
+
+	k_user_buddy.total_groups = 1 + k_user_buddy.max_block_log2 - k_user_buddy.min_block_log2;
+	k_user_buddy.group_size = k_user_buddy.total_groups * sizeof(struct k_buddy_node);
+
+	k_user_buddy.list_size = sizeof(struct k_buddy_node) *
+			(1 << (k_user_buddy.max_block_log2 - k_user_buddy.min_block_log2));
+
+	k_user_buddy.group = k_buddy_alloc(k_user_buddy.group_size);
+	if (!k_user_buddy.group)
 		return;
 
-	k_group = (void *)heap;
-	k_paging_reserve_pages(heap, K_BUDDY_GROUP_SIZE);
-	k_memset(k_group, 0, K_BUDDY_GROUP_SIZE);
+	k_memset(k_user_buddy.group, 0, k_user_buddy.group_size);
 
-	k_node = (void *)K_ALIGN_UP((k_uint32_t)k_group + K_BUDDY_GROUP_SIZE, 0x1000);
-	k_paging_reserve_pages((k_uint32_t)k_node, K_BUDDY_LIST_SIZE);
-	k_memset(k_node, 0, K_BUDDY_LIST_SIZE);
+	k_user_buddy.node = k_buddy_alloc(k_user_buddy.list_size);
+	if (!k_user_buddy.node)
+		return;
 
-	k_heap = (void *)K_ALIGN_UP((k_uint32_t)k_node + K_BUDDY_LIST_SIZE,
-			1 << K_BUDDY_MIN_BLOCK_LOG2);
-	//k_paging_reserve_pages((k_uint32_t)k_heap, 1 << K_BUDDY_MAX_BLOCK_LOG2);
+	k_memset(k_user_buddy.node, 0, k_user_buddy.list_size);
 
-	k_node[0].status = K_BUDDY_NODE_SPLIT;
-	k_node[0].order = K_BUDDY_MAX_BLOCK_LOG2;
-	k_node[0].next = k_node[0].prev = &k_group[0];
+	k_user_buddy.heap = k_buddy.heap + (1 << k_buddy.max_block_log2) - K_IMAGE_BASE;
 
-	k_group[0].status = K_BUDDY_NODE_HEAD;
-	k_group[0].order = K_BUDDY_MAX_BLOCK_LOG2;
-	k_group[0].next = k_group[0].prev = &k_node[0];
+	k_buddy_reorder_nodes(&k_user_buddy);
+}
 
-	for (i = 1; i < K_BUDDY_TOTAL_GROUPS; i++) {
-		k_group[i].status = K_BUDDY_NODE_HEAD;
-		k_group[i].order = K_BUDDY_MAX_BLOCK_LOG2 - i;
-		k_group[i].next = k_group[i].prev = &k_group[i];
-	}
+void k_buddy_init(k_uint32_t heap)
+{
+	if (k_buddy.group || k_buddy.node || k_buddy.heap)
+		return;
+
+	k_buddy_kernel_init(heap);
+
+	k_buddy_user_init();
 }
 

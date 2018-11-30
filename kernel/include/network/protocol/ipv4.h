@@ -35,8 +35,8 @@ struct k_ipv4_header {
 	__u8	ttl;
 	__u8	protocol;
 	__u16	checksum;
-	__u32	src_ip;
-	__u32	dest_ip;
+	__u32	ip_src;
+	__u32	ip_dest;
 } __attribute__((packed));
 
 #define K_IPV4(a, b, c, d)	\
@@ -47,6 +47,7 @@ struct k_ipv4_header {
 typedef k_uint32_t	k_ipv4_t;
 
 void k_ipv4_build_packet(struct k_network_buffer *, k_uint16_t, k_ipv4_t);
+k_error_t k_ipv4_rx(struct k_network_buffer *);
 
 #endif
 

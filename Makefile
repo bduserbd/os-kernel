@@ -79,6 +79,7 @@ link:
 	$(V)if [ "$(ARCH)" = "x86" ] && [ "$(CPUS)" != "1" ]; then			\
 		$(OBJCOPY) target.elf --update-section .ap_start=$(BUILD_OBJDIR)/$(AP_BIN);	\
 	fi;
+	$(OBJCOPY) target.elf --update-section .user=user-mode/init.o;	\
 
 initramfs:
 	$(V)$(patsubst $(CURDIR)/%,%,find $(BUILD_MODULES_OBJDIR))	\

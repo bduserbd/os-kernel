@@ -87,6 +87,8 @@ extern void k_irq_handler15(void);
 
 extern void k_spurious_int(void);
 
+extern void k_system_call(void);
+
 #endif
 
 #endif

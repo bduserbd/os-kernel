@@ -5,6 +5,12 @@
 #include "include/string.h"
 #include "include/video/print.h"
 
+k_error_t k_elf_check(Elf(Ehdr) *, k_size_t);
+k_error_t k_elf_load_image(Elf(Ehdr) *, struct k_module *);
+k_error_t k_elf_load_symbols(Elf(Ehdr) *, struct k_module *);
+k_error_t k_elf_relocate_symbols(Elf(Ehdr) *, struct k_module *);
+void *k_elf_section_by_name(Elf(Ehdr) *, const char *);
+
 static struct k_module *k_mods = NULL;
 
 static int k_loader_module_exists(const char *name)

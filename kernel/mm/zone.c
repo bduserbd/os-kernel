@@ -18,8 +18,7 @@ void *k_p2v(const void *physical)
 
 	for (zone = k_memory_zones; zone; zone = zone->next)
 		if (frame >= zone->start_frame && zone->start_frame + zone->total_frames > frame)
-			return (void *)K_OFFSET_FROM(zone->frames[frame - zone->start_frame].virtual,
-					offset);
+			return (void *)K_OFFSET_FROM(zone->frames[frame - zone->start_frame].virtual, offset);
 
 	return NULL;
 }
