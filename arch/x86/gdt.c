@@ -80,7 +80,7 @@ k_error_t k_tss_init(void)
 		return K_ERROR_MEMORY_ALLOCATION_FAILED;
 
 	k_user_tss.ss0 = K_GDT_KERNEL_DATA_SELECTOR;
-	k_user_tss.esp0 = (k_uint32_t)stack;
+	k_user_tss.esp0 = (k_uint32_t)stack + (0x1000 - 1);
 
 	return K_ERROR_NONE;
 }

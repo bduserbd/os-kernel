@@ -81,6 +81,12 @@ static void k_idt_set_gate(int i, k_uint32_t offset, int type)
 	k_idt[i].p = 1;
 }
 
+static void k_idt_set_user_gate(int i, k_uint32_t offset, int type)
+{
+	k_idt_set_gate(i, offset, type);
+	k_idt[i].dpl = 3;
+}
+
 void k_idt_init(void)
 {
 	int i, j;
@@ -93,6 +99,8 @@ void k_idt_init(void)
 
 	for (i = K_IRQ_SLAVE_START, j = 8; i < K_IRQ_SLAVE_START + 8; i++, j++)
 		k_idt_set_gate(i, (k_uint32_t)k_irq_handler_arr[j], K_IDT_INTERRUPT_GATE_32BIT);
+
+	k_idt_set_user_gate(0x80, (k_uint32_t)k_system_call, K_IDT_INTERRUPT_GATE_32BIT);
 
 	k_idt_set_gate(0xff, (k_uint32_t)k_spurious_int, K_IDT_TRAP_GATE);
 

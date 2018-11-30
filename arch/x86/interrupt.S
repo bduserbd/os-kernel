@@ -105,3 +105,12 @@ K_IRQ_HANDLER 15 K_IRQ_SLAVE_START + 7
 k_spurious_int:
 	iret
 
+/* System call. */
+	.globl	k_system_call
+k_system_call:
+	pusha
+	call	k_system_call_handler
+	popa
+
+	iret
+

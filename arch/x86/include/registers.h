@@ -78,5 +78,10 @@ struct k_int_registers {
 	k_uint32_t error_code, eip, cs, eflags;
 } __attribute__((packed));
 
+struct k_system_call_registers {
+	k_uint32_t edi, esi, ebp, _esp, ebx, edx, ecx, eax;
+	k_uint32_t eip, cs, eflags, esp, ss;
+} __attribute__((packed));
+
 #endif
 

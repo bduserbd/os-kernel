@@ -45,7 +45,8 @@ void k_task_create(k_task_entry_point_t func, void *parameter)
 	if (!task->stack)
 		return;
 
-	task->arch = k_task_arch_info_alloc(k_task_main, task->stack, parameter);
+	task->arch = k_task_arch_info_alloc(k_task_main, (k_uint8_t *)task->stack +
+			K_TASK_STACK_SIZE - 1, parameter);
 	if (!task->arch)
 		return;
 

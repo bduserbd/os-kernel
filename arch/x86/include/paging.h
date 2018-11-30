@@ -37,6 +37,12 @@ void k_paging_build_frame_array(unsigned long);
 
 #endif
 
+/* Page reservation flags. */
+#define K_PAGING_RESERVE_HIGH_MEMORY	(1 << 0)
+#define K_PAGING_RESERVE_DMA		(1 << 1)
+#define K_PAGING_RESERVE_USER		(1 << 2)
+#define K_PAGING_RESERVE_THIS_ZONE	(1 << 3)
+
 /* Page Directory Entry (4-KByte). */
 #define K_PDE_P		(1 << 0)
 #define K_PDE_RW	(1 << 1)
