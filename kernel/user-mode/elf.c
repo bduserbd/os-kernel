@@ -1,5 +1,6 @@
 #include "include/elf/elf-loader.h"
 #include "include/video/print.h"
+#include "include/mm/buddy.h"
 
 k_error_t k_elf_arch_check(Elf(Ehdr) *elf, k_size_t size);
 
@@ -38,7 +39,11 @@ k_error_t k_elf_user_load(Elf(Ehdr) *elf)
 		if (segment[i].p_type != PT_LOAD)
 			continue;
 
-		k_printf("LOAD");
+		void *p1 = k_buddy_user_alloc(0x500);
+		void *p2 = k_buddy_user_alloc(0x500);
+		void *p3 = k_buddy_user_alloc(0x50000);
+		void *p4 = k_buddy_user_alloc(0x500);
+		k_printf("%x %x %x %x\n", p1, p2, p3, p4);
 	}
 
 	return K_ERROR_NONE;

@@ -6,6 +6,7 @@ OBJS += smbios.o
 OBJS += elf.o
 OBJS += task.o task-switch.o
 OBJS += user-mode.o
+OBJS += log2.o
 
 ifeq ($(FIRMWARE),BIOS)
   OBJS += mp.o
