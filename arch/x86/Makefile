@@ -1,6 +1,6 @@
 OBJS += init.o
 OBJS += cpu.o io.o lapic.o
-OBJS += idt.o interrupt.o 8259a.o 8253.o
+OBJS += idt.o interrupt.o 8259a.o 8253.o hpet.o
 OBJS += system-call.o
 OBJS += gdt.o
 OBJS += smbios.o

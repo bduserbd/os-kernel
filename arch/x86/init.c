@@ -1,6 +1,7 @@
 #include "include/init.h"
 #include "include/cpu.h"
 #include "include/lapic.h"
+#include "include/hpet.h"
 #include "include/smbios.h"
 #include "include/8253.h"
 #include "include/video.h"
@@ -50,9 +51,11 @@ void k_x86_init(void *smbios, void *rsdp,
 	k_acpi_get_info(rsdp);
 	k_smbios_get_info(smbios);
 
-	k_pit_init();
+	//k_pit_init();
 
 	k_lapic_init();
+
+	k_hpet_init();
 
 #if 0
 #ifdef K_CONFIG_SMP

@@ -6,6 +6,7 @@
 
 void k_init(void)
 {
+/*
 	k_task_init();
 
 	asm volatile("sti");
@@ -14,5 +15,6 @@ void k_init(void)
 	k_network_init();
 
 	k_user_mode_init();
+*/
 }
 

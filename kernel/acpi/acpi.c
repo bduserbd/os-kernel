@@ -33,7 +33,11 @@ static void k_acpi_parse_interrupt_override(struct k_acpi_interrupt_override *in
 
 static void k_acpi_parse_ioapic(struct k_acpi_ioapic *ioapic)
 {
+	/* This can be reported in the reserved memory areas. */
+	if (k_p2v_l(ioapic->ioapic_address))
+		return;
 
+	k_memory_zone_dma_add(ioapic->ioapic_address >> 12, 1);
 }
 
 static k_error_t k_acpi_parse_lapic(int index, struct k_acpi_lapic *lapic)
@@ -96,6 +100,8 @@ static void k_acpi_parse_hpet(struct k_acpi_hpet *hpet)
 {
 	if (hpet->address.space_id != K_ACPI_ADDRESS_SPACE_ID_SYSTEM_MEMORY)
 		return;
+
+	k_acpi.hpet_address = hpet->address.address;
 }
 
 static void k_acpi_parse_xsdt(struct k_acpi_xsdt *xsdt)
