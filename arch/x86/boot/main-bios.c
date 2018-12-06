@@ -157,7 +157,7 @@ k_error_t k_main(void)
 	k_text_set_info(&fb);
 	k_print_set_output_callback(k_text_puts);
 
-	k_pic_init();
+	//k_pic_init();
 	k_idt_init();
 
 	k_paging_build_frame_array(K_KB(mbi->mem_upper) >> 12);

@@ -1,6 +1,7 @@
 #include "include/init.h"
 #include "include/cpu.h"
 #include "include/lapic.h"
+#include "include/ioapic.h"
 #include "include/hpet.h"
 #include "include/smbios.h"
 #include "include/8253.h"
@@ -52,6 +53,7 @@ void k_x86_init(void *smbios, void *rsdp,
 	k_smbios_get_info(smbios);
 
 	//k_pit_init();
+	k_ioapic_init();
 
 	k_lapic_init();
 

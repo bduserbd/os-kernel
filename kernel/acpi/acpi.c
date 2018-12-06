@@ -33,11 +33,7 @@ static void k_acpi_parse_interrupt_override(struct k_acpi_interrupt_override *in
 
 static void k_acpi_parse_ioapic(struct k_acpi_ioapic *ioapic)
 {
-	/* This can be reported in the reserved memory areas. */
-	if (k_p2v_l(ioapic->ioapic_address))
-		return;
-
-	k_memory_zone_dma_add(ioapic->ioapic_address >> 12, 1);
+	k_acpi.ioapic_address = ioapic->ioapic_address;
 }
 
 static k_error_t k_acpi_parse_lapic(int index, struct k_acpi_lapic *lapic)

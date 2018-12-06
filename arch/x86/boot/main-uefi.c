@@ -311,7 +311,7 @@ k_error_t k_main(void)
 	k_buddy_init(K_ALIGN_UP(K_OFFSET_FROM(k_normal_frames, K_FRAME_ARRAY_SIZE), 0x1000));
 
 	/* Page faults and so aren't printed until graphics are set. */
-	k_pic_init();
+	//k_pic_init();
 	k_idt_init();
 
 	k_paging_reserve_pages(k_initramfs_start, k_initramfs_length);

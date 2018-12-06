@@ -14,7 +14,9 @@ struct k_acpi_info {
 
 	struct k_acpi_id ids[K_CONFIG_CPUS];
 
-	k_uint32_t lapic_address;
+	unsigned long ioapic_address;
+
+	unsigned long lapic_address;
 
 	unsigned long hpet_address;
 };

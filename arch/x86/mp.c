@@ -82,10 +82,29 @@ void k_mp_get_info(void)
 
 	entry_type = (k_uint8_t *)config + sizeof(struct k_mp_configuration_table);
 	for (i = 0; i < config->entry_count; i++) {
-		if (*entry_type == K_SMP_ENTRY_PROCESSOR) {
-			entry_type += 20;
-		} else {
-			entry_type += 8;
+		switch (*entry_type) {
+		case K_SMP_ENTRY_PROCESSOR:
+			entry_type += sizeof(struct k_mp_processor_entry);
+			break;
+
+		case K_SMP_ENTRY_BUS:
+			entry_type += sizeof(struct k_mp_bus_entry);
+			break;
+
+		case K_SMP_ENTRY_IOAPIC:
+			entry_type += sizeof(struct k_mp_ioapic_entry);
+			break;
+
+		case K_SMP_ENTRY_IO_INTERRUPT:
+			entry_type += sizeof(struct k_mp_io_interrupt_entry);
+			break;
+
+		case K_SMP_ENTRY_LOCAL_INTERRUPT:
+			entry_type += sizeof(struct k_mp_local_interrupt_entry);
+			break;
+
+		default:
+			break;
 		}
 	}
 }
