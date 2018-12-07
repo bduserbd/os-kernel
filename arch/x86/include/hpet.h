@@ -25,6 +25,10 @@ enum {
 
 #define K_HPET_TIMER_INT_ENB_CNF	(1 << 2)
 
+#define K_HPET_TIMER_TYPE_CNF		(1 << 3)
+
+#define K_HPET_TIMER_PER_INT_CAP	(1 << 4)
+
 #define K_HPET_TIMER_SIZE_CAP_32	(0 << 5)
 #define K_HPET_TIMER_SIZE_CAP_64	(1 << 5)
 

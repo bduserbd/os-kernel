@@ -1,6 +1,6 @@
 #include "include/hpet.h"
 #include "kernel/include/acpi/acpi.h"
-#include "kernel/include/time/time.h"
+#include "kernel/include/time/device.h"
 #include "kernel/include/mm/mm.h"
 #include "kernel/include/divmod64.h"
 #include "kernel/include/video/print.h"
@@ -18,24 +18,110 @@ static inline k_uint64_t k_hpet_get_reg(int reg)
 	return *(volatile k_uint64_t *)(k_hpet.address + reg);
 }
 
-void k_hpet_init(void)
+static inline void k_hpet_set_reg(int reg, k_uint64_t data)
+{
+	*(volatile k_uint64_t *)(k_hpet.address + reg) = data;
+}
+
+static void k_hpet_stop_main_counter(void)
+{
+	k_uint64_t config;
+
+	config = k_hpet_get_reg(K_HPET_CONFIGURATION);
+	config &= ~K_HPET_ENABLE_CNF;
+	k_hpet_set_reg(K_HPET_CONFIGURATION, config);
+}
+
+static void k_hpet_start_main_counter(void)
+{
+	k_uint64_t config;
+
+	config = k_hpet_get_reg(K_HPET_CONFIGURATION);
+	config |= K_HPET_ENABLE_CNF;
+	k_hpet_set_reg(K_HPET_CONFIGURATION, config);
+}
+
+static void k_hpet_set_timer_periodic(int timer)
+{
+	k_uint64_t config;
+
+	config = k_hpet_get_reg(K_HPET_TIMER_CONFIGURATION(timer));
+
+	if (config & K_HPET_TIMER_PER_INT_CAP) {
+		config |= K_HPET_TIMER_TYPE_CNF;
+		k_hpet_set_reg(K_HPET_TIMER_CONFIGURATION(timer), config);
+	}
+}
+
+static void k_hpet_set_timer_oneshot(int timer)
+{
+	k_uint64_t config;
+
+	config = k_hpet_get_reg(K_HPET_TIMER_CONFIGURATION(timer));
+
+	if (config & K_HPET_TIMER_PER_INT_CAP) {
+		config &= ~K_HPET_TIMER_TYPE_CNF;
+		k_hpet_set_reg(K_HPET_TIMER_CONFIGURATION(timer), config);
+	}
+}
+
+static void k_hpet_timers_init(void)
+{
+	int i;
+	k_uint64_t config;
+
+	for (i = 0; i < k_hpet.timers; i++) {
+		config = k_hpet_get_reg(K_HPET_TIMER_CONFIGURATION(i));
+
+		k_printf("%llx ", config);
+	}
+	k_printf("\n");
+}
+
+static void k_hpet_info_init(void)
 {
 	k_uint64_t caps;
 	k_uint64_t frequency;
 
+	caps = k_hpet_get_reg(K_HPET_CAPABILITIES);
+
+	k_divmod64(K_FEMTOSECONDS_PER_SECOND, K_HPET_COUNTER_CLK_PERIOD(caps),
+			&frequency, NULL);
+
+	k_hpet.frequency = frequency;
+
+	k_hpet.timers = K_HPET_NUM_TIM_CAP(caps);
+	k_hpet_timers_init();
+}
+
+#define HPET	"HPET - High Precision Event Timer"
+
+static struct k_clock_device k_clock_hpet = {
+	.name = HPET,
+};
+
+static struct k_timer_device k_timer_hpet = {
+	.name = HPET,
+	.flags = K_TIMER_DEVICE_FLAGS_PERIODIC | K_TIMER_DEVICE_FLAGS_ONESHOT,
+	.irq = 0,
+};
+
+void k_hpet_init(void)
+{
 	if (!k_acpi.found)
 		return;
 
 	k_memory_zone_dma_add(k_acpi.hpet_address >> 12, 1);
 	k_hpet.address = k_p2v_l(k_acpi.hpet_address);
 
-	caps = k_hpet_get_reg(K_HPET_CAPABILITIES);
+	k_hpet_stop_main_counter();
 
-	k_hpet.timers = K_HPET_NUM_TIM_CAP(caps);
+	k_hpet_info_init();
 
-	k_divmod64(K_FEMTOSECONDS_PER_SECOND, K_HPET_COUNTER_CLK_PERIOD(caps),
-			&frequency, NULL);
+	k_hpet_set_reg(K_HPET_MAIN_COUNTER, 0);
+	k_hpet_start_main_counter();
 
-	k_hpet.frequency = frequency;
+	k_printf("%llu\n", k_hpet_get_reg(K_HPET_MAIN_COUNTER));
+	k_printf("%llu\n", k_hpet_get_reg(K_HPET_MAIN_COUNTER));
 }
 
