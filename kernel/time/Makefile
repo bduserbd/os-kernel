@@ -1,7 +1,4 @@
-OBJS += string.o
-OBJS += log2.o
-OBJS += divmod64.o
-OBJS += bcd.o
+OBJS += cmos.o
 
 CFLAGS = -I ../
 

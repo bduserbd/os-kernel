@@ -1,3 +1,4 @@
+#include "include/time/cmos.h"
 #include "include/task/task.h"
 #include "include/network/network.h"
 #include "include/irq/late-irq.h"
@@ -6,6 +7,8 @@
 
 void k_init(void)
 {
+	k_cmos_init();
+
 /*
 	k_task_init();
 

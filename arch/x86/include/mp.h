@@ -86,6 +86,14 @@ struct k_mp_local_interrupt_entry {
 	__u8	destination_lapic_intin;
 } __attribute__((packed));
 
+struct k_mp_info {
+	int found;
+
+	unsigned long ioapic_address;
+};
+
+extern struct k_mp_info k_mp;
+
 void k_mp_get_info(void);
 
 #endif

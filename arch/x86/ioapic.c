@@ -4,6 +4,10 @@
 #include "kernel/include/irq/irq-info.h"
 #include "kernel/include/video/print.h"
 
+#ifdef K_CONFIG_BIOS
+#include "include/mp.h"
+#endif
+
 static struct k_ioapic_info {
 	unsigned long address;
 } k_ioapic;
@@ -36,14 +40,19 @@ void k_ioapic_init(void)
 	if (!k_acpi.found)
 		return;
 
+#ifdef K_CONFIG_BIOS
+	if (!k_mp.found)
+		return;
+
+	if (k_acpi.ioapic_address != k_mp.ioapic_address)
+		return;
+#endif
+
 	if (!(k_ioapic.address = k_p2v_l(k_acpi.ioapic_address))) {
 		k_memory_zone_dma_add(k_acpi.ioapic_address >> 12, 1);
 		k_ioapic.address = k_p2v_l(k_acpi.ioapic_address);
 	}
 
 	k_printf("I/O APIC: %x\n", k_ioapic.address);
-
-	for (int i = 0; i < 24; i++)
-		k_printf("%llx ", k_ioapic_get_redirect_reg(i));
 }
 
