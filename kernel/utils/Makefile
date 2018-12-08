@@ -1,5 +1,5 @@
 OBJS += string.o
-OBJS += log2.o
+OBJS += bits.o
 OBJS += divmod64.o
 OBJS += bcd.o
 

@@ -1,6 +1,7 @@
 #ifndef K_TIMER_H
 #define K_TIMER_H
 
+#include "kernel/include/error.h"
 #include "kernel/include/time/time.h"
 
 struct k_clock_device {
@@ -18,6 +19,10 @@ struct k_timer_device {
 	unsigned int flags;
 
 	unsigned int irq;
+
+	k_error_t (*set_periodic_mode)(struct k_timer_device *);
+
+	k_error_t (*set_oneshot_mode)(struct k_timer_device *);
 
 	struct k_timer_device *next;
 };

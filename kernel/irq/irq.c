@@ -12,7 +12,7 @@ struct k_irq_descriptor k_irqs[K_NUMBER_OF_IRQS] = {
 	},
 };
 
-k_error_t k_irq_init(struct k_irq_chip *chip)
+k_error_t k_irq_register_chip(struct k_irq_chip *chip)
 {
 	int i;
 	k_error_t error;
@@ -24,9 +24,7 @@ k_error_t k_irq_init(struct k_irq_chip *chip)
 			!chip->mask || !chip->unmask || !chip->int_to_irq)
 		return K_ERROR_INVALID_PARAMETER;
 
-	if (k_irq_chip)
-		return K_ERROR_NONE;
-
+	chip->next = k_irq_chip;
 	k_irq_chip = chip;
 
 	for (i = 0; i < K_NUMBER_OF_IRQS - 1; i++)

@@ -1,4 +1,5 @@
 #include "include/hpet.h"
+#include "kernel/include/bits.h"
 #include "kernel/include/acpi/acpi.h"
 #include "kernel/include/time/device.h"
 #include "kernel/include/mm/mm.h"
@@ -8,6 +9,7 @@
 static struct k_hpet_info {
 	int timers;
 
+	k_uint32_t period;
 	k_uint64_t frequency;
 
 	unsigned long address;
@@ -41,19 +43,39 @@ static void k_hpet_start_main_counter(void)
 	k_hpet_set_reg(K_HPET_CONFIGURATION, config);
 }
 
-static void k_hpet_set_timer_periodic(int timer)
+static void k_hpet_set_periodic_mode_index(int timer)
 {
 	k_uint64_t config;
+	k_uint64_t counter, ticks;
 
 	config = k_hpet_get_reg(K_HPET_TIMER_CONFIGURATION(timer));
 
-	if (config & K_HPET_TIMER_PER_INT_CAP) {
-		config |= K_HPET_TIMER_TYPE_CNF;
-		k_hpet_set_reg(K_HPET_TIMER_CONFIGURATION(timer), config);
-	}
+	if (!(config & K_HPET_TIMER_PER_INT_CAP))
+		return;
+
+	k_hpet_stop_main_counter();
+
+	counter = k_hpet_get_reg(K_HPET_MAIN_COUNTER);
+	ticks = 500000 * k_hpet.period;
+
+	config |= K_HPET_TIMER_INT_ENB_CNF | K_HPET_TIMER_TYPE_CNF |
+			K_HPET_TIMER_VAL_SET_CNF;
+
+	k_hpet_set_reg(K_HPET_TIMER_CONFIGURATION(timer), config);
+	k_hpet_set_reg(K_HPET_TIMER_COMPARATOR(timer), counter + ticks);
+	k_hpet_set_reg(K_HPET_TIMER_COMPARATOR(timer), ticks);
+
+	k_hpet_start_main_counter();
 }
 
-static void k_hpet_set_timer_oneshot(int timer)
+static k_error_t k_hpet_set_periodic_mode(struct k_timer_device *timer)
+{
+	k_hpet_set_periodic_mode_index(0);
+
+	return K_ERROR_NONE;
+}
+
+static void k_hpet_set_oneshot_mode_index(int timer)
 {
 	k_uint64_t config;
 
@@ -65,17 +87,30 @@ static void k_hpet_set_timer_oneshot(int timer)
 	}
 }
 
+static k_error_t k_hpet_set_oneshot_mode(struct k_timer_device *timer)
+{
+	k_hpet_set_oneshot_mode_index(0);
+
+	return K_ERROR_NONE;
+}
+
 static void k_hpet_timers_init(void)
 {
 	int i;
+	k_uint32_t irq_bits;
 	k_uint64_t config;
 
-	for (i = 0; i < k_hpet.timers; i++) {
+	for (i = 0; i < 1 /* k_hpet.timers */ ; i++) {
 		config = k_hpet_get_reg(K_HPET_TIMER_CONFIGURATION(i));
+		config &= ~(K_HPET_TIMER_INT_ROUTE_CNF_MASK);
 
-		k_printf("%llx ", config);
+		irq_bits = K_HPET_TIMER_INT_ROUTE_CAP(config);
+
+		config |= K_HPET_TIMER_INT_ROUTE_CNF(k_bit_scan_forward(irq_bits));
+		k_hpet_set_reg(K_HPET_TIMER_CONFIGURATION(i), config);
+
+		k_hpet_set_periodic_mode_index(i);
 	}
-	k_printf("\n");
 }
 
 static void k_hpet_info_init(void)
@@ -85,8 +120,9 @@ static void k_hpet_info_init(void)
 
 	caps = k_hpet_get_reg(K_HPET_CAPABILITIES);
 
-	k_divmod64(K_FEMTOSECONDS_PER_SECOND, K_HPET_COUNTER_CLK_PERIOD(caps),
-			&frequency, NULL);
+	k_hpet.period = K_HPET_COUNTER_CLK_PERIOD(caps);
+
+	k_divmod64(K_FEMTOSECONDS_PER_SECOND, k_hpet.period, &frequency, NULL);
 
 	k_hpet.frequency = frequency;
 
@@ -96,14 +132,18 @@ static void k_hpet_info_init(void)
 
 #define HPET	"HPET - High Precision Event Timer"
 
+#if 0
 static struct k_clock_device k_clock_hpet = {
 	.name = HPET,
 };
+#endif
 
 static struct k_timer_device k_timer_hpet = {
 	.name = HPET,
 	.flags = K_TIMER_DEVICE_FLAGS_PERIODIC | K_TIMER_DEVICE_FLAGS_ONESHOT,
 	.irq = 0,
+	.set_periodic_mode = k_hpet_set_periodic_mode,
+	.set_oneshot_mode = k_hpet_set_oneshot_mode,
 };
 
 void k_hpet_init(void)

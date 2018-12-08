@@ -52,11 +52,10 @@ void k_x86_init(void *smbios, void *rsdp,
 	k_acpi_get_info(rsdp);
 	k_smbios_get_info(smbios);
 
-	//k_pit_init();
+	k_pit_init();
+
 	k_ioapic_init();
-
 	k_lapic_init();
-
 	k_hpet_init();
 
 #if 0

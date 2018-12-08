@@ -9,10 +9,10 @@ void k_init(void)
 {
 	k_cmos_init();
 
+	asm volatile("sti");
 /*
 	k_task_init();
 
-	asm volatile("sti");
 
 	k_task_create(k_late_irq_task, NULL);
 	k_network_init();

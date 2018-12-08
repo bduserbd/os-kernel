@@ -32,6 +32,13 @@ enum {
 #define K_HPET_TIMER_SIZE_CAP_32	(0 << 5)
 #define K_HPET_TIMER_SIZE_CAP_64	(1 << 5)
 
+#define K_HPET_TIMER_VAL_SET_CNF	(1 << 6)
+
+#define K_HPET_TIMER_INT_ROUTE_CNF_MASK		(0x1f << 9)
+#define K_HPET_TIMER_INT_ROUTE_CNF(irq)		((irq & 0x1f) << 9)
+
+#define K_HPET_TIMER_INT_ROUTE_CAP(config)	(config >> 32) 
+
 /* HPET timer comparator register. */
 #define K_HPET_TIMER_COMPARATOR(i)	(0x100 + i * 0x20 + 0x8)
 

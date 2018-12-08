@@ -21,6 +21,8 @@ struct k_irq_chip {
 	unsigned int (*int_to_irq)(struct k_irq_chip *, unsigned int);
 
 	void *data;
+
+	struct k_irq_chip *next;
 };
 
 struct k_irq_action {
@@ -45,7 +47,7 @@ struct k_irq_descriptor {
 
 extern struct k_irq_descriptor k_irqs[K_NUMBER_OF_IRQS];
 
-k_error_t k_irq_init(struct k_irq_chip *);
+k_error_t k_irq_register_chip(struct k_irq_chip *);
 k_error_t k_irq_execute_handler(unsigned int);
 k_error_t k_irq_execute_handler_custom(unsigned int, void *);
 void k_irq_ack(unsigned int);
