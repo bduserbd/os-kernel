@@ -54,7 +54,7 @@ void k_int_handler(struct k_int_registers regs)
 
 void k_irq_handler(struct k_int_registers regs)
 {
-	k_printf("%d", regs.interrupt);
+	k_printf("%d", regs.interrupt - 32);
 	k_lapic_eoi();
 #if 0
 	unsigned int irq;
