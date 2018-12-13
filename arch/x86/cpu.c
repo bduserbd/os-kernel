@@ -13,8 +13,8 @@ void k_cpuid_count(k_uint32_t function, k_uint32_t *eax, k_uint32_t *ebx,
 		: "memory");
 }
 
-void k_cpuid(k_uint32_t function, k_uint32_t *eax, k_uint32_t *ebx,
-		k_uint32_t *ecx, k_uint32_t *edx)
+void k_cpuid(k_uint32_t function, unsigned long *eax, unsigned long *ebx,
+		unsigned long *ecx, unsigned long *edx)
 {
 	asm volatile("cpuid"
 		: "=a" (*eax), "=c" (*ecx), "=d" (*edx), "=b" (*ebx)
@@ -22,6 +22,7 @@ void k_cpuid(k_uint32_t function, k_uint32_t *eax, k_uint32_t *ebx,
 		: "memory");
 }
 
+#if 0
 static void k_cpu_get_vendor(struct k_cpu_x86 *cpu)
 {
 	k_cpuid(0x00000000, &cpu->max_function, (k_uint32_t *)&cpu->vendor[0],
@@ -224,6 +225,7 @@ _out:
 		GET_CACHE_INFO(edx);
 	}
 }
+#endif
 
 void k_cpu_print_info(struct k_cpu_x86 *cpu)
 {
@@ -261,6 +263,7 @@ unsigned int k_cpu_cache_line_size(void)
 void k_cpu_get_info(void)
 {
 	k_memset(&k_boot_cpu, 0, sizeof(struct k_cpu_x86));
+#if 0
 
 	k_cpu_get_vendor(&k_boot_cpu);
 	k_cpu_get_model(&k_boot_cpu);
@@ -270,5 +273,6 @@ void k_cpu_get_info(void)
 	k_cpu_get_processor_name(&k_boot_cpu);
 
 	k_cpu_get_cache_info(&k_boot_cpu);
+#endif
 }
 

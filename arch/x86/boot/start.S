@@ -7,13 +7,13 @@
 _real_start:
 	cli
 
+#if 0
 	movl    $K_PHYSICAL_ADDRESS(__k_stack_start), %esp
 
 	/* Grub info. */
 	movl	%eax, K_PHYSICAL_ADDRESS(k_multiboot_magic_ptr)
 	movl	%ebx, K_PHYSICAL_ADDRESS(k_multiboot_info_ptr)
 
-#if 0
 	/* Boot setup. */
 	call	k_multiboot_is_valid
 	testl	%eax, %eax
@@ -82,6 +82,7 @@ die:
 	jmp die
 
 
+#if 0
 	.data
 /* Basic GDT. */
 	.p2align 3
@@ -109,6 +110,7 @@ k_multiboot_magic_ptr:
 	.globl k_multiboot_info_ptr
 k_multiboot_info_ptr:
 	.long	0
+#endif
 
 	.p2align 5
 	.section ".user", "a"

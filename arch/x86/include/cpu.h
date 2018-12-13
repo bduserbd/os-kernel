@@ -118,7 +118,8 @@ void k_cpu_get_info(void);
 void k_cpu_print_info(struct k_cpu_x86 *);
 
 bool k_cpu_eflag(unsigned long);
-void k_cpuid(k_uint32_t, k_uint32_t *, k_uint32_t *, k_uint32_t *, k_uint32_t *);
+void k_cpuid(k_uint32_t, unsigned long *, unsigned long *,
+		unsigned long *, unsigned long *);
 
 #endif
 

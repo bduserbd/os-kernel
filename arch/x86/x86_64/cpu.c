@@ -32,15 +32,17 @@ static int k_cpu_is_amd(char vendor[12])
 k_error_t k_cpu_is_valid(void)
 {
 	char vendor[12];
-	k_uint32_t max_function;
-	k_uint32_t eax, ebx, ecx, edx;
+	unsigned long max_function;
+	unsigned long eax, ebx, ecx, edx;
 
+#if 0
 	if (!k_cpu_eflag(K_EFLAGS_AC) || !k_cpu_eflag(K_EFLAGS_ID))
 		return K_ERROR_FAILURE;
+#endif
 
-	k_cpuid(0x00000000, &max_function, (k_uint32_t *)&vendor[0],
-			(k_uint32_t *)&vendor[8], (k_uint32_t *)&vendor[4]);
+	k_cpuid(0x00000000, &eax, &ebx, &ecx, &edx);
 
+#if 0
 	if (!k_cpu_is_amd(vendor))
 		return K_ERROR_FAILURE;
 
@@ -54,7 +56,7 @@ k_error_t k_cpu_is_valid(void)
 
 		k_cpuid(0x80000000, &eax, &ebx, &ecx, &edx);
 		if (eax >= 0x80000001) {
-			k_cpuid(0x80000000, &eax, &ebx, &ecx, &edx);
+			k_cpuid(0x80000001, &eax, &ebx, &ecx, &edx);
 
 			if (!(edx & K_CPUID_LM))
 				return K_ERROR_FAILURE;
@@ -62,6 +64,7 @@ k_error_t k_cpu_is_valid(void)
 			return K_ERROR_FAILURE;
 	} else
 		return K_ERROR_FAILURE;
+#endif
 
 	return K_ERROR_NONE;
 }
