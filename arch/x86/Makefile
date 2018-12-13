@@ -1,25 +1,25 @@
-OBJS += init.o
-OBJS += cpu.o io.o lapic.o ioapic.o
-OBJS += idt.o interrupt.o 8259a.o 8253.o hpet.o
-OBJS += system-call.o
-OBJS += gdt.o
-OBJS += smbios.o
-OBJS += elf.o
-OBJS += task.o task-switch.o
-OBJS += user-mode.o
+#OBJS += init.o
+OBJS += cpu.o io.o #lapic.o ioapic.o
+#OBJS += idt.o interrupt.o 8259a.o 8253.o hpet.o
+#OBJS += system-call.o
+#OBJS += gdt.o
+#OBJS += smbios.o
+#OBJS += elf.o
+#OBJS += task.o task-switch.o
+#OBJS += user-mode.o
 OBJS += bits.o
 
 ifeq ($(FIRMWARE),BIOS)
-  OBJS += mp.o
-  OBJS += video.o
+  #OBJS += mp.o
+  #OBJS += video.o
 endif
 
 CFLAGS += -I ../
 
 ifdef AP_BIN
-  OBJS += smp.o ap.o
+  #OBJS += smp.o ap.o
   AP_TRAMPOLINE += trampoline.o
-  LDFLAGS += -melf_i386 -Tap.ld
+  LDFLAGS += -melf_$(SUB_X86_ARCH) -Tap.ld
   AP_TARGET := ap
 endif
 
@@ -30,6 +30,7 @@ compile:
 	$(V)$(MAKE) $(BUILD) TARGETS="$(OBJS)" CFLAGS="$(CFLAGS)"
 
 dirs:
+	$(V)$(MAKE) -C $(SUB_X86_ARCH)/
 	$(V)$(MAKE) -C boot/
 
 ap:

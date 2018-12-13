@@ -17,6 +17,7 @@ extern __u8 __k_end[];
 extern unsigned long *k_multiboot_magic_ptr;
 extern unsigned long *k_multiboot_info_ptr;
 
+#if 0
 static unsigned long k_initramfs_start = 0;
 static unsigned long k_initramfs_length = 0;
 
@@ -138,9 +139,11 @@ k_error_t k_get_fb_info(struct k_multiboot_info *mbi, struct k_fb_info *fb)
 }
 
 void k_print_set_output_callback(void (*)(const char *));
+#endif
 
 k_error_t k_main(void)
 {
+#if 0
 	k_error_t error;
 	struct k_multiboot_info *mbi;
 	struct k_fb_info fb;
@@ -166,6 +169,7 @@ k_error_t k_main(void)
 	k_paging_reserve_pages(k_initramfs_start, k_initramfs_length);
 
 	k_x86_init(NULL, NULL, k_initramfs_start, k_initramfs_length);
+#endif
 
 	return K_ERROR_FAILURE;
 }

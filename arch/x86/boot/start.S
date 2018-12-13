@@ -13,8 +13,9 @@ _real_start:
 	movl	%eax, K_PHYSICAL_ADDRESS(k_multiboot_magic_ptr)
 	movl	%ebx, K_PHYSICAL_ADDRESS(k_multiboot_info_ptr)
 
+#if 0
 	/* Boot setup. */
-	call	k_is_valid_multiboot
+	call	k_multiboot_is_valid
 	testl	%eax, %eax
 	jnz	die
 
@@ -66,9 +67,10 @@ our_protected_mode:
 	addl	$K_IMAGE_BASE, k_multiboot_info_ptr
 
 	call	k_paging_remove_identity_map
+#endif
 
 	/* Basic CPU reqiurements. */
-	call    k_cpu_valid
+	call    k_cpu_is_valid
 	testl   %eax, %eax
 	jnz     die
 

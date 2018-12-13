@@ -38,13 +38,13 @@ BUILD_OBJS +=
 
 BUILD_LD_SCRIPT = linker.ld
 
-BUILD_CFLAGS += -Wall -m32 -O2
+BUILD_CFLAGS += -Wall #-O2
 BUILD_CFLAGS += -I $(CURDIR)
 BUILD_CFLAGS += -Wno-main -nostdlib -fno-builtin -fno-strict-aliasing
 BUILD_CFLAGS += $(BUILD_CPPFLAGS)
 BUILD_CFLAGS += -g
 
-BUILD_LDFLAGS += -T $(BUILD_LD_SCRIPT) -melf_i386 -n
+BUILD_LDFLAGS += -T $(BUILD_LD_SCRIPT) -n
 
 BUILD_OBJCOPYFLAGS += -O binary
 BUILD_OBJCOPYFLAGS += -R .comment -R .eh_frame

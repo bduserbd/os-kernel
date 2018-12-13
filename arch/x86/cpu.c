@@ -4,26 +4,6 @@
 
 struct k_cpu_x86 k_boot_cpu;
 
-int k_cpu_eflag(k_uint32_t flags)
-{
-	k_uint32_t a, b;
-
-	asm volatile("pushfl\n"
-			"pushfl\n"
-			"pop %0\n"
-			"mov %0,%1\n"
-			"xor %2,%1\n"
-			"push %1\n"
-			"popfl\n"
-			"pushfl\n"
-			"pop %1\n"
-			"popfl"
-			: "=&r" (a), "=&r" (b)
-			: "ri" (flags));
-
-	return !!((a ^ b) & flags);
-}
-
 void k_cpuid_count(k_uint32_t function, k_uint32_t *eax, k_uint32_t *ebx,
 		k_uint32_t *ecx, k_uint32_t *edx)
 {
@@ -247,6 +227,7 @@ _out:
 
 void k_cpu_print_info(struct k_cpu_x86 *cpu)
 {
+#if 0
 	k_uint32_t i;
 
 	k_printf("CPU vendor: %s\n", cpu->vendor);
@@ -269,6 +250,7 @@ void k_cpu_print_info(struct k_cpu_x86 *cpu)
 			i == K_CPU_CACHE_TYPE_L3 ? "L3" : "Unknown",
 			cpu->cache[i].size, cpu->cache[i].way_associative, cpu->cache[i].line_size);
 	}
+#endif
 }
 
 unsigned int k_cpu_cache_line_size(void)

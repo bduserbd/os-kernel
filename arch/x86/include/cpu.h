@@ -26,10 +26,12 @@ enum {
 #define K_CPUID_INITIAL_APIC_ID(ebx)	((ebx >> 24) & 0xff)
 
 /* EDX */
+#define K_CPUID_PSE	(1 << 3)
 #define K_CPUID_TSC	(1 << 4)
 #define K_CPUID_MSR	(1 << 5)
 #define K_CPUID_PAE	(1 << 6)
 #define K_CPUID_APIC	(1 << 9)
+#define K_CPUID_PGE	(1 << 13)
 #define K_CPUID_CLFSH	(1 << 19)
 
 /* CPUID 0x00000002 */
@@ -85,6 +87,10 @@ struct k_cpuid2_descriptor {
 /* ECX */
 #define K_CPUID_CACHE_SETS(ecx)		(ecx + 1)
 
+/* CPUID 0x80000001 */
+/* EDX */
+#define K_CPUID_LM	(1 << 29)
+
 struct k_cpu_x86 {
 	char vendor[13];
 	char processor_name[49];
@@ -111,7 +117,7 @@ extern struct k_cpu_x86 k_boot_cpu;
 void k_cpu_get_info(void);
 void k_cpu_print_info(struct k_cpu_x86 *);
 
-int k_cpu_eflag(k_uint32_t);
+bool k_cpu_eflag(unsigned long);
 void k_cpuid(k_uint32_t, k_uint32_t *, k_uint32_t *, k_uint32_t *, k_uint32_t *);
 
 #endif

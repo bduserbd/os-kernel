@@ -6,6 +6,8 @@
 #define true	1
 #define false	0
 
+typedef int	bool;
+
 /* Signed types */
 typedef signed char		s8;
 typedef signed short		s16;
