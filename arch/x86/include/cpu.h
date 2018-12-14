@@ -36,6 +36,7 @@ enum {
 #define K_CPUID_PAE	(1 << 6)
 #define K_CPUID_APIC	(1 << 9)
 #define K_CPUID_PGE	(1 << 13)
+#define K_CPUID_CMOV	(1 << 15)
 #define K_CPUID_CLFSH	(1 << 19)
 
 #ifndef __ASSEMBLER__

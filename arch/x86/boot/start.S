@@ -7,12 +7,16 @@
 _real_start:
 	cli
 
-#if 0
 	movl    $K_PHYSICAL_ADDRESS(__k_stack_start), %esp
 
 	/* Grub info. */
 	movl	%eax, K_PHYSICAL_ADDRESS(k_multiboot_magic_ptr)
 	movl	%ebx, K_PHYSICAL_ADDRESS(k_multiboot_info_ptr)
+
+	/* Basic CPU reqiurements. */
+	call    k_cpu_is_valid
+	testl   %eax, %eax
+	jnz     die
 
 	/* Boot setup. */
 	call	k_multiboot_is_valid
@@ -27,6 +31,7 @@ _real_start:
 	call	k_paging_table_set_start
 	addl	$0x4, %esp
 
+#if 0
 	pushl	$0
 	pushl	$0
 	movl	$__k_end, %eax
@@ -69,11 +74,6 @@ our_protected_mode:
 	call	k_paging_remove_identity_map
 #endif
 
-	/* Basic CPU reqiurements. */
-	call    k_cpu_is_valid
-	testl   %eax, %eax
-	jnz     die
-
 	/* Main flow. */
 	#call	k_main
 
@@ -102,6 +102,7 @@ first_gdt_desc:
 first_idt:
 	.word   0
 	.long   0
+#endif
 
 	.globl k_multiboot_magic_ptr
 k_multiboot_magic_ptr:
@@ -110,7 +111,14 @@ k_multiboot_magic_ptr:
 	.globl k_multiboot_info_ptr
 k_multiboot_info_ptr:
 	.long	0
-#endif
+
+	.globl k_initramfs_start
+k_initramfs_start:
+	.long	0
+
+	.globl k_initramfs_length
+k_initramfs_length:
+	.long	0
 
 	.p2align 5
 	.section ".user", "a"

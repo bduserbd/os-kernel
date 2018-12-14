@@ -50,10 +50,10 @@ k_cpu_is_valid:
 
 	movl	$0x1, %eax
 	cpuid
-	andl	$(K_CPUID_PSE | K_CPUID_TSC | K_CPUID_MSR |	\
-			K_CPUID_PAE | K_CPUID_APIC | K_CPUID_PGE), %edx
-	xorl	$(K_CPUID_PSE | K_CPUID_TSC | K_CPUID_MSR |	\
-			K_CPUID_PAE | K_CPUID_APIC | K_CPUID_PGE), %edx
+	andl	$(K_CPUID_PSE | K_CPUID_TSC | K_CPUID_MSR | K_CPUID_PAE |	\
+			K_CPUID_APIC | K_CPUID_PGE | K_CPUID_CMOV), %edx
+	xorl	$(K_CPUID_PSE | K_CPUID_TSC | K_CPUID_MSR | K_CPUID_PAE |	\
+			K_CPUID_APIC | K_CPUID_PGE | K_CPUID_CMOV), %edx
 	jnz	_exit
 
 	movl	$0x80000000, %eax
