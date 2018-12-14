@@ -1,6 +1,8 @@
 #ifndef K_CPU_H
 #define K_CPU_H
 
+#ifndef __ASSEMBLER__
+
 #include "kernel/include/error.h"
 #include "kernel/include/types.h"
 
@@ -12,6 +14,8 @@ enum {
 	K_CPU_CACHE_TYPE_L3,
 	K_CPU_CACHE_MAX,
 };
+
+#endif
 
 /* CPUID 0x00000001 */
 /* EAX */
@@ -33,6 +37,8 @@ enum {
 #define K_CPUID_APIC	(1 << 9)
 #define K_CPUID_PGE	(1 << 13)
 #define K_CPUID_CLFSH	(1 << 19)
+
+#ifndef __ASSEMBLER__
 
 /* CPUID 0x00000002 */
 enum {
@@ -69,6 +75,8 @@ struct k_cpuid2_descriptor {
 	};
 };
 
+#endif
+
 /* CPUID 0x00000004 */
 /* EAX */
 #define K_CPUID_CACHE_TYPE_NULL		(0 << 0)
@@ -90,6 +98,8 @@ struct k_cpuid2_descriptor {
 /* CPUID 0x80000001 */
 /* EDX */
 #define K_CPUID_LM	(1 << 29)
+
+#ifndef __ASSEMBLER__
 
 struct k_cpu_x86 {
 	char vendor[13];
@@ -120,6 +130,8 @@ void k_cpu_print_info(struct k_cpu_x86 *);
 bool k_cpu_eflag(unsigned long);
 void k_cpuid(k_uint32_t, unsigned long *, unsigned long *,
 		unsigned long *, unsigned long *);
+
+#endif
 
 #endif
 

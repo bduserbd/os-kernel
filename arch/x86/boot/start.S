@@ -75,7 +75,7 @@ our_protected_mode:
 	jnz     die
 
 	/* Main flow. */
-	call	k_main
+	#call	k_main
 
 die:
 	hlt
