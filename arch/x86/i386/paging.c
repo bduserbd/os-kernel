@@ -1,4 +1,5 @@
 #include "include/paging.h"
+#include "include/i386/paging.h"
 #include "include/cr0.h"
 #include "include/cpu.h"
 #include "kernel/include/string.h"

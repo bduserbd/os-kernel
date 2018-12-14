@@ -1,4 +1,6 @@
 OBJS += cpu.o
+OBJS += paging.o
+OBJS += init.o
 
 CFLAGS += -I ../
 

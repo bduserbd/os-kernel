@@ -51,33 +51,33 @@ k_alloc_boot_page_table:
 	movl	8(%esi), %edi
 
 	cmpb	$'i', (%edi)
-	jne	_exit
+	jne	2f
 	cmpb	$'n', 1(%edi)
-	jne	_exit
+	jne	2f
 	cmpb	$'i', 2(%edi)
-	jne	_exit
+	jne	2f
 	cmpb	$'t', 3(%edi)
-	jne	_exit
+	jne	2f
 	cmpb	$'r', 4(%edi)
-	jne	_exit
+	jne	2f
 	cmpb	$'a', 5(%edi)
-	jne	_exit
+	jne	2f
 	cmpb	$'m', 6(%edi)
-	jne	_exit
+	jne	2f
 	cmpb	$'f', 7(%edi)
-	jne	_exit
+	jne	2f
 	cmpb	$'s', 8(%edi)
-	jne	_exit
+	jne	2f
 	cmpb	$'.', 9(%edi)
-	jne	_exit
+	jne	2f
 	cmpb	$'i', 10(%edi)
-	jne	_exit
+	jne	2f
 	cmpb	$'m', 11(%edi)
-	jne	_exit
+	jne	2f
 	cmpb	$'g', 12(%edi)
-	jne	_exit
+	jne	2f
 	cmpb	$0x0, 13(%edi)
-	jne	_exit
+	jne	2f
 
 	movl	(%esi), %eax
 	movl	%eax, K_PHYSICAL_ADDRESS(k_initramfs_start)
@@ -93,6 +93,7 @@ k_alloc_boot_page_table:
 	andl	$0xfffff000, %eax
 	ret
 
+2:
 	incl	%edx
 	addl	$16, %esi
 	cmpl	%edx, %ecx

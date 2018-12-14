@@ -3,6 +3,7 @@
 #include "include/paging.h"
 
 	.text
+	.code32
 	.globl	_real_start
 _real_start:
 	cli
@@ -31,25 +32,24 @@ _real_start:
 	call	k_paging_table_set_start
 	addl	$0x4, %esp
 
-#if 0
-	pushl	$0
-	pushl	$0
-	movl	$__k_end, %eax
-	subl	$__k_start, %eax
+	movl	$K_PHYSICAL_ADDRESS(__k_start), %eax
+	movl	$K_PHYSICAL_ADDRESS(__k_end), %ecx
+	subl	%eax, %ecx
+	pushl	%ecx
 	pushl	%eax
-	pushl	$K_PHYSICAL_ADDRESS(__k_start)
-	pushl	K_PHYSICAL_ADDRESS(k_page_table);
-	call	k_paging_reserve_pages_ptr
-	addl	$0x10, %esp
+	call	k_paging_early_reserve
+	addl	$0x8, %esp
 
+#if 0
 	call	k_paging_identity_map
+#endif
 
 	call	k_paging_init
 
+#if 0
 	lea	1f, %eax
 	jmp	*%eax
 1:
-
 	addl	$K_IMAGE_BASE, %esp
 
 	/* Set segments & GDT & IDT. */
