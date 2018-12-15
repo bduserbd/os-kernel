@@ -2,12 +2,10 @@
 #define K_MULTIBOOT2_H
 
 #ifndef __ASSEMBLER__
+
 #include "kernel/include/types.h"
 #include "kernel/include/acpi/acpi.h"
-
-#ifdef K_CONFIG_UEFI
 #include "kernel/include/uefi/uefi.h"
-#endif
 
 #endif
 
@@ -23,9 +21,7 @@
 #define K_MULTIBOOT2_TAG_TYPE_SMBIOS		13
 #define K_MULTIBOOT2_TAG_TYPE_ACPI_OLD		14
 #define K_MULTIBOOT2_TAG_TYPE_ACPI_NEW		15
-#ifdef K_CONFIG_UEFI
 #define K_MULTIBOOT2_TAG_TYPE_EFI_MMAP		17
-#endif
 
 #define K_MULTIBOOT2_HEADER_TAG_END		0
 #define K_MULTIBOOT2_HEADER_TAG_FRAMEBUFFER	5

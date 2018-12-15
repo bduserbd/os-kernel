@@ -14,11 +14,12 @@ extern __u8 __k_end[];
 extern unsigned long *k_multiboot_magic_ptr;
 extern unsigned long *k_multiboot_info_ptr;
 
-static unsigned long k_multiboot_info_size = 0;
+unsigned long k_multiboot_info_size = 0;
 
-static unsigned long k_initramfs_start = 0;
-static unsigned long k_initramfs_length = 0;
+extern unsigned long k_initramfs_start;
+extern unsigned long k_initramfs_length;
 
+#if 0
 k_error_t k_scan_multiboot_tags(k_uint32_t ebx, int type, k_error_t (*callback)
 		(void *, void *), void *data)
 {
@@ -277,9 +278,11 @@ k_error_t k_reserve_reserved_pages(void)
 
 	return K_ERROR_NONE;
 }
+#endif
 
 k_error_t k_main(void)
 {
+#if 0
 	k_uint32_t ebx;
 	k_uint32_t mem_upper;
 	k_error_t error;
@@ -317,6 +320,7 @@ k_error_t k_main(void)
 	k_paging_reserve_pages(k_initramfs_start, k_initramfs_length);
 
 	k_x86_init(smbios, rsdp, k_initramfs_start, k_initramfs_length);
+#endif
 
 	return K_ERROR_FAILURE;
 }

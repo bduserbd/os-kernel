@@ -112,13 +112,12 @@ menuentry \"my os\" {					\n\
 }"
 
 uefi-grub:
-	$(V)mkdir -p boot/grub/i386-efi
+	$(V)mkdir -p boot/grub/$(SUB_X86_ARCH)-efi
 	$(V)echo $(GRUB_UEFI_BOOT_MENU) > boot/grub/grub.cfg
 	$(V)cp target.elf boot/kernel
 	$(V)cp initramfs.img boot/initramfs.img
-	$(V)cp /usr/lib/grub/i386-efi/* boot/grub/i386-efi
-	$(V)grub-mkstandalone -O i386-efi -o BOOTIA32.EFI	\
-		boot/
+	$(V)cp /usr/lib/grub/$(SUB_X86_ARCH)-efi/* boot/grub/$(SUB_X86_ARCH)-efi
+	$(V)grub-mkstandalone -O $(SUB_X86_ARCH)-efi -o $(UEFI_IMAGE_NAME) boot/
 
 prep:
 	$(V)$(MAKE) -C linker/
