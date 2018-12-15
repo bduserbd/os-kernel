@@ -1,11 +1,12 @@
 #include "include/x86_64/paging.h"
+#include "include/gdt.h"
 #include "include/cr4.h"
 #include "include/cr0.h"
 #include "include/msr.h"
 
 	.text
-	.code32
 
+	.code32
 # Only at page directory & table offsets (no PDPE & PML4E)
 # %eax - Memory start
 # %ecx - Length
@@ -138,4 +139,44 @@ k_paging_init:
 	movl	%eax, %cr0
 
 	ret
+
+	.globl	k_memory_mode_init
+k_memory_mode_init:
+	lgdt	K_PHYSICAL_ADDRESS(first_gdt_desc)
+	movl	$K_GDT_KERNEL_DATA_SELECTOR, %eax
+	movw	%ax, %ds
+	movw	%ax, %es
+	movw	%ax, %fs
+	movw	%ax, %gs
+	movw	%ax, %ss
+
+	jmp	$K_GDT_KERNEL_CODE_SELECTOR, $K_PHYSICAL_ADDRESS(k_memory_mode_64bit)
+
+	.code64
+k_memory_mode_64bit:
+	lidt	first_idt
+
+	addq	$K_IMAGE_BASE, %rsp
+
+1:
+	jmp	1b
+
+	.data
+#include "include/gdt-descriptor.S"
+	.p2align 3
+first_gdt:
+	K_GDT_ENTRY
+	K_GDT_ENTRY base=0x0 limit=0xfffff type=0xa s=1 dpl=0 p=1 l=1 db=1 g=1
+	K_GDT_ENTRY base=0x0 limit=0xfffff type=0x2 s=1 dpl=0 p=1 l=1 db=1 g=1
+first_gdt_end:
+
+	.p2align 3
+first_gdt_desc:
+	.word	first_gdt_end-first_gdt-1
+	.long	K_PHYSICAL_ADDRESS(first_gdt)
+
+	.p2align 3
+first_idt:
+	.word	0
+	.long	0
 

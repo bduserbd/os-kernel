@@ -1,11 +1,20 @@
 #ifndef K_I386_PAGING_H
 #define K_I386_PAGING_H
 
+#include "arch/x86/include/paging.h"
+
+#ifndef __ASSEMBLER__
+
 #include "kernel/include/types.h"
 
-/* Page Directory Entry (4-KByte). */
 typedef k_uint32_t	k_pde_t;
+typedef k_uint32_t	k_pte_t;
 
+extern k_pde_t *k_page_table;
+
+#endif
+
+/* Page Directory Entry (4-KByte). */
 #define K_PDE_P		(1 << 0)
 #define K_PDE_RW	(1 << 1)
 #define K_PDE_US	(1 << 2)
@@ -15,8 +24,6 @@ typedef k_uint32_t	k_pde_t;
 #define K_PDE_PS	(1 << 7)
 
 /* Page Table Entry. */
-typedef k_uint32_t	k_pte_t;
-
 #define K_PTE_P		(1 << 0)
 #define K_PTE_RW	(1 << 1)
 #define K_PTE_US	(1 << 2)
@@ -27,8 +34,6 @@ typedef k_uint32_t	k_pte_t;
 
 #define K_PAGE_TABLE_MAP_SIZE           (0x400 << 12)
 #define K_PAGE_TABLE_TOTAL_SIZE		(0x1000 + (0x400 * 0x1000))
-
-extern k_pde_t *k_page_table;
 
 #endif
 
