@@ -90,7 +90,7 @@ k_alloc_boot_page_table:
 	cmovl	%ebx, %eax
 
 	addl	$0xfff, %eax
-	andl	$0xfffff000, %eax
+	andl	$~0xfff, %eax
 	ret
 
 2:

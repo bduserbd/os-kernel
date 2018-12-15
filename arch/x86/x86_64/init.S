@@ -12,10 +12,10 @@
 # %ecx - Length
 	.globl	k_paging_early_reserve
 k_paging_early_reserve:
-	andl	$0xfffff000, %eax
+	andl	$~0xfff, %eax
 
 	addl	$0xfff, %ecx
-	andl	$0xfffff000, %ecx
+	andl	$~0xfff, %ecx
 
 	movl	%eax, %edx
 	addl	%ecx, %edx
@@ -41,7 +41,7 @@ k_paging_early_reserve:
 
 	orl	$(K_PDE_RW | K_PDE_P), %esi
 	movl	%esi, (%edi)
-	andl	$0xfffff000, %esi
+	andl	$~0xfff, %esi
 2:
 	movl	%eax, %ecx
 	shr	$12, %ecx
@@ -153,10 +153,34 @@ k_memory_mode_init:
 	jmp	$K_GDT_KERNEL_CODE_SELECTOR, $K_PHYSICAL_ADDRESS(k_memory_mode_64bit)
 
 	.code64
+
+k_paging_remove_identity_map:
+	# PML4E
+	movq	k_page_table, %rax
+	movq	$0, (%rax)
+
+	# PDPE
+	addq	$K_PAGE_TABLE_SIZE, %rax
+	movq	$0, (%rax)
+
+	ret
+
 k_memory_mode_64bit:
+	leaq	1f, %rax
+	jmp	*%rax
+1:
+
 	lidt	first_idt
 
+	pushq	$0
+	popfq
+
 	addq	$K_IMAGE_BASE, %rsp
+
+	addq	$K_IMAGE_BASE, k_page_table
+	callq	k_paging_remove_identity_map
+
+	callq	k_main
 
 1:
 	jmp	1b

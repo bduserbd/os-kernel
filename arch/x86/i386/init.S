@@ -39,12 +39,10 @@ our_protected_mode:
 	pushl	$0
 	popf
 
-	addl	$K_IMAGE_BASE, k_multiboot_info_ptr
-
 	call	k_paging_remove_identity_map
 
-	/* Main flow. */
-	#call	k_main
+	call	k_main
+
 1:
 	jmp	1b
 

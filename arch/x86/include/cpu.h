@@ -106,7 +106,7 @@ struct k_cpu_x86 {
 	char vendor[13];
 	char processor_name[49];
 
-	k_uint32_t max_function, max_extended_function;
+	unsigned long max_function, max_extended_function;
 
 	int family;
 	int model;
