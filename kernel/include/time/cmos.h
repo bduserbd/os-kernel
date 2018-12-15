@@ -1,0 +1,31 @@
+#ifndef K_CMOS_H
+#define K_CMOS_H
+
+#define K_CMOS_ADDRESS	0x70
+#define K_CMOS_DATA	0x71
+
+#define K_RTC_SECONDS		0x00
+#define K_RTC_SECONDS_ALARM	0x01
+#define K_RTC_MINUTES		0x02
+#define K_RTC_MINUTES_ALARM	0x03
+#define K_RTC_HOURS		0x04
+#define K_RTC_HOURS_ALARM	0x05
+#define K_RTC_DAY_OF_WEEK	0x06
+#define K_RTC_DATE_DAY		0x07
+#define K_RTC_DATE_MONTH	0x08
+#define K_RTC_DATE_YEAR		0x09
+
+#define K_CMOS_STATUS_REGISTER_A	0x0a
+
+#define K_CMOS_STATUS_REGISTER_B	0x0b
+
+#define K_CMOS_STATUS_REGISTER_B_24_HOUR_MODE	(1 << 1)
+#define K_CMOS_STATUS_REGISTER_B_BINARY		(1 << 2)
+
+#define K_CMOS_STATUS_REGISTER_C	0x0c
+#define K_CMOS_STATUS_REGISTER_D	0x0d
+
+void k_cmos_init(void);
+
+#endif
+

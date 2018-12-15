@@ -56,6 +56,11 @@ void k_lapic_icr_start_up(k_uint8_t lapic_id, k_uint8_t page)
 
 #endif
 
+void k_lapic_eoi(void)
+{
+	k_lapic_write(K_LAPIC_EOI, 4);
+}
+
 void k_lapic_init(void)
 {
 	k_uint32_t svr, version;

@@ -37,12 +37,12 @@ struct k_mp_configuration_table {
 enum {
 	K_SMP_ENTRY_PROCESSOR		= 0,
 	K_SMP_ENTRY_BUS			= 1,
-	K_SMP_ENTRY_IO_APIC		= 2,
-	K_SMP_ENTRY_IO_INTERRUPR	= 3,
+	K_SMP_ENTRY_IOAPIC		= 2,
+	K_SMP_ENTRY_IO_INTERRUPT	= 3,
 	K_SMP_ENTRY_LOCAL_INTERRUPT	= 4,
 };
 
-struct k_mp_process_entry {
+struct k_mp_processor_entry {
 	__u8	entry_type;
 	__u8	lapic_id;
 	__u8	lapic_version;
@@ -58,12 +58,12 @@ struct k_mp_bus_entry {
 	__u8	bus_type_string[6];
 } __attribute__((packed));
 
-struct k_mp_io_apic_entry {
+struct k_mp_ioapic_entry {
 	__u8	entry_type;
-	__u8	io_apic_id;
-	__u8	io_apic_version;
-	__u8	io_apic_flags;
-	__u32	io_apic_address;
+	__u8	ioapic_id;
+	__u8	ioapic_version;
+	__u8	ioapic_flags;
+	__u32	ioapic_address;
 } __attribute__((packed));
 
 struct k_mp_io_interrupt_entry {
@@ -72,8 +72,8 @@ struct k_mp_io_interrupt_entry {
 	__u8	io_interrupt_flags;
 	__u8	source_bus_id;
 	__u8	source_bus_irq;
-	__u8	destination_io_apic_id;
-	__u8	destination_io_apic_intin;
+	__u8	destination_ioapic_id;
+	__u8	destination_ioapic_intin;
 } __attribute__((packed));
 
 struct k_mp_local_interrupt_entry {
@@ -85,6 +85,14 @@ struct k_mp_local_interrupt_entry {
 	__u8	destination_lapic_id;
 	__u8	destination_lapic_intin;
 } __attribute__((packed));
+
+struct k_mp_info {
+	int found;
+
+	unsigned long ioapic_address;
+};
+
+extern struct k_mp_info k_mp;
 
 void k_mp_get_info(void);
 

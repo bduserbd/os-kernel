@@ -1,7 +1,7 @@
 #include "include/mm/buddy.h"
 #include "include/modules/export-symbol.h"
 #include "include/string.h"
-#include "include/log2.h"
+#include "include/bits.h"
 
 extern unsigned long k_total_normal_frames;
 

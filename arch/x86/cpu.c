@@ -4,28 +4,12 @@
 
 struct k_cpu_x86 k_boot_cpu;
 
-int k_cpu_eflag(k_uint32_t flags)
-{
-	k_uint32_t a, b;
+#ifdef K_BITS_64
+void k_cpu_amd_get_info(struct k_cpu_x86 *cpu);
+#endif
 
-	asm volatile("pushfl\n"
-			"pushfl\n"
-			"pop %0\n"
-			"mov %0,%1\n"
-			"xor %2,%1\n"
-			"push %1\n"
-			"popfl\n"
-			"pushfl\n"
-			"pop %1\n"
-			"popfl"
-			: "=&r" (a), "=&r" (b)
-			: "ri" (flags));
-
-	return !!((a ^ b) & flags);
-}
-
-void k_cpuid_count(k_uint32_t function, k_uint32_t *eax, k_uint32_t *ebx,
-		k_uint32_t *ecx, k_uint32_t *edx)
+void k_cpuid_count(k_uint32_t function, unsigned long *eax, unsigned long *ebx,
+		unsigned long *ecx, unsigned long *edx)
 {
 	asm volatile("cpuid"
 		: "=a" (*eax), "=c" (*ecx), "=d" (*edx), "=b" (*ebx)
@@ -33,8 +17,8 @@ void k_cpuid_count(k_uint32_t function, k_uint32_t *eax, k_uint32_t *ebx,
 		: "memory");
 }
 
-void k_cpuid(k_uint32_t function, k_uint32_t *eax, k_uint32_t *ebx,
-		k_uint32_t *ecx, k_uint32_t *edx)
+void k_cpuid(k_uint32_t function, unsigned long *eax, unsigned long *ebx,
+		unsigned long *ecx, unsigned long *edx)
 {
 	asm volatile("cpuid"
 		: "=a" (*eax), "=c" (*ecx), "=d" (*edx), "=b" (*ebx)
@@ -44,14 +28,19 @@ void k_cpuid(k_uint32_t function, k_uint32_t *eax, k_uint32_t *ebx,
 
 static void k_cpu_get_vendor(struct k_cpu_x86 *cpu)
 {
-	k_cpuid(0x00000000, &cpu->max_function, (k_uint32_t *)&cpu->vendor[0],
-		(k_uint32_t *)&cpu->vendor[8], (k_uint32_t *)&cpu->vendor[4]);
+	unsigned long ebx, ecx, edx;
+
+	k_cpuid(0x00000000, &cpu->max_function, &ebx, &ecx, &edx);
+
+	*(k_uint32_t *)&cpu->vendor[0] = (k_uint32_t)ebx;
+	*(k_uint32_t *)&cpu->vendor[8] = (k_uint32_t)ecx;
+	*(k_uint32_t *)&cpu->vendor[4] = (k_uint32_t)edx;
 }
 
 static void k_cpu_get_model(struct k_cpu_x86 *cpu)
 {
 	int base_family;
-	k_uint32_t eax, ebx, ecx, edx;
+	unsigned long eax, ebx, ecx, edx;
 
 	if (cpu->max_function >= 0x00000001) {
 		k_cpuid(0x00000001, &eax, &ebx, &ecx, &edx);
@@ -70,7 +59,7 @@ static void k_cpu_get_model(struct k_cpu_x86 *cpu)
 
 void k_cpu_get_id(struct k_cpu_x86 *cpu)
 {
-	k_uint32_t eax, ebx, ecx, edx;
+	unsigned long eax, ebx, ecx, edx;
 
 	if (cpu->max_function >= 0x00000001) {
 		k_cpuid(0x00000001, &eax, &ebx, &ecx, &edx);
@@ -81,7 +70,7 @@ void k_cpu_get_id(struct k_cpu_x86 *cpu)
 
 void k_cpu_get_max_extended_function(struct k_cpu_x86 *cpu)
 {
-	k_uint32_t eax, ebx, ecx, edx;
+	unsigned long eax, ebx, ecx, edx;
 
 	k_cpuid(0x80000000, &eax, &ebx, &ecx, &edx);
 
@@ -94,13 +83,17 @@ void k_cpu_get_max_extended_function(struct k_cpu_x86 *cpu)
 void k_cpu_get_processor_name(struct k_cpu_x86 *cpu)
 {
 	k_uint32_t i;
+	unsigned long eax, ebx, ecx, edx;
 
 	if (cpu->max_extended_function >= 0x80000004)
-		for (i = 0; i < 3; i++)
-			k_cpuid(0x80000002 + i, (k_uint32_t *)&cpu->processor_name[i << 4],
-				(k_uint32_t *)&cpu->processor_name[(i << 4) + 4],
-				(k_uint32_t *)&cpu->processor_name[(i << 4) + 8],
-				(k_uint32_t *)&cpu->processor_name[(i << 4) + 12]);
+		for (i = 0; i < 3; i++) {
+			k_cpuid(0x80000002 + i, &eax, &ebx, &ecx, &edx);
+
+			*(k_uint32_t *)&cpu->processor_name[i << 4] = (k_uint32_t)eax;
+			*(k_uint32_t *)&cpu->processor_name[(i << 4) + 4] = (k_uint32_t)ebx;
+			*(k_uint32_t *)&cpu->processor_name[(i << 4) + 8] = (k_uint32_t)ecx;
+			*(k_uint32_t *)&cpu->processor_name[(i << 4) + 12] = (k_uint32_t)edx;
+		}
 }
 
 static struct k_cpuid2_descriptor k_cpuid2_encoding_descriptors[0xff] = {
@@ -170,7 +163,7 @@ static struct k_cpuid2_descriptor k_cpuid2_encoding_descriptors[0xff] = {
 
 void k_cpu_get_cache_info(struct k_cpu_x86 *cpu)
 {
-	k_uint32_t eax, ebx, ecx, edx;
+	unsigned long eax, ebx, ecx, edx;
 
 	if (cpu->max_function >= 0x00000001) {
 		k_cpuid(0x00000001, &eax, &ebx, &ecx, &edx);
@@ -247,6 +240,7 @@ _out:
 
 void k_cpu_print_info(struct k_cpu_x86 *cpu)
 {
+#if 0
 	k_uint32_t i;
 
 	k_printf("CPU vendor: %s\n", cpu->vendor);
@@ -269,6 +263,7 @@ void k_cpu_print_info(struct k_cpu_x86 *cpu)
 			i == K_CPU_CACHE_TYPE_L3 ? "L3" : "Unknown",
 			cpu->cache[i].size, cpu->cache[i].way_associative, cpu->cache[i].line_size);
 	}
+#endif
 }
 
 unsigned int k_cpu_cache_line_size(void)
@@ -288,5 +283,9 @@ void k_cpu_get_info(void)
 	k_cpu_get_processor_name(&k_boot_cpu);
 
 	k_cpu_get_cache_info(&k_boot_cpu);
+
+#ifdef K_BITS_64
+	k_cpu_amd_get_info(&k_boot_cpu);
+#endif
 }
 

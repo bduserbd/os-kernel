@@ -1,4 +1,5 @@
 #include "include/paging.h"
+#include "include/i386/paging.h"
 #include "include/cr0.h"
 #include "include/cpu.h"
 #include "kernel/include/string.h"
@@ -44,33 +45,6 @@ void k_paging_build_frame_array(unsigned long total_frames)
 	}
 
 	k_normal_frames = frames;
-}
-
-void k_paging_remove_identity_map(void)
-{
-	k_uint32_t a, b;
-
-	k_page_table = (k_pde_t *)K_VIRTUAL_ADDRESS(k_page_table);
-
-	a = 0x0;
-	b = K_IMAGE_BASE - K_MB(4);
-
-	while (1) {
-		k_uint32_t table = (a >> 22) & 0x3ff;
-
-		if (k_page_table[table] & K_PDE_P) {
-			k_uint32_t pde = k_page_table[table];
-			k_page_table[table] = 0x0;
-			k_memset((void *)(K_IMAGE_BASE + (pde & ~0xfff)), 0, 0x1000);
-		}
-
-		if (a == b)
-			break;
-
-		a += K_MB(4);
-	}
-
-	k_paging_flush_tlb();
 }
 
 void *k_v2p(const void *virtual)
@@ -225,6 +199,33 @@ void k_paging_identity_map(void)
 
 		a += K_MB(4);
 	}
+}
+
+void k_paging_remove_identity_map(void)
+{
+	k_uint32_t a, b;
+
+	k_page_table = (k_pde_t *)K_VIRTUAL_ADDRESS(k_page_table);
+
+	a = 0x0;
+	b = K_IMAGE_BASE - K_MB(4);
+
+	while (1) {
+		k_uint32_t table = (a >> 22) & 0x3ff;
+
+		if (k_page_table[table] & K_PDE_P) {
+			k_uint32_t pde = k_page_table[table];
+			k_page_table[table] = 0x0;
+			k_memset((void *)(K_IMAGE_BASE + (pde & ~0xfff)), 0, 0x1000);
+		}
+
+		if (a == b)
+			break;
+
+		a += K_MB(4);
+	}
+
+	k_paging_flush_tlb();
 }
 
 void k_paging_table_set_start(k_uint32_t start)

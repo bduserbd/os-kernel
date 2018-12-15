@@ -7,7 +7,7 @@ else ifeq ($(FIRMWARE),UEFI)
 endif
 
 OBJS += start.o
-OBJS += cpu.o paging.o
+#OBJS += cpu.o paging.o
 
 CFLAGS += -I ../
 

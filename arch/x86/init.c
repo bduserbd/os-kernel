@@ -1,6 +1,8 @@
 #include "include/init.h"
 #include "include/cpu.h"
 #include "include/lapic.h"
+#include "include/ioapic.h"
+#include "include/hpet.h"
 #include "include/smbios.h"
 #include "include/8253.h"
 #include "include/video.h"
@@ -50,9 +52,11 @@ void k_x86_init(void *smbios, void *rsdp,
 	k_acpi_get_info(rsdp);
 	k_smbios_get_info(smbios);
 
-	k_pit_init();
+	//k_pit_init();
 
+	k_ioapic_init();
 	k_lapic_init();
+	k_hpet_init();
 
 #if 0
 #ifdef K_CONFIG_SMP
@@ -60,10 +64,10 @@ void k_x86_init(void *smbios, void *rsdp,
 #endif
 #endif
 
+#if 0
 	k_loader_init();
 	k_initramfs_get_info(initramfs_start, initramfs_length);
 
-#if 0
 	k_irq_mask(0);
 	for (int i = 0; i < 100000000; i++)
 		asm volatile("nop");

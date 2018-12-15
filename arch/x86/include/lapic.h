@@ -17,6 +17,9 @@
 /* Local APIC Task Priority Register. */
 #define K_LAPIC_TPR	0x80
 
+/* Local APIC End of Interrupt Register. */
+#define K_LAPIC_EOI	0xb0
+
 /* Local APIC Logical Destination Register.  */
 #define K_LAPIC_LDR	0xd0
 

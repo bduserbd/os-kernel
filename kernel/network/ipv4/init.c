@@ -11,9 +11,8 @@
 void k_ipv4_init(void)
 {
 	struct k_network_card *card;
-	//struct k_network_buffer *buffer;
+	struct k_network_buffer *buffer;
 
-#if 0
 	buffer = k_malloc(sizeof(struct k_network_buffer));
 	if (!buffer)
 		return;
@@ -33,7 +32,6 @@ void k_ipv4_init(void)
 
 	buffer->end = buffer->start + SIZE;
 	buffer->packet_start = buffer->packet_end = buffer->end;
-#endif
 
 	for (card = k_network_cards; card; card = card->next) {
 		k_address_cache_create(card);
@@ -41,10 +39,10 @@ void k_ipv4_init(void)
 		k_address_cache_new_entry(card, K_IPV4(0, 0, 0, 0), card->hw_address);
 		k_address_cache_new_entry(card, K_IPV4_BROADCAST, k_ethernet_broadcast_address);
 
-		//buffer->card = card;
-		//k_dhcp_build_packet(buffer, options_length);
+		buffer->card = card;
+		k_dhcp_build_packet(buffer, options_length);
 
-		//while ((card->ops->transmit(card, buffer) == K_ERROR_NETWORK_LINK_NOT_SET)) ;
+		while ((card->ops->transmit(card, buffer) == K_ERROR_NETWORK_LINK_NOT_SET)) ;
 	}
 }
 

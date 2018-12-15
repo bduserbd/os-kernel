@@ -54,6 +54,9 @@ void k_int_handler(struct k_int_registers regs)
 
 void k_irq_handler(struct k_int_registers regs)
 {
+	k_printf("%d", regs.interrupt - 32);
+	k_lapic_eoi();
+#if 0
 	unsigned int irq;
 
 	irq = k_irq_from_int(regs.interrupt);
@@ -66,6 +69,7 @@ void k_irq_handler(struct k_int_registers regs)
 		k_irq_execute_handler_custom(irq, &regs);
 	else
 		k_irq_execute_handler(irq);
+#endif
 }
 
 static void k_idt_set_gate(int i, k_uint32_t offset, int type)
