@@ -40,9 +40,7 @@ _real_start:
 	call	k_paging_early_reserve
 	addl	$0x8, %esp
 
-#if 0
 	call	k_paging_identity_map
-#endif
 
 	call	k_paging_init
 

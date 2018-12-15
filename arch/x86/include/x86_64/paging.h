@@ -45,6 +45,7 @@ typedef k_uint64_t	k_pte_t;
 #define K_PTE_PWT	(1 << 3)
 #define K_PTE_PCD	(1 << 4)
 #define K_PTE_A		(1 << 5)
+#define K_PTE_G		(1 << 8)
 
 #define K_PAGE_TABLE_ENTRIES	512
 #define K_PAGE_TABLE_SIZE	0x1000

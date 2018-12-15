@@ -1,12 +1,14 @@
 #include "include/x86_64/paging.h"
 #include "include/cr4.h"
+#include "include/cr0.h"
+#include "include/msr.h"
 
 	.text
 	.code32
 
 # Only at page directory & table offsets (no PDPE & PML4E)
 # %eax - Memory start
-# %ecx - length
+# %ecx - Length
 	.globl	k_paging_early_reserve
 k_paging_early_reserve:
 	andl	$0xfffff000, %eax
@@ -48,7 +50,7 @@ k_paging_early_reserve:
 	addl	%ecx, %esi
 
 	movl	%eax, %ebx
-	orl	$(K_PTE_RW | K_PTE_P), %ebx
+	orl	$(K_PTE_G | K_PTE_RW | K_PTE_P), %ebx
 	movl	%ebx, (%esi)
 
 	addl	$K_PAGE_TABLE_SIZE, %eax
@@ -68,6 +70,7 @@ k_paging_table_set_start:
 	movl	%ebx, %edi
 	movl	$(K_PAGE_TABLE_SIZE / 4), %ecx
 	rep stosl
+	subl	$K_PAGE_TABLE_SIZE, %edi
 
 	leal	(K_PAGE_TABLE_SIZE | K_PML4E_RW | K_PML4E_P)(%ebx), %edx
 	movl	%edx, (%edi)
@@ -76,6 +79,7 @@ k_paging_table_set_start:
 	leal	K_PAGE_TABLE_SIZE(%ebx), %edi
 	movl	$(K_PAGE_TABLE_SIZE / 4), %ecx
 	rep stosl
+	subl	$K_PAGE_TABLE_SIZE, %edi
 
 	leal	(2 * K_PAGE_TABLE_SIZE | K_PML4E_RW | K_PML4E_P)(%ebx), %edx
 	movl	%edx, (%edi)
@@ -97,6 +101,25 @@ k_paging_table_set_start:
 
 	ret
 
+# Map 0xffffffff80000000 to existing page directories & tables.
+# PML4E - 511
+# PDPE - 510
+# Thanks to sharing same root page directories, subsequent mappings
+# will be created but won't be used.
+	.globl	k_paging_identity_map
+k_paging_identity_map:
+	# PML4E
+	movl	K_PHYSICAL_ADDRESS(k_page_table), %eax
+	leal	(K_PAGE_TABLE_SIZE | K_PML4E_RW | K_PML4E_P)(%eax), %ebx
+	movl	%ebx, (8 * 511)(%eax)
+
+	# PDPE
+	addl	$K_PAGE_TABLE_SIZE, %eax
+	leal	(K_PAGE_TABLE_SIZE | K_PDPE_RW | K_PDPE_P)(%eax), %ebx
+	movl	%ebx, (8 * 510)(%eax)
+
+	ret
+
 	.globl	k_paging_init
 k_paging_init:
 	movl	%cr4, %eax
@@ -105,6 +128,14 @@ k_paging_init:
 
 	movl	K_PHYSICAL_ADDRESS(k_page_table), %eax
 	movl	%eax, %cr3
+
+	movl	$K_MSR_IA32_EFER, %ecx
+	rdmsr
+	orl	$K_MSR_IA32_EFER_LME, %eax
+	wrmsr
+
+	movl	$(K_CR0_PG | K_CR0_PE), %eax
+	movl	%eax, %cr0
 
 	ret
 
