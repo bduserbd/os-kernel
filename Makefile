@@ -38,7 +38,7 @@ BUILD_OBJS +=
 
 BUILD_LD_SCRIPT = linker.ld
 
-BUILD_CFLAGS += -Wall -O2
+BUILD_CFLAGS += -Wall #-O2
 BUILD_CFLAGS += -I $(CURDIR)
 BUILD_CFLAGS += -Wno-main -nostdlib -fno-builtin -fno-strict-aliasing
 BUILD_CFLAGS += $(BUILD_CPPFLAGS)

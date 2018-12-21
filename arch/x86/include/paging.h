@@ -25,6 +25,14 @@ void k_paging_table_set_start(k_uint32_t);
 void k_paging_reserve_pages(k_uint32_t, k_uint32_t);
 void k_paging_build_frame_array(unsigned long);
 
+static inline void k_paging_flush_tlb(void)
+{
+	unsigned long cr3;
+
+	asm volatile("mov %%cr3, %0" : "=r" (cr3));
+	asm volatile("mov %0, %%cr3" : : "r" (cr3));
+}
+
 #else
 
 #define K_PHYSICAL_ADDRESS(virtual)	((virtual) - K_IMAGE_BASE)

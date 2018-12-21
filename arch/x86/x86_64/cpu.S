@@ -63,8 +63,8 @@ k_cpu_is_valid:
 
 	movl	$0x80000001, %eax
 	cpuid
-	andl	$K_CPUID_LM, %edx
-	xorl	$K_CPUID_LM, %edx
+	andl	$(K_CPUID_NX | K_CPUID_LM), %edx
+	xorl	$(K_CPUID_NX | K_CPUID_LM), %edx
 	jnz	_exit
 
 	xorl	%eax, %eax

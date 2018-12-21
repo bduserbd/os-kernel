@@ -99,6 +99,7 @@ struct k_cpuid2_descriptor {
 /* CPUID 0x80000001 */
 /* EDX */
 #define K_CPUID_LM	(1 << 29)
+#define K_CPUID_NX	(1 << 20)
 
 #ifndef __ASSEMBLER__
 

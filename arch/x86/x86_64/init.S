@@ -1,4 +1,5 @@
 #include "include/x86_64/paging.h"
+#include "include/cpu.h"
 #include "include/gdt.h"
 #include "include/cr4.h"
 #include "include/cr0.h"
@@ -132,7 +133,7 @@ k_paging_init:
 
 	movl	$K_MSR_IA32_EFER, %ecx
 	rdmsr
-	orl	$K_MSR_IA32_EFER_LME, %eax
+	orl	$(K_MSR_IA32_EFER_LME | K_MSR_IA32_EFER_NXE), %eax
 	wrmsr
 
 	movl	$(K_CR0_PG | K_CR0_PE), %eax

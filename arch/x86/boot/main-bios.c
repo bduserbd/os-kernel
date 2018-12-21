@@ -74,9 +74,12 @@ k_error_t k_get_fb_info(struct k_multiboot_info *mbi, struct k_fb_info *fb)
 
 void k_print_set_output_callback(void (*)(const char *));
 #endif
+void k_paging_arch_init(void);
 
 k_error_t k_main(void)
 {
+	k_paging_arch_init();
+
 #if 0
 	k_error_t error;
 	struct k_multiboot_info *mbi;

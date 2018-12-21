@@ -11,14 +11,6 @@ k_pde_t *k_page_table = NULL;
 unsigned long k_total_normal_frames = 0;
 struct k_frame *k_normal_frames = NULL;
 
-static inline void k_paging_flush_tlb(void)
-{
-	k_uint32_t reg;
-
-	asm volatile("mov %%cr3, %0" : "=r" (reg));
-	asm volatile("mov %0, %%cr3" : : "r" (reg));
-}
-
 void k_paging_build_frame_array(unsigned long total_frames)
 {
 	int i, j;
