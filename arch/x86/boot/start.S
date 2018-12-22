@@ -46,22 +46,6 @@ die:
 	hlt
 	jmp die
 
-	.globl k_multiboot_magic_ptr
-k_multiboot_magic_ptr:
-	.long	0
-
-	.globl k_multiboot_info_ptr
-k_multiboot_info_ptr:
-	.long	0
-
-	.globl k_initramfs_start
-k_initramfs_start:
-	.long	0
-
-	.globl k_initramfs_length
-k_initramfs_length:
-	.long	0
-
 	.p2align 5
 	.section ".user", "a"
 	.skip	K_CONFIG_USER_MODE_EXECUTABLE

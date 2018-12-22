@@ -1,4 +1,5 @@
-#include "include/idt.h"
+	.text
+	.code32
 
 /* Exception that push error code. */
 	.macro K_IDT_ERROR_CODE number

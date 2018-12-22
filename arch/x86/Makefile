@@ -1,6 +1,6 @@
 #OBJS += init.o
 OBJS += cpu.o io.o #lapic.o ioapic.o
-#OBJS += idt.o interrupt.o 8259a.o 8253.o hpet.o
+OBJS += idt.o 8259a.o #8253.o hpet.o
 #OBJS += system-call.o
 #OBJS += gdt.o
 #OBJS += smbios.o
@@ -11,7 +11,7 @@ OBJS += bits.o
 
 ifeq ($(FIRMWARE),BIOS)
   #OBJS += mp.o
-  #OBJS += video.o
+  OBJS += video.o
 endif
 
 CFLAGS += -I ../

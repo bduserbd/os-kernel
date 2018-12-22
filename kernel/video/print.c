@@ -262,7 +262,7 @@ int k_vprintf(const char *fmt, va_list ap)
 			return -1;
 
 		if (flags & K_PRINTF_FORMAT_STRING)
-			k_puts((const char *)va_arg(ap, k_uint32_t));
+			k_puts((const char *)va_arg(ap, unsigned long));
 		else {
 			k_uint64_t v = 0;
 

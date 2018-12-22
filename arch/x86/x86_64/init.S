@@ -198,10 +198,10 @@ first_gdt_end:
 	.p2align 3
 first_gdt_desc:
 	.word	first_gdt_end-first_gdt-1
-	.long	K_PHYSICAL_ADDRESS(first_gdt)
+	.quad	K_PHYSICAL_ADDRESS(first_gdt)
 
 	.p2align 3
 first_idt:
 	.word	0
-	.long	0
+	.quad	0
 

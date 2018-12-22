@@ -14,11 +14,11 @@
 extern __u8 __k_start[];
 extern __u8 __k_end[];
 
-extern unsigned long *k_multiboot_magic_ptr;
-extern unsigned long *k_multiboot_info_ptr;
+unsigned long k_multiboot_magic_ptr;
+unsigned long k_multiboot_info_ptr;
 
-extern unsigned long k_initramfs_start;
-extern unsigned long k_initramfs_length;
+unsigned long k_initramfs_start;
+unsigned long k_initramfs_length;
 
 #if 0
 /* Functions from here are called when high virtual memory is initialized. */
@@ -50,6 +50,7 @@ k_error_t k_reserve_reserved_pages(void)
 
 	return K_ERROR_NONE;
 }
+#endif
 
 k_error_t k_get_fb_info(struct k_multiboot_info *mbi, struct k_fb_info *fb)
 {
@@ -73,17 +74,18 @@ k_error_t k_get_fb_info(struct k_multiboot_info *mbi, struct k_fb_info *fb)
 }
 
 void k_print_set_output_callback(void (*)(const char *));
-#endif
 void k_paging_arch_init(void);
 
 k_error_t k_main(void)
 {
-	k_paging_arch_init();
-
-#if 0
 	k_error_t error;
 	struct k_multiboot_info *mbi;
 	struct k_fb_info fb;
+
+	k_multiboot_info_ptr += K_IMAGE_BASE;
+	k_initramfs_start += K_IMAGE_BASE;
+
+	k_paging_arch_init();
 
 	mbi = (void *)k_multiboot_info_ptr;
 	k_paging_reserve_pages((unsigned long)mbi, sizeof(struct k_multiboot_info));
@@ -100,6 +102,9 @@ k_error_t k_main(void)
 	k_pic_init();
 	k_idt_init();
 
+	//*(k_uint64_t *)0xa000000 = 'A';
+
+#if 0
 	k_paging_build_frame_array(K_KB(mbi->mem_upper) >> 12);
 	k_buddy_init(K_ALIGN_UP(K_OFFSET_FROM(k_normal_frames, K_FRAME_ARRAY_SIZE), 0x1000));
 

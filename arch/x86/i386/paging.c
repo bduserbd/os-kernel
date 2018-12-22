@@ -64,11 +64,11 @@ unsigned long k_v2p_l(unsigned long virtual)
 }
 K_EXPORT_FUNC(k_v2p_l);
 
-void k_paging_reserve_pages_ptr(k_pde_t *k_pde, k_uint32_t start, k_uint32_t range,
+void k_paging_reserve_pages_ptr(k_pde_t *k_pde, unsigned long start, unsigned long range,
 		unsigned long dma, unsigned int flags)
 {
-	k_uint32_t a, b;
-	k_uint32_t physical;
+	unsigned long a, b;
+	unsigned long physical;
 	k_pde_t *pde;
 	k_pte_t *pte;
 
@@ -86,21 +86,22 @@ void k_paging_reserve_pages_ptr(k_pde_t *k_pde, k_uint32_t start, k_uint32_t ran
 	pde = k_pde;
 
 	while (1) {
-		k_uint32_t table = (a >> 22) & 0x3ff;
-		k_uint32_t page = (a >> 12) & 0x3ff;
+		unsigned long table = (a >> 22) & 0x3ff;
+		unsigned long page = (a >> 12) & 0x3ff;
 
 		if ((pde[table] & K_PDE_P) == 0) {
-			unsigned int pde_flags = K_PDE_P | K_PDE_RW;
+			unsigned long pde_flags = K_PDE_P | K_PDE_RW;
 			if (flags & K_PAGING_RESERVE_USER)
 				pde_flags |= K_PDE_US;
 
 			if (flags & K_PAGING_RESERVE_HIGH_MEMORY) {
-				pde[table] = ((k_uint32_t)k_pde - K_IMAGE_BASE + 
+				pde[table] = ((unsigned long)k_pde - K_IMAGE_BASE + 
 						0x1000 + table * 0x1000) | pde_flags;
 
 				k_memset((void *)(K_IMAGE_BASE + (pde[table] & ~0xfff)), 0, 0x1000);
 			} else {
-				pde[table] = ((k_uint32_t)k_pde + 0x1000 + table * 0x1000) | pde_flags;
+				pde[table] = ((unsigned long)k_pde + 0x1000 + table * 0x1000) |
+						pde_flags;
 
 				k_memset((void *)(pde[table] & ~0xfff), 0, 0x1000);
 			}
@@ -123,7 +124,7 @@ void k_paging_reserve_pages_ptr(k_pde_t *k_pde, k_uint32_t start, k_uint32_t ran
 			pte = (k_pte_t *)((pde[table] & ~0xfff));
 		}
 
-		pte[page] = (k_uint32_t)physical | K_PTE_P | K_PTE_RW;
+		pte[page] = (unsigned long)physical | K_PTE_P | K_PTE_RW;
 		if (flags & K_PAGING_RESERVE_USER)
 			pte[page] |= K_PTE_US;
 
@@ -154,7 +155,7 @@ void k_paging_map_user(unsigned virtual, unsigned physical, unsigned long range)
 	k_paging_flush_tlb();
 }
 
-void k_paging_reserve_pages(k_uint32_t start, k_uint32_t range)
+void k_paging_reserve_pages(unsigned long start, unsigned long range)
 {
 	k_paging_reserve_pages_ptr(k_page_table, start, range, 0,
 					K_PAGING_RESERVE_HIGH_MEMORY |
@@ -165,7 +166,7 @@ void k_paging_reserve_pages(k_uint32_t start, k_uint32_t range)
 
 void k_paging_identity_map(void)
 {
-	k_uint32_t a, b;
+	unsigned long a, b;
 	k_pde_t *pde;
 
 	pde = (k_pde_t *)K_VALUE_PHYSICAL_ADDRESS(&k_page_table);
@@ -174,12 +175,12 @@ void k_paging_identity_map(void)
 	b = K_IMAGE_BASE - K_MB(4);
 
 	while (1) {
-		k_uint32_t table1 = (a >> 22) & 0x3ff;
+		unsigned long table1 = (a >> 22) & 0x3ff;
 
 		if (pde[table1] & K_PDE_P) {
-			k_uint32_t table2 = table1 + (K_IMAGE_BASE >> 22);
+			unsigned long table2 = table1 + (K_IMAGE_BASE >> 22);
 
-			pde[table2] = ((k_uint32_t)pde + 0x1000 + table2 * 0x1000) |
+			pde[table2] = ((unsigned long)pde + 0x1000 + table2 * 0x1000) |
 				K_PDE_P | K_PDE_RW;
 
 			k_memcpy((void *)(pde[table2] & ~0xfff),
@@ -195,7 +196,7 @@ void k_paging_identity_map(void)
 
 void k_paging_remove_identity_map(void)
 {
-	k_uint32_t a, b;
+	unsigned long a, b;
 
 	k_page_table = (k_pde_t *)K_VIRTUAL_ADDRESS(k_page_table);
 
@@ -203,10 +204,11 @@ void k_paging_remove_identity_map(void)
 	b = K_IMAGE_BASE - K_MB(4);
 
 	while (1) {
-		k_uint32_t table = (a >> 22) & 0x3ff;
+		unsigned long table = (a >> 22) & 0x3ff;
 
 		if (k_page_table[table] & K_PDE_P) {
-			k_uint32_t pde = k_page_table[table];
+			unsigned long pde = k_page_table[table];
+
 			k_page_table[table] = 0x0;
 			k_memset((void *)(K_IMAGE_BASE + (pde & ~0xfff)), 0, 0x1000);
 		}
@@ -220,7 +222,7 @@ void k_paging_remove_identity_map(void)
 	k_paging_flush_tlb();
 }
 
-void k_paging_table_set_start(k_uint32_t start)
+void k_paging_table_set_start(unsigned long start)
 {
 	unsigned long *pde;
 
