@@ -135,7 +135,7 @@ void k_paging_reserve_pages_ptr(k_pde_t *k_pde, unsigned long start, unsigned lo
 	}
 }
 
-void k_paging_map_dma(unsigned long virtual, unsigned long physical, unsigned long range)
+void k_paging_reserve_dma(unsigned long virtual, unsigned long physical, unsigned long range)
 {
 	k_paging_reserve_pages_ptr(k_page_table, virtual, range, physical,
 					K_PAGING_RESERVE_HIGH_MEMORY |
@@ -144,7 +144,7 @@ void k_paging_map_dma(unsigned long virtual, unsigned long physical, unsigned lo
 	k_paging_flush_tlb();
 }
 
-void k_paging_map_user(unsigned virtual, unsigned physical, unsigned long range)
+void k_paging_reserve_user(unsigned virtual, unsigned physical, unsigned long range)
 {
 	k_paging_reserve_pages_ptr(k_page_table, virtual, range, physical,
 					K_PAGING_RESERVE_HIGH_MEMORY |
@@ -239,6 +239,11 @@ void k_paging_table_set_start(unsigned long start)
 		k_paging_reserve_pages_ptr((void *)*pde, start, K_PAGE_TABLE_TOTAL_SIZE,
 				0, 0);
 	}
+}
+
+void k_paging_arch_init(void)
+{
+
 }
 
 void k_paging_init(void)

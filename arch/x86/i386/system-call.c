@@ -1,5 +1,5 @@
 #include "include/system-call.h"
-#include "include/registers.h"
+#include "include/i386/registers.h"
 #include "kernel/include/video/print.h"
 
 static void k_system_call_exit(struct k_system_call_registers *regs)

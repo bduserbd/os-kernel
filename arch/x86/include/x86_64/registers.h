@@ -82,8 +82,8 @@ struct k_registers {
 } __attribute__((packed));
 
 struct k_int_registers {
-	k_uint64_t rdi, rsi, rbp, rsp, rbx, rdx, rcx, rax;
-	k_uint64_t r15, r14, r13, r12, r11, r10, r9, r8;
+	k_uint64_t rax, rcx, rdx, rbx, rsp, rbp, rsi, rdi;
+	k_uint64_t r8, r9, r10, r11, r12, r13, r14, r15;
 	k_uint64_t interrupt;
 	k_uint64_t error_code, rip, cs, rflags;
 } __attribute__((packed));

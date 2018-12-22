@@ -3,19 +3,19 @@
 #include "include/paging.h"
 #include "kernel/include/video/print.h"
 
-struct k_idt_interrupt_gate k_idt[256] __attribute__((aligned(0x8)));
-struct k_idt_register k_idt_reg __attribute__((aligned(0x8)));
+struct k_idt_interrupt_gate k_idt[256] __attribute__((aligned(0x10)));
+struct k_idt_register k_idt_reg __attribute__((aligned(0x10)));
 
 static void k_int_print_regs(struct k_int_registers *regs)
 {
-	k_printf("RDI: %llx RSI: %llx RBP: %llx RSP: %llx\n"
-			"RBX: %llx RDX: %llx RCX: %llx RAX: %llx\n"
+	k_printf("RAX: %llx RCX: %llx RDX: %llx RBX: %llx\n"
+			"RSP: %llx RBP: %llx RSI: %llx RDI: %llx\n"
 			"R8: %llx R9: %llx R10: %llx R11: %llx\n"
 			"R12: %llx R13: %llx R14: %llx R15: %llx\n"
 			"Interrupt: %llx\n"
 			"Error code: %llx RIP: %llx CS: %llx RFLAGS: %llx\n",
-			regs->rdi, regs->rsi, regs->rbp, regs->rsp,
-			regs->rbx, regs->rdx, regs->rcx, regs->rax,
+			regs->rax, regs->rcx, regs->rdx, regs->rbx,
+			regs->rsp, regs->rbp, regs->rsi, regs->rdi,
 			regs->r8, regs->r9, regs->r10, regs->r11,
 			regs->r12, regs->r13, regs->r14, regs->r15,
 			regs->interrupt, regs->error_code, regs->rip, regs->cs, regs->rflags);
@@ -33,7 +33,7 @@ void k_int_handler(struct k_int_registers regs)
 	}
 }
 
-void k_irq_handler()
+void k_irq_handler(struct k_int_registers regs)
 {
 
 }
@@ -55,12 +55,18 @@ static void k_idt_set_gate(int i, k_uint64_t offset, int type)
 
 void k_idt_init(void)
 {
-	int i;
+	int i, j;
 
 	for (i = 0; i < 32; i++)
 		k_idt_set_gate(i, (k_uint64_t)k_idt_int_arr[i], K_IDT_INTERRUPT_GATE_64BIT);
 
-	k_idt_reg.limit = 32 * 8 - 1;
+	for (i = K_IRQ_MASTER_START, j = 0; i < K_IRQ_MASTER_START + 8; i++, j++)
+		k_idt_set_gate(i, (k_uint64_t)k_irq_handler_arr[j], K_IDT_INTERRUPT_GATE_64BIT);
+
+	for (i = K_IRQ_SLAVE_START, j = 8; i < K_IRQ_SLAVE_START + 8; i++, j++)
+		k_idt_set_gate(i, (k_uint64_t)k_irq_handler_arr[j], K_IDT_INTERRUPT_GATE_64BIT);
+
+	k_idt_reg.limit = 256 * sizeof(struct k_idt_interrupt_gate) - 1;
 	k_idt_reg.address = (k_uint64_t)&k_idt;
 
 	asm volatile("lidtq %0" : : "m" (k_idt_reg));

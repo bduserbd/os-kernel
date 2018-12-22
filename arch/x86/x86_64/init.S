@@ -171,6 +171,8 @@ k_memory_mode_64bit:
 	jmp	*%rax
 1:
 
+	lgdt	gdt_desc
+
 	lidt	first_idt
 
 	pushq	$0
@@ -188,17 +190,23 @@ k_memory_mode_64bit:
 
 	.data
 #include "include/gdt-descriptor.S"
+	.globl	first_gdt
 	.p2align 3
 first_gdt:
-	K_GDT_ENTRY
-	K_GDT_ENTRY base=0x0 limit=0xfffff type=0xa s=1 dpl=0 p=1 l=1 db=1 g=1
-	K_GDT_ENTRY base=0x0 limit=0xfffff type=0x2 s=1 dpl=0 p=1 l=1 db=1 g=1
+	K_GDT_ENTRY g=0
+	K_GDT_ENTRY base=0x0 limit=0x0 type=0xa s=1 dpl=0 p=1 l=1 g=1
+	K_GDT_ENTRY base=0x0 limit=0x0 type=0x2 s=1 dpl=0 p=1
 first_gdt_end:
 
 	.p2align 3
 first_gdt_desc:
 	.word	first_gdt_end-first_gdt-1
-	.quad	K_PHYSICAL_ADDRESS(first_gdt)
+	.long	K_PHYSICAL_ADDRESS(first_gdt)
+
+	.p2align 3
+gdt_desc:
+	.word	first_gdt_end-first_gdt-1
+	.quad	first_gdt
 
 	.p2align 3
 first_idt:

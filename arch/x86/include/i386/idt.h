@@ -2,6 +2,7 @@
 #define K_I386_IDT_H
 
 #include "kernel/include/types.h"
+#include "arch/x86/include/idt.h"
 
 #define K_IDT_INTERRUPT_GATE_16BIT	0x6
 #define K_IDT_INTERRUPT_GATE_32BIT	0xe

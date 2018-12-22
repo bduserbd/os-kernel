@@ -1,3 +1,5 @@
+#include "include/idt.h"
+
 	.text
 	.code32
 

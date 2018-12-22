@@ -1,5 +1,5 @@
-#include "include/idt.h"
-#include "include/registers.h"
+#include "include/i386/idt.h"
+#include "include/i386/registers.h"
 #include "kernel/include/irq/irq-info.h"
 #include "kernel/include/video/print.h"
 
@@ -36,8 +36,8 @@ void k_int_handler(struct k_int_registers regs)
 void k_irq_handler(struct k_int_registers regs)
 {
 	k_printf("%d", regs.interrupt - 32);
-	k_lapic_eoi();
 #if 0
+	k_lapic_eoi();
 	unsigned int irq;
 
 	irq = k_irq_from_int(regs.interrupt);
@@ -88,9 +88,9 @@ void k_idt_init(void)
 
 	k_idt_set_user_gate(0x80, (k_uint32_t)k_system_call, K_IDT_INTERRUPT_GATE_32BIT);
 
-	k_idt_set_gate(0xff, (k_uint32_t)k_spurious_int, K_IDT_TRAP_GATE);
+	k_idt_set_gate(0xff, (k_uint32_t)k_spurious_int, K_IDT_TRAP_GATE_32BIT);
 
-	k_idt_reg.limit = 256 * 8 - 1;
+	k_idt_reg.limit = 256 * sizeof(struct k_idt_interrupt_gate) - 1;
 	k_idt_reg.address = (k_uint32_t)&k_idt;
 
 	asm volatile("lidt %0" : : "m" (k_idt_reg));
