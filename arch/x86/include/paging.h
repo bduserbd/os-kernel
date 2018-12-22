@@ -20,6 +20,8 @@ extern struct k_frame *k_normal_frames;
 #define K_VIRTUAL_ADDRESS(physical)	\
 	((unsigned long)(physical) | K_IMAGE_BASE)
 
+#define K_PAGE_NUMBER(address)	((address) >> 12)
+
 void k_paging_init(void);
 void k_paging_reserve_pages(unsigned long, unsigned long);
 void k_paging_reserve_execute_pages(unsigned long, unsigned long);

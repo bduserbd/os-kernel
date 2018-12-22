@@ -30,22 +30,22 @@ void k_x86_init(void *smbios, void *rsdp,
 	if (error)
 		return;
 
-	//k_cpu_print_info(&k_boot_cpu);
+	k_cpu_print_info(&k_boot_cpu);
 
 #ifdef K_CONFIG_BIOS
-	k_mp_get_info();
+	//k_mp_get_info();
 #endif
 
 #if 0
-	k_printf("%x ", k_malloc(4));
-	k_printf("%x ", k_malloc(7));
-	k_printf("%x ", k_malloc(12));
-	k_printf("%x ", k_malloc(12));
-	k_printf("%x ", k_malloc(40));
-	k_printf("%x ", k_malloc(512));
-	k_printf("%x ", k_malloc(516));
-	k_printf("%x ", k_malloc(780));
-	k_printf("%x ", k_malloc(16));
+	k_printf("%lx ", k_malloc(4));
+	k_printf("%lx ", k_malloc(7));
+	k_printf("%lx ", k_malloc(12));
+	k_printf("%lx ", k_malloc(12));
+	k_printf("%lx ", k_malloc(40));
+	k_printf("%lx ", k_malloc(512));
+	k_printf("%lx ", k_malloc(516));
+	k_printf("%lx ", k_malloc(780));
+	k_printf("%lx ", k_malloc(16));
 	k_printf("\n");
 #endif
 
@@ -53,10 +53,11 @@ void k_x86_init(void *smbios, void *rsdp,
 	k_smbios_get_info(smbios);
 
 	//k_pit_init();
-
+#if 0
 	k_ioapic_init();
 	k_lapic_init();
 	k_hpet_init();
+#endif
 
 #if 0
 #ifdef K_CONFIG_SMP
@@ -74,6 +75,6 @@ void k_x86_init(void *smbios, void *rsdp,
 	k_irq_unmask(0);
 #endif
 
-	k_init();
+	//k_init();
 }
 

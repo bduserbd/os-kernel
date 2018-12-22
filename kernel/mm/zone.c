@@ -6,7 +6,7 @@
 static k_uint8_t *k_dma_zones = NULL;
 struct k_memory_zone *k_memory_zones = NULL;
 
-void k_paging_map_dma(unsigned long, unsigned long, unsigned long);
+void k_paging_reserve_dma(unsigned long, unsigned long, unsigned long);
 
 void *k_p2v(const void *physical)
 {
@@ -83,7 +83,7 @@ void k_memory_zone_dma_add(unsigned long start_frame, unsigned long total_frames
 
 	mapping = k_memory_zone_alloc_dma_mapping();
 
-	k_paging_map_dma((unsigned long)mapping, zone->start_frame << 12,
+	k_paging_reserve_dma((unsigned long)mapping, zone->start_frame << 12,
 			zone->total_frames << 12);
 
 	for (i = 0; i < zone->total_frames; i++)

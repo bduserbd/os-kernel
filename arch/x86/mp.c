@@ -20,9 +20,9 @@ static k_error_t k_mp_checksum(void *ptr, int length)
 		return K_ERROR_BAD_CHECKSUM;
 }
 
-static k_uint32_t k_mp_scan_address_range(k_uint32_t start, k_uint32_t range)
+static unsigned long k_mp_scan_address_range(unsigned long start, unsigned long range)
 {
-	k_uint32_t end;
+	unsigned long end;
 
 	/* if (start & (0x10 - 1))
 		   return 0; */

@@ -14,9 +14,9 @@ dirs:
 	#$(V)$(MAKE) -C irq/
 	#$(V)$(MAKE) -C time/
 	#$(V)$(MAKE) -C task/
-	#$(V)$(MAKE) -C acpi/
+	$(V)$(MAKE) -C acpi/
 	#$(V)$(MAKE) -C fb/
-	#$(V)$(MAKE) -C mm/
+	$(V)$(MAKE) -C mm/
 	$(V)$(MAKE) -C video/
 	#$(V)$(MAKE) -C network/
 	#$(V)$(MAKE) -C modules/

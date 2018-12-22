@@ -26,7 +26,7 @@ static struct k_buddy k_buddy;
 /* Physical page frames. */
 static struct k_buddy k_user_buddy;
 
-void k_paging_reserve_pages(k_uint32_t, k_uint32_t);
+void k_paging_reserve_pages(unsigned long, unsigned long);
 
 static struct k_buddy_node *k_buddy_get(struct k_buddy *buddy, struct k_buddy_node *node)
 {
@@ -173,7 +173,7 @@ void *k_buddy_alloc(k_size_t size)
 		return NULL;
 
 	log2 = k_buddy.max_block_log2 - k_buddy_best_fit_group(&k_buddy, size);
-	k_paging_reserve_pages((k_uint32_t)ptr, 1 << log2);
+	k_paging_reserve_pages((unsigned long)ptr, 1 << log2);
 
 	return ptr;
 }
@@ -212,7 +212,7 @@ static void k_buddy_reorder_nodes(struct k_buddy *buddy)
 	}
 }
 
-static void k_buddy_kernel_init(k_uint32_t heap)
+static void k_buddy_kernel_init(unsigned long heap)
 {
 	k_buddy.total_groups = K_BUDDY_TOTAL_GROUPS;
 	k_buddy.group_size = K_BUDDY_GROUP_SIZE;
@@ -226,11 +226,11 @@ static void k_buddy_kernel_init(k_uint32_t heap)
 	k_paging_reserve_pages(heap, k_buddy.group_size);
 	k_memset(k_buddy.group, 0, k_buddy.group_size);
 
-	k_buddy.node = (void *)K_ALIGN_UP((k_uint32_t)k_buddy.group + k_buddy.group_size, 0x1000);
-	k_paging_reserve_pages((k_uint32_t)k_buddy.node, k_buddy.list_size);
+	k_buddy.node = (void *)K_ALIGN_UP((unsigned long)k_buddy.group + k_buddy.group_size, 0x1000);
+	k_paging_reserve_pages((unsigned long)k_buddy.node, k_buddy.list_size);
 	k_memset(k_buddy.node, 0, k_buddy.list_size);
 
-	k_buddy.heap = (void *)K_ALIGN_UP((k_uint32_t)k_buddy.node + k_buddy.list_size,
+	k_buddy.heap = (void *)K_ALIGN_UP((unsigned long)k_buddy.node + k_buddy.list_size,
 			1 << k_buddy.min_block_log2);
 
 	k_buddy_reorder_nodes(&k_buddy);
@@ -276,7 +276,7 @@ static void k_buddy_user_init(void)
 	k_buddy_reorder_nodes(&k_user_buddy);
 }
 
-void k_buddy_init(k_uint32_t heap)
+void k_buddy_init(unsigned long heap)
 {
 	if (k_buddy.group || k_buddy.node || k_buddy.heap)
 		return;

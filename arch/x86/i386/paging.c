@@ -124,7 +124,7 @@ void k_paging_reserve_pages_ptr(k_pde_t *k_pde, unsigned long start, unsigned lo
 			pte = (k_pte_t *)((pde[table] & ~0xfff));
 		}
 
-		pte[page] = (unsigned long)physical | K_PTE_P | K_PTE_RW;
+		pte[page] = physical | K_PTE_P | K_PTE_RW;
 		if (flags & K_PAGING_RESERVE_USER)
 			pte[page] |= K_PTE_US;
 

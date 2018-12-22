@@ -165,9 +165,9 @@ static k_error_t k_acpi_check_rsdp(struct k_acpi_rsdp *rsdp)
 	return K_ERROR_NONE;
 }
 
-static k_uint32_t k_acpi_scan_address_range(k_uint32_t start, k_uint32_t range)
+static unsigned long k_acpi_scan_address_range(unsigned long start, unsigned long range)
 {
-	k_uint32_t end;
+	unsigned long end;
 
 	/* if (start & (0x10 - 1)
 	   return; */

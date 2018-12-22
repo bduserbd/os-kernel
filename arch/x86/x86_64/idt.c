@@ -60,9 +60,9 @@ void k_idt_init(void)
 	for (i = 0; i < 32; i++)
 		k_idt_set_gate(i, (k_uint64_t)k_idt_int_arr[i], K_IDT_INTERRUPT_GATE_64BIT);
 
-	k_idt_reg.limit = 256 * 8 - 1;
+	k_idt_reg.limit = 32 * 8 - 1;
 	k_idt_reg.address = (k_uint64_t)&k_idt;
 
-	asm volatile("lidt %0" : : "m" (k_idt_reg));
+	asm volatile("lidtq %0" : : "m" (k_idt_reg));
 }
 

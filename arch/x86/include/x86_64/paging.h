@@ -61,5 +61,13 @@ typedef k_uint64_t	k_pte_t;
 #define K_PDE_INDEX(address)	(((address) >> 21ULL) & 0x1ff)
 #define K_PTE_INDEX(address)	(((address) >> 12ULL) & 0x1ff)
 
+#define K_PAGE_TABLES_TO_ADDRESS(pml4e, pdpe, pde, pte, offset)	\
+	((0xffffULL << 48ULL) |					\
+	((pml4e) << 39ULL) |					\
+	((pdpe) << 30ULL) |					\
+	((pde) << 21ULL) |					\
+	((pte) << 12ULL) |					\
+	((offset) & K_PAGE_BITS))
+
 #endif
 
