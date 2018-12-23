@@ -1,4 +1,5 @@
 #include "include/ioapic.h"
+#include "include/lapic.h"
 #include "include/idt.h"
 #include "kernel/include/acpi/acpi.h"
 #include "kernel/include/mm/mm.h"
@@ -52,7 +53,7 @@ static inline void k_ioapic_set_redirect_reg(int reg, k_uint64_t data)
 
 static void k_ioapic_ack(struct k_irq_chip *chip, unsigned int irq)
 {
-
+	k_lapic_eoi(irq);
 }
 
 static void k_ioapic_mask(struct k_irq_chip *chip, unsigned int irq)
@@ -132,6 +133,6 @@ void k_ioapic_init(void)
 
 	k_irq_register_chip(&k_ioapic_irq_chip);
 
-	k_printf("I/O APIC: %x\n", k_ioapic.address);
+	k_printf("I/O APIC: %lx\n", k_ioapic.address);
 }
 

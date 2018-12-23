@@ -102,5 +102,7 @@ k_uint8_t k_lapic_id(void);
 void k_lapic_icr_init(k_uint8_t);
 void k_lapic_icr_start_up(k_uint8_t, k_uint8_t);
 
+void k_lapic_eoi(unsigned int);
+
 #endif
 

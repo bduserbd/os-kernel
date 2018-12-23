@@ -1,5 +1,6 @@
 #include "include/i386/idt.h"
 #include "include/i386/registers.h"
+#include "include/paging.h"
 #include "kernel/include/irq/irq-info.h"
 #include "kernel/include/video/print.h"
 
@@ -22,11 +23,7 @@ void k_int_handler(struct k_int_registers regs)
 	k_int_print_regs(&regs);
 
 	if (regs.interrupt == 0xe) {
-		k_uint32_t cr2;
-
-		asm volatile("mov %%cr2,%0" : "=r" (cr2));
-
-		k_printf("CR2: %x", cr2);
+		k_printf("CR2: %x", k_paging_fault_address());
 
 		for (;;)
 			asm volatile("hlt");
@@ -35,10 +32,9 @@ void k_int_handler(struct k_int_registers regs)
 
 void k_irq_handler(struct k_int_registers regs)
 {
-	k_printf("%d", regs.interrupt - 32);
-#if 0
-	k_lapic_eoi();
 	unsigned int irq;
+
+	k_printf("%d", regs.interrupt - 32);
 
 	irq = k_irq_from_int(regs.interrupt);
 	if (irq == K_INVALID_IRQ)
@@ -50,7 +46,6 @@ void k_irq_handler(struct k_int_registers regs)
 		k_irq_execute_handler_custom(irq, &regs);
 	else
 		k_irq_execute_handler(irq);
-#endif
 }
 
 static void k_idt_set_gate(int i, k_uint32_t offset, int type)

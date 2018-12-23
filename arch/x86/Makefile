@@ -1,11 +1,10 @@
 OBJS += init.o
-OBJS += cpu.o io.o #lapic.o ioapic.o
-OBJS += idt.o 8259a.o #8253.o hpet.o
+OBJS += cpu.o io.o lapic.o ioapic.o
+OBJS += idt.o 8259a.o 8253.o hpet.o
 #OBJS += system-call.o
 #OBJS += gdt.o
 OBJS += smbios.o
 #OBJS += elf.o
-#OBJS += task.o task-switch.o
 #OBJS += user-mode.o
 OBJS += bits.o
 

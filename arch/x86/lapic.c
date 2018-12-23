@@ -10,7 +10,7 @@ static struct k_lapic_info {
 	int version;
 	int max_lvt;
 
-	k_uint32_t address;
+	unsigned long address;
 } k_lapic;
 
 static k_uint32_t k_lapic_read(int reg)
@@ -56,9 +56,9 @@ void k_lapic_icr_start_up(k_uint8_t lapic_id, k_uint8_t page)
 
 #endif
 
-void k_lapic_eoi(void)
+void k_lapic_eoi(unsigned int irq)
 {
-	k_lapic_write(K_LAPIC_EOI, 4);
+	k_lapic_write(K_LAPIC_EOI, 1 << irq);
 }
 
 void k_lapic_init(void)
@@ -70,7 +70,7 @@ void k_lapic_init(void)
 
 	/* Basic info. */
 	k_lapic.address = k_acpi.lapic_address;
-	k_printf("Local APIC: %x\n", k_lapic.address);
+	k_printf("Local APIC: %lx\n", k_lapic.address);
 
 	version = k_lapic_read(K_LAPIC_VERSION_REGISTER);
 	k_lapic.version = K_LAPIC_VERSION_REGISTER_VERSION(version);

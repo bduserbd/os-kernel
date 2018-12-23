@@ -9,12 +9,12 @@ static k_error_t k_pit_irq_handler(unsigned int irq, void *context)
 	static int ticks = 0;
 
 	ticks++;
-	//if (ticks == 500) {
-	//	k_printf("$");
-	//	ticks = 0;
-	//}
+	if (ticks == 5) {
+		k_printf("$");
+		ticks = 0;
+	}
 
-	k_task_switch(context);
+	//k_task_switch(context);
 
 	return K_ERROR_NONE;
 }
@@ -22,7 +22,7 @@ static k_error_t k_pit_irq_handler(unsigned int irq, void *context)
 void k_pit_init(void)
 {
 	k_error_t error;
-	const k_uint16_t divisor = 0xffff;
+	const k_uint16_t divisor = 0xfff;
 
 	error = k_irq_request(0, k_pit_irq_handler, 0, NULL);
 	if (error)

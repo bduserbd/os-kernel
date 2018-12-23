@@ -9,7 +9,6 @@ void k_init(void)
 {
 	k_cmos_init();
 
-	asm volatile("sti");
 /*
 	k_task_init();
 

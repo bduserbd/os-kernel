@@ -164,6 +164,10 @@ k_paging_remove_identity_map:
 	addq	$K_PAGE_TABLE_SIZE, %rax
 	movq	$0, (%rax)
 
+	# Flush TLB
+	movq	%cr3, %rax
+	movq	%rax, cr3
+
 	ret
 
 k_memory_mode_64bit:

@@ -100,9 +100,13 @@ static struct k_irq_chip k_8259a_irq_chip = {
 	.data = NULL,
 };
 
+void k_pic_uninit(void)
+{
+	k_8259a_irq_chip.reset(&k_8259a_irq_chip);
+}
+
 void k_pic_init(void)
 {
-	//k_irq_register_chip(&k_8259a_irq_chip);
-	k_8259a_irq_chip.reset(&k_8259a_irq_chip);
+	k_irq_register_chip(&k_8259a_irq_chip);
 }
 

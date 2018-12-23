@@ -1,10 +1,11 @@
 #include "include/x86_64/idt.h"
 #include "include/x86_64/registers.h"
 #include "include/paging.h"
+#include "kernel/include/irq/irq-info.h"
 #include "kernel/include/video/print.h"
 
-struct k_idt_interrupt_gate k_idt[256] __attribute__((aligned(0x10)));
-struct k_idt_register k_idt_reg __attribute__((aligned(0x10)));
+struct k_idt_interrupt_gate k_idt[256] __attribute__((aligned(0x8)));
+struct k_idt_register k_idt_reg __attribute__((aligned(0x8)));
 
 static void k_int_print_regs(struct k_int_registers *regs)
 {
@@ -35,7 +36,27 @@ void k_int_handler(struct k_int_registers regs)
 
 void k_irq_handler(struct k_int_registers regs)
 {
+	unsigned int irq;
 
+	irq = k_irq_from_int(regs.interrupt);
+	if (irq == K_INVALID_IRQ)
+		return;
+
+	k_irq_ack(irq);
+
+	static int ticks = 0;
+
+	ticks++;
+	if (ticks == 60 * 1000) {
+		k_printf("%x", regs.interrupt - 32);
+		ticks = 0;
+	}
+#if 0
+	if (irq == 0)
+		k_irq_execute_handler_custom(irq, &regs);
+	else
+		k_irq_execute_handler(irq);
+#endif
 }
 
 static void k_idt_set_gate(int i, k_uint64_t offset, int type)

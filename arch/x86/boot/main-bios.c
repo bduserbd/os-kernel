@@ -97,10 +97,7 @@ k_error_t k_main(void)
 	k_text_set_info(&fb);
 	k_print_set_output_callback(k_text_puts);
 
-	k_pic_init();
 	k_idt_init();
-
-	*(k_uint8_t *)0xa000000 = 'A';
 
 	k_paging_build_frame_array(K_PAGE_NUMBER(K_KB(mbi->mem_upper)));
 	k_buddy_init(K_ALIGN_UP(K_OFFSET_FROM(k_normal_frames, K_FRAME_ARRAY_SIZE), 0x1000));

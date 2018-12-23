@@ -4,6 +4,7 @@
 #include "include/ioapic.h"
 #include "include/hpet.h"
 #include "include/smbios.h"
+#include "include/8259a.h"
 #include "include/8253.h"
 #include "include/video.h"
 #include "include/paging.h"
@@ -30,10 +31,10 @@ void k_x86_init(void *smbios, void *rsdp,
 	if (error)
 		return;
 
-	k_cpu_print_info(&k_boot_cpu);
+	//k_cpu_print_info(&k_boot_cpu);
 
 #ifdef K_CONFIG_BIOS
-	//k_mp_get_info();
+	k_mp_get_info();
 #endif
 
 #if 0
@@ -52,12 +53,18 @@ void k_x86_init(void *smbios, void *rsdp,
 	k_acpi_get_info(rsdp);
 	k_smbios_get_info(smbios);
 
-	//k_pit_init();
-#if 0
-	k_ioapic_init();
-	k_lapic_init();
-	k_hpet_init();
-#endif
+	error = k_hpet_init();
+	if (!error) {
+		k_pic_uninit();
+
+		k_ioapic_init();
+		k_lapic_init();
+	} else {
+		k_pic_init();
+		k_pit_init();
+	}
+
+	asm volatile("sti");
 
 #if 0
 #ifdef K_CONFIG_SMP
@@ -75,6 +82,6 @@ void k_x86_init(void *smbios, void *rsdp,
 	k_irq_unmask(0);
 #endif
 
-	//k_init();
+	k_init();
 }
 
