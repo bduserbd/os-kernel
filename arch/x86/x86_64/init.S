@@ -166,7 +166,7 @@ k_paging_remove_identity_map:
 
 	# Flush TLB
 	movq	%cr3, %rax
-	movq	%rax, cr3
+	movq	%rax, %cr3
 
 	ret
 

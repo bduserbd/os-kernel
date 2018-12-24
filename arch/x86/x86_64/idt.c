@@ -47,7 +47,7 @@ void k_irq_handler(struct k_int_registers regs)
 	static int ticks = 0;
 
 	ticks++;
-	if (ticks == 60 * 1000) {
+	if (ticks == 1000) {
 		k_printf("%x", regs.interrupt - 32);
 		ticks = 0;
 	}
