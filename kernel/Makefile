@@ -22,4 +22,5 @@ dirs:
 	#$(V)$(MAKE) -C modules/
 	#$(V)$(MAKE) -C initramfs/
 	#$(V)$(MAKE) -C user-mode/
+	$(V)$(MAKE) -C data-structures/
 

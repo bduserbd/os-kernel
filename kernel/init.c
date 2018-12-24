@@ -11,6 +11,7 @@
 void k_init(void)
 {
 	k_cmos_init();
+	k_clock_init();
 	k_timer_init();
 
 	k_sleep(15 * 1000);

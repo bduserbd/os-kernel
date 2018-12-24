@@ -59,7 +59,7 @@ static void k_hpet_set_periodic_mode_index(int timer)
 	k_hpet_stop_main_counter();
 
 	counter = k_hpet_get_reg(K_HPET_MAIN_COUNTER);
-	ticks = 100000ULL;
+	k_divmod64(k_hpet.frequency, K_HZ, &ticks, NULL);
 
 	config |= K_HPET_TIMER_INT_ENB_CNF | K_HPET_TIMER_TYPE_CNF |
 			K_HPET_TIMER_VAL_SET_CNF;
@@ -113,8 +113,6 @@ static void k_hpet_timers_init(void)
 
 		config |= K_HPET_TIMER_INT_ROUTE_CNF(irq);
 		k_hpet_set_reg(K_HPET_TIMER_CONFIGURATION(i), config);
-
-		k_hpet_set_periodic_mode_index(i);
 	}
 }
 

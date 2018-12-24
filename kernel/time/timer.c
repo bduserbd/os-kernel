@@ -23,6 +23,10 @@ void k_timer_init(void)
 	if (error)
 		return;
 
+	error = device->set_periodic_mode(device);
+	if (error)
+		return;
+
 	k_timer_device = device;
 }
 

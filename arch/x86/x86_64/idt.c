@@ -44,10 +44,10 @@ void k_irq_handler(struct k_int_registers regs)
 
 	k_irq_ack(irq);
 
-	static int ticks = 0;
+	static volatile int ticks = 0;
 
 	ticks++;
-	if (ticks == 1000) {
+	if (ticks == 10000) {
 		k_printf("%x", regs.interrupt - 32);
 		ticks = 0;
 	}

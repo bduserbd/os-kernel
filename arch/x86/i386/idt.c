@@ -34,18 +34,25 @@ void k_irq_handler(struct k_int_registers regs)
 {
 	unsigned int irq;
 
-	k_printf("%d", regs.interrupt - 32);
-
 	irq = k_irq_from_int(regs.interrupt);
 	if (irq == K_INVALID_IRQ)
 		return;
 
 	k_irq_ack(irq);
 
+	static volatile int ticks = 0;
+	ticks++;
+	if (ticks == 30 * 1000) {
+		k_printf("%d", regs.interrupt - 32);
+		ticks = 0;
+	}
+
+#if 0
 	if (irq == 0)
 		k_irq_execute_handler_custom(irq, &regs);
 	else
 		k_irq_execute_handler(irq);
+#endif
 }
 
 static void k_idt_set_gate(int i, k_uint32_t offset, int type)
