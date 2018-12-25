@@ -91,6 +91,7 @@ static unsigned int k_pic_int_to_irq(struct k_irq_chip *chip, unsigned int inter
 
 static struct k_irq_chip k_8259a_irq_chip = {
 	.name = "8259A",
+	.irqs = 0xf,
 	.start = k_pic_start,
 	.reset = k_pic_reset,
 	.ack = k_pic_ack,

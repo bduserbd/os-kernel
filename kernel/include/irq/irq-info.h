@@ -3,12 +3,14 @@
 
 #include "kernel/include/irq/irq.h"
 
-#define K_NUMBER_OF_IRQS	16
+#define K_NUMBER_OF_IRQS	32
 
 #define K_INVALID_IRQ	((unsigned int)~0)
 
 struct k_irq_chip {
 	const char *name;
+
+	unsigned int irqs;
 
 	k_error_t (*start)(struct k_irq_chip *);
 	void (*reset)(struct k_irq_chip *);

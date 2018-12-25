@@ -24,10 +24,13 @@ k_error_t k_irq_register_chip(struct k_irq_chip *chip)
 			!chip->mask || !chip->unmask || !chip->int_to_irq)
 		return K_ERROR_INVALID_PARAMETER;
 
+	if (chip->irqs > K_NUMBER_OF_IRQS)
+		return K_ERROR_INVALID_PARAMETER;
+
 	chip->next = k_irq_chip;
 	k_irq_chip = chip;
 
-	for (i = 0; i < K_NUMBER_OF_IRQS - 1; i++)
+	for (i = 0; i < chip->irqs; i++)
 		k_irqs[i].irq = i;
 
 	k_irq_chip->reset(k_irq_chip);
@@ -45,7 +48,7 @@ static k_error_t k_irq_execute_handler_parameter(unsigned int irq, void *data)
 	struct k_irq_action *action;
 	struct k_irq_descriptor *irq_desc;
 
-	if (irq > K_NUMBER_OF_IRQS - 1)
+	if (irq > k_irq_chip->irqs - 1)
 		return K_ERROR_INVALID_PARAMETER;
 
 	irq_desc = &k_irqs[irq];
@@ -117,7 +120,7 @@ k_error_t k_irq_request(unsigned int irq, k_irq_handler_t handler,
 	if (!k_irq_chip)
 		return K_ERROR_UNINITIALIZED;
 
-	if (irq > K_NUMBER_OF_IRQS - 1)
+	if (irq > k_irq_chip->irqs - 1)
 		return K_ERROR_INVALID_PARAMETER;
 
 	irq_desc = &k_irqs[irq];

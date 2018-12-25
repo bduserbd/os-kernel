@@ -1,6 +1,12 @@
 #ifndef K_PIT_H
 #define K_PIT_H
 
+#include "kernel/include/types.h"
+
+/* PIT frequency. */
+#define K_PIT_FREQUENCY	1193182
+#define K_PIT_K_TICKS	(K_PIT_FREQUENCY / K_HZ)
+
 /* I/O ports of PIT channels. */
 #define K_PIT_CHANNEL0_DATA_PORT	0x40
 #define K_PIT_CHANNEL1_DATA_PORT	0x41
@@ -26,6 +32,7 @@
 #define K_PIT_COMMAND_PORT_BCD		(1 << 0)
 
 void k_pit_init(void);
+void k_pit_channel2_sleep(unsigned int);
 
 #endif
 

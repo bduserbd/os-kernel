@@ -131,6 +131,8 @@ void k_ioapic_init(void)
 	version = k_ioapic_get_reg(K_IOAPIC_VER);
 	k_ioapic.redirect_entries = K_IOAPIC_VER_MAX_REDIRECT_ENTRIES(version);
 
+	k_ioapic_irq_chip.irqs = k_ioapic.redirect_entries;
+
 	k_irq_register_chip(&k_ioapic_irq_chip);
 
 	k_printf("I/O APIC: %lx\n", k_ioapic.address);

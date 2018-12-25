@@ -43,9 +43,6 @@
 #define K_LAPIC_ESR_SEND_ACCEPT_ERROR		(1 << 2)
 #define K_LAPIC_ESR_RECEIVE_ACCEPT_ERROR	(1 << 3)
 
-/* Local APIC LVT CMCI Register. */
-#define K_LAPIC_LVT_CMCI	0x2f0
-
 /* Local APIC Interrupt Command Register. */
 #define K_LAPIC_ICR	0x300
 
@@ -75,14 +72,32 @@
 
 #define K_LAPIC_ICR2	0x310
 
+/* Local APIC LVT. */
+#define K_LAPIC_LVT_MASK	(1 << 16)
+
+/* Local APIC LVT CMCI Register. */
+#define K_LAPIC_LVT_CMCI	0x2f0
+
 /* Local APIC LVT Timer Register. */
 #define K_LAPIC_LVT_TIMER	0x320
+
+#define K_LAPIC_LVT_TIMER_MODE_ONESHOT		(0 << 17)
+#define K_LAPIC_LVT_TIMER_MODE_PERIODIC		(1 << 17)
+#define K_LAPIC_LVT_TIMER_MODE_TSC_DEADLINE	(2 << 17)
 
 /* Local APIC LVT LINT0 Register. */
 #define K_LAPIC_LVT_LINT0	0x350
 
 /* Local APIC LVT LINT1 Register. */
 #define K_LAPIC_LVT_LINT1	0x360
+
+/* Local APIC Initial Counter Register. */
+#define K_LAPIC_TIMER_ICR	0x380
+
+#define K_LAPIC_TIMER_ICR_VALUE	0xffffffff
+
+/* Local APIC Current Counter Register. */
+#define K_LAPIC_TIMER_CCR	0x390
 
 /* Local APIC Divide Configuration Register. */
 #define K_LAPIC_DIV_CONFIG	0x3e0

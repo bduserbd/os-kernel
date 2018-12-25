@@ -67,21 +67,23 @@ static void k_binary_heap_to_down(struct k_binary_heap *heap,
 	}
 }
 
-void k_binary_heap_insert(struct k_binary_heap *heap, void *item)
+k_error_t k_binary_heap_insert(struct k_binary_heap *heap, void *item)
 {
 	unsigned int next_index;
 
 	if (!item)
-		return;
+		return K_ERROR_INVALID_PARAMETER;
 
 	next_index = heap->index + 1;
 	if (next_index == heap->total_elements)
-		return;
+		return K_ERROR_INSUFFICIENT_STORAGE;
 
 	heap->elements[next_index] = item;
 	k_binary_heap_to_up(heap, next_index);
 
 	heap->index = next_index;
+
+	return K_ERROR_NONE;
 }
 
 void *k_binary_heap_get_root(struct k_binary_heap *heap)

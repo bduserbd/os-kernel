@@ -1,6 +1,8 @@
 #ifndef K_BINARY_HEAP
 #define K_BINARY_HEAP
 
+#include "kernel/include/error.h"
+
 enum {
 	K_BINARY_HEAP_MIN,
 	K_BINARY_HEAP_MAX,
@@ -17,7 +19,7 @@ struct k_binary_heap {
 	int (*compare)(void *, void *);
 };
 
-void k_binary_heap_insert(struct k_binary_heap *, void *);
+k_error_t k_binary_heap_insert(struct k_binary_heap *, void *);
 
 void *k_binary_heap_get_root(struct k_binary_heap *);
 void *k_binary_heap_fetch_root(struct k_binary_heap *);

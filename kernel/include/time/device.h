@@ -21,6 +21,7 @@ struct k_clock_device {
 enum {
 	K_TIMER_DEVICE_PIT,
 	K_TIMER_DEVICE_HPET,
+	K_TIMER_DEVICE_LAPIC,
 };
 
 #define K_TIMER_DEVICE_FLAGS_PERIODIC	(1 << 0)

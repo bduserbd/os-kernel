@@ -53,6 +53,9 @@ void k_x86_init(void *smbios, void *rsdp,
 	k_acpi_get_info(rsdp);
 	k_smbios_get_info(smbios);
 
+	k_lapic_init();
+
+#if 0
 	error = k_hpet_init();
 	if (!error) {
 		k_pic_uninit();
@@ -65,6 +68,7 @@ void k_x86_init(void *smbios, void *rsdp,
 	}
 
 	asm volatile("sti");
+#endif
 
 #if 0
 #ifdef K_CONFIG_SMP
@@ -82,6 +86,6 @@ void k_x86_init(void *smbios, void *rsdp,
 	k_irq_unmask(0);
 #endif
 
-	k_init();
+	//k_init();
 }
 

@@ -40,19 +40,7 @@ void k_irq_handler(struct k_int_registers regs)
 
 	k_irq_ack(irq);
 
-	static volatile int ticks = 0;
-	ticks++;
-	if (ticks == 30 * 1000) {
-		k_printf("%d", regs.interrupt - 32);
-		ticks = 0;
-	}
-
-#if 0
-	if (irq == 0)
-		k_irq_execute_handler_custom(irq, &regs);
-	else
-		k_irq_execute_handler(irq);
-#endif
+	k_irq_execute_handler(irq);
 }
 
 static void k_idt_set_gate(int i, k_uint32_t offset, int type)
