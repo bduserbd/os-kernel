@@ -16,23 +16,15 @@ static int k_timers_compare(void *ptr1, void *ptr2)
 {
 	struct k_timer *timer1, *timer2;
 
-	if (!ptr1 && ptr2)
-		return -1;
-	else if (ptr1 && !ptr2)
-		return 1;
-	else if (!ptr1 && !ptr2)
-		return 0;
-	else {
-		timer1 = ptr1;
-		timer2 = ptr2;
+	timer1 = ptr1;
+	timer2 = ptr2;
 
-		if (timer1->expires < timer2->expires)
-			return 1;
-		else if (timer1->expires > timer2->expires)
-			return -1;
-		else
-			return 0;
-	}
+	if (timer1->expires < timer2->expires)
+		return 1;
+	else if (timer1->expires > timer2->expires)
+		return -1;
+	else
+		return 0;
 }
 
 void k_timer_init(void)
@@ -52,7 +44,7 @@ void k_timer_init(void)
 	if (error)
 		return;
 
-	k_timers = k_binary_heap_init(K_BINARY_HEAP_MIN, 255, k_timers_compare);
+	k_timers = k_binary_heap_init(K_BINARY_HEAP_MAX, 255, k_timers_compare);
 	if (!k_timers)
 		return;
 

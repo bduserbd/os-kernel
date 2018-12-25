@@ -8,7 +8,6 @@ enum {
 
 struct k_binary_heap {
 	int type;
-	int result;
 
 	unsigned int total_elements;
 	unsigned int index;

@@ -6,13 +6,36 @@
 #define LEFT(i)		(1 + ((i) << 1))
 #define RIGHT(i)	(2 + ((i) << 1))
 
+static bool k_binary_heap_compare(struct k_binary_heap *heap, void *item1, void *item2)
+{
+	if (!item1 && !item2)
+		return false;
+
+	if (heap->type == K_BINARY_HEAP_MAX) {
+		if (!item1 && item2)
+			return true;
+		else if (item1 && !item2)
+			return false;
+		else
+			return heap->compare(item1, item2) == 1;
+	} else {
+		if (!item1 && item2)
+			return true;
+		else if (item1 && !item2)
+			return false;
+		else
+			return heap->compare(item1, item2) == -1;
+	}
+
+}
+
 static void k_binary_heap_to_up(struct k_binary_heap *heap, unsigned int index)
 {
 	void *temp;
 
 	while (index > 0 &&
-			(heap->compare(heap->elements[PARENT(index)],
-				heap->elements[index]) == heap->result)) {
+			k_binary_heap_compare(heap, heap->elements[PARENT(index)],
+				heap->elements[index])) {
 		temp = heap->elements[index];
 		heap->elements[index] = heap->elements[PARENT(index)];
 		heap->elements[PARENT(index)] = temp;
@@ -31,12 +54,10 @@ static void k_binary_heap_to_down(struct k_binary_heap *heap,
 		swap = LEFT(start_index);
 
 		if (swap + 1 != end_index)
-			if (heap->compare(heap->elements[swap], heap->elements[swap + 1]) ==
-					heap->result)
+			if (k_binary_heap_compare(heap, heap->elements[swap], heap->elements[swap + 1]))
 				swap++;
 
-		if (heap->compare(heap->elements[start_index], heap->elements[swap]) ==
-				heap->result) {
+		if (k_binary_heap_compare(heap, heap->elements[start_index], heap->elements[swap])) {
 			temp = heap->elements[start_index];
 			heap->elements[start_index] = heap->elements[swap];
 			heap->elements[swap] = temp;
@@ -106,10 +127,6 @@ struct k_binary_heap *k_binary_heap_init(int type, unsigned int total_elements,
 		return NULL;
 
 	heap->type = type;
-	if (heap->type == K_BINARY_HEAP_MAX)
-		heap->result = 1;
-	else
-		heap->result = -1;
 
 	heap->total_elements = total_elements;
 	heap->index = 0;
