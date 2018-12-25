@@ -29,9 +29,9 @@ void k_int_handler(struct k_int_registers regs)
 	if (regs.interrupt == 0xe) {
 		k_printf("CR2: %llx", k_paging_fault_address());
 
-		for (;;)
-			asm volatile("hlt");
 	}
+	for (;;)
+		asm volatile("hlt");
 }
 
 void k_irq_handler(struct k_int_registers regs)
@@ -48,7 +48,7 @@ void k_irq_handler(struct k_int_registers regs)
 
 	ticks++;
 	if (ticks == 10000) {
-		k_printf("%x", regs.interrupt - 32);
+		//k_printf("%x", regs.interrupt - 32);
 		ticks = 0;
 	}
 #if 0

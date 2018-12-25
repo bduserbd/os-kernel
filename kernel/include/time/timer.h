@@ -1,10 +1,10 @@
 #ifndef K_TIMER_H
 #define K_TIMER_H
 
-#include "kernel/include/types.h"
+#include "kernel/include/time/time.h"
 
 struct k_timer {
-	k_uint64_t expires;
+	k_tick_t expires;
 
 	struct k_timer *next;
 };
