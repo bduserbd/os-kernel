@@ -22,7 +22,7 @@ struct k_fb_info {
 	k_uint32_t pitch;
 
 	/* Video memory area. */
-	k_addr_t framebuffer;
+	unsigned long framebuffer;
 
 	/* Pixel definitions. */
 	k_uint8_t bits_per_pixel;

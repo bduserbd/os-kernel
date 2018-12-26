@@ -46,6 +46,11 @@ typedef k_uint64_t	k_pte_t;
 #define K_PTE_PCD	(1 << 4)
 #define K_PTE_A		(1 << 5)
 #define K_PTE_G		(1 << 8)
+#define K_PTE_NX	(1ULL << 63)
+
+#define K_PAGE_BITS	0xfffULL
+#define K_PAGE_MASK	~K_PAGE_BITS
+#define K_PAGE_SIZE	0x1000ULL
 
 #define K_PAGE_TABLE_ENTRIES	512
 #define K_PAGE_TABLE_SIZE	0x1000
@@ -55,6 +60,14 @@ typedef k_uint64_t	k_pte_t;
 #define K_PDPE_INDEX(address)	(((address) >> 30ULL) & 0x1ff)
 #define K_PDE_INDEX(address)	(((address) >> 21ULL) & 0x1ff)
 #define K_PTE_INDEX(address)	(((address) >> 12ULL) & 0x1ff)
+
+#define K_PAGE_TABLES_TO_ADDRESS(pml4e, pdpe, pde, pte, offset)	\
+	((0xffffULL << 48ULL) |					\
+	((pml4e) << 39ULL) |					\
+	((pdpe) << 30ULL) |					\
+	((pde) << 21ULL) |					\
+	((pte) << 12ULL) |					\
+	((offset) & K_PAGE_BITS))
 
 #endif
 

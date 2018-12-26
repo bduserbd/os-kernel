@@ -1,6 +1,6 @@
 OBJS += string.o
 OBJS += bits.o
-OBJS += divmod64.o
+OBJS += div64.o
 OBJS += bcd.o
 
 CFLAGS = -I ../

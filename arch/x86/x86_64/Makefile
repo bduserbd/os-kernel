@@ -1,7 +1,8 @@
-OBJS += cpu.o
-OBJS += paging.o
 OBJS += init.o
-OBJS += amd.o
+OBJS += cpu.o
+OBJS += idt.o interrupt.o
+OBJS += paging.o
+OBJS += system-call.o
 
 CFLAGS += -I ../
 

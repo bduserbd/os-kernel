@@ -1,6 +1,8 @@
 #ifndef K_IOAPIC_H
 #define K_IOAPIC_H
 
+#include "kernel/include/error.h"
+
 /* Accessing I/O APIC registers. */
 enum {
 	K_IOAPIC_REGSEL	= 0x00,
@@ -35,7 +37,7 @@ enum {
 
 #define K_IOAPIC_REDTBL_INTERRUPT_MASK	(1 << 16)
 
-void k_ioapic_init(void);
+k_error_t k_ioapic_init(void);
 
 #endif
 

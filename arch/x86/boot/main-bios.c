@@ -14,13 +14,12 @@
 extern __u8 __k_start[];
 extern __u8 __k_end[];
 
-extern unsigned long *k_multiboot_magic_ptr;
-extern unsigned long *k_multiboot_info_ptr;
+unsigned long k_multiboot_magic_ptr;
+unsigned long k_multiboot_info_ptr;
 
-extern unsigned long k_initramfs_start;
-extern unsigned long k_initramfs_length;
+unsigned long k_initramfs_start;
+unsigned long k_initramfs_length;
 
-#if 0
 /* Functions from here are called when high virtual memory is initialized. */
 k_error_t k_reserve_reserved_pages(void)
 {
@@ -33,7 +32,7 @@ k_error_t k_reserve_reserved_pages(void)
 	if ((mbi->flags & K_MULTIBOOT_INFO_MEM_MAP) == 0)
 		return K_ERROR_NOT_FOUND;
 
-	// TODO: What if we wiped these ?
+	// TODO: What if we wiped memory map descriptors ?
 	entry = (void *)k_p2v_l(mbi->mmap_addr);
 
 	for (i = 0; i < mbi->mmap_length / sizeof(struct k_multiboot_mmap_entry); i++)
@@ -73,14 +72,18 @@ k_error_t k_get_fb_info(struct k_multiboot_info *mbi, struct k_fb_info *fb)
 }
 
 void k_print_set_output_callback(void (*)(const char *));
-#endif
+void k_paging_arch_init(void);
 
 k_error_t k_main(void)
 {
-#if 0
 	k_error_t error;
 	struct k_multiboot_info *mbi;
 	struct k_fb_info fb;
+
+	k_multiboot_info_ptr += K_IMAGE_BASE;
+	k_initramfs_start += K_IMAGE_BASE;
+
+	k_paging_arch_init();
 
 	mbi = (void *)k_multiboot_info_ptr;
 	k_paging_reserve_pages((unsigned long)mbi, sizeof(struct k_multiboot_info));
@@ -94,16 +97,14 @@ k_error_t k_main(void)
 	k_text_set_info(&fb);
 	k_print_set_output_callback(k_text_puts);
 
-	k_pic_init();
 	k_idt_init();
 
-	k_paging_build_frame_array(K_KB(mbi->mem_upper) >> 12);
+	k_paging_build_frame_array(K_PAGE_NUMBER(K_KB(mbi->mem_upper)));
 	k_buddy_init(K_ALIGN_UP(K_OFFSET_FROM(k_normal_frames, K_FRAME_ARRAY_SIZE), 0x1000));
 
 	k_paging_reserve_pages(k_initramfs_start, k_initramfs_length);
 
-	k_x86_init(NULL, NULL, k_initramfs_start, k_initramfs_length);
-#endif
+	k_x86_init(NULL, NULL);
 
 	return K_ERROR_FAILURE;
 }

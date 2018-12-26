@@ -35,7 +35,7 @@ static k_error_t k_smbios_checksum(void *ptr, int length)
 		return K_ERROR_BAD_CHECKSUM;
 }
 
-static void *k_smbios_scan_address_range(k_uint32_t start, k_uint32_t range)
+static void *k_smbios_scan_address_range(unsigned long start, unsigned long range)
 {
 	k_uint8_t *ptr, *end;
 

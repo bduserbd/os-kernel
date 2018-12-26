@@ -1,6 +1,6 @@
-#include "include/divmod64.h"
+#include "include/div64.h"
 
-void k_divmod64(k_uint64_t n, k_uint64_t d, k_uint64_t *q, k_uint64_t *r)
+void k_div64(k_uint64_t n, k_uint64_t d, k_uint64_t *q, k_uint64_t *r)
 {
 	int i;
 	k_uint64_t _q = 0, _r = 0;

@@ -11,16 +11,15 @@
 extern __u8 __k_start[];
 extern __u8 __k_end[];
 
-extern unsigned long *k_multiboot_magic_ptr;
-extern unsigned long *k_multiboot_info_ptr;
+unsigned long k_multiboot_magic_ptr;
+unsigned long k_multiboot_info_ptr;
 
 unsigned long k_multiboot_info_size = 0;
 
-extern unsigned long k_initramfs_start;
-extern unsigned long k_initramfs_length;
+unsigned long k_initramfs_start;
+unsigned long k_initramfs_length;
 
-#if 0
-k_error_t k_scan_multiboot_tags(k_uint32_t ebx, int type, k_error_t (*callback)
+k_error_t k_scan_multiboot_tags(unsigned long ebx, int type, k_error_t (*callback)
 		(void *, void *), void *data)
 {
 	struct k_multiboot2_tag *tag;
@@ -179,10 +178,10 @@ void k_print_set_output_callback(void (*)(const char *));
 k_error_t k_reserve_reserved_pages(void)
 {
 	k_error_t error;
-	k_uint32_t ebx;
+	unsigned long ebx;
 	struct k_fb_info fb;
 
-	ebx = (k_uint32_t)k_multiboot_info_ptr;
+	ebx = k_multiboot_info_ptr;
 
 #if 0
 	error = k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_MMAP, k_reserve_reserved_pages, NULL);
@@ -212,20 +211,21 @@ k_error_t k_reserve_reserved_pages(void)
 
 	return K_ERROR_NONE;
 }
-#endif
 
 k_error_t k_main(void)
 {
-#if 0
-	k_uint32_t ebx;
+	unsigned long ebx;
 	k_uint32_t mem_upper;
 	k_error_t error;
 	void *smbios = (void *)-1;
 	void *rsdp = NULL;
 
+	k_multiboot_info_ptr += K_IMAGE_BASE;
+	k_initramfs_start += K_IMAGE_BASE;
+
 	//k_paging_reserve_pages(K_VIRTUAL_ADDRESS(0x8000), 0x1000);
 
-	ebx = (k_uint32_t)k_multiboot_info_ptr;
+	ebx = k_multiboot_info_ptr;
 	k_paging_reserve_pages(ebx, k_multiboot_info_size);
 
 	k_scan_multiboot_tags(ebx, K_MULTIBOOT2_TAG_TYPE_SMBIOS, k_get_smbios, &smbios);
@@ -244,17 +244,16 @@ k_error_t k_main(void)
 	if (error)
 		return error;
 
-	k_paging_build_frame_array(K_KB(mem_upper) >> 12);
+	k_paging_build_frame_array(K_PAGE_NUMBER(K_KB(mem_upper)));
 	k_buddy_init(K_ALIGN_UP(K_OFFSET_FROM(k_normal_frames, K_FRAME_ARRAY_SIZE), 0x1000));
 
 	/* Page faults and so aren't printed until graphics are set. */
-	//k_pic_init();
+	k_pic_init();
 	k_idt_init();
 
 	k_paging_reserve_pages(k_initramfs_start, k_initramfs_length);
 
-	k_x86_init(smbios, rsdp, k_initramfs_start, k_initramfs_length);
-#endif
+	k_x86_init(smbios, rsdp);
 
 	return K_ERROR_FAILURE;
 }

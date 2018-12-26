@@ -73,10 +73,11 @@ struct k_acpi_madt {
 } __attribute__((packed));
 
 /* ACPI MADT entries. */
-#define K_ACPI_MADT_LAPIC		0x0
-#define K_ACPI_MADT_IOAPIC		0x1
-#define K_ACPI_MADT_INTERRUPT_OVERRIDE	0x2
-#define K_ACPI_MADT_LAPIC_NMI		0x4
+#define K_ACPI_MADT_LAPIC			0x0
+#define K_ACPI_MADT_IOAPIC			0x1
+#define K_ACPI_MADT_INTERRUPT_OVERRIDE		0x2
+#define K_ACPI_MADT_NON_MASKABLE_INTERRUPT	0x3
+#define K_ACPI_MADT_LAPIC_NMI			0x4
 
 /* ACPI Local APIC. */
 #define K_ACPI_LAPIC_FLAGS_ENABLED	(1 << 0)
@@ -107,6 +108,14 @@ struct k_acpi_interrupt_override {
 	__u8	source_irq;
 	__u32	global_irq;
 	__u16	flags;
+} __attribute__((packed));
+
+/* ACPI Non Maskable Interrupt I/O APIC. */
+struct k_acpi_non_maskable_interrupt {
+	__u8	type;
+	__u8	length;
+	__u16	flags;
+	__u32	global_irq;
 } __attribute__((packed));
 
 /* ACPI Local APIC NMI. */

@@ -1,33 +1,6 @@
 #ifndef K_IDT_H
 #define K_IDT_H
 
-#ifndef __ASSEMBLER__
-#include "kernel/include/types.h"
-#endif
-
-#define K_IDT_INTERRUPT_GATE_16BIT	0x6
-#define K_IDT_INTERRUPT_GATE_32BIT	0xe
-#define K_IDT_TRAP_GATE			0xf
-
-#ifndef __ASSEMBLER__
-
-struct k_idt_register {
-	__u16	limit;
-	__u32	address;
-} __attribute__((packed));
-
-struct k_idt_interrupt_gate {
-	__u16	offset0;
-	__u16	segment_selector;
-	__u8	zero;
-	__u8	type : 5;
-	__u8	dpl : 2;
-	__u8	p : 1;
-	__u16	offset1;
-} __attribute__((packed));
-
-#endif
-
 #define K_IRQ_MASTER_START	0x20
 #define K_IRQ_SLAVE_START	0x28
 
@@ -88,6 +61,9 @@ extern void k_irq_handler15(void);
 extern void k_spurious_int(void);
 
 extern void k_system_call(void);
+
+void (*k_idt_int_arr[32])(void);
+void (*k_irq_handler_arr[16])(void);
 
 #endif
 

@@ -1,4 +1,5 @@
 #include "include/x86_64/paging.h"
+#include "include/cpu.h"
 #include "include/gdt.h"
 #include "include/cr4.h"
 #include "include/cr0.h"
@@ -132,7 +133,7 @@ k_paging_init:
 
 	movl	$K_MSR_IA32_EFER, %ecx
 	rdmsr
-	orl	$K_MSR_IA32_EFER_LME, %eax
+	orl	$(K_MSR_IA32_EFER_LME | K_MSR_IA32_EFER_NXE), %eax
 	wrmsr
 
 	movl	$(K_CR0_PG | K_CR0_PE), %eax
@@ -163,12 +164,18 @@ k_paging_remove_identity_map:
 	addq	$K_PAGE_TABLE_SIZE, %rax
 	movq	$0, (%rax)
 
+	# Flush TLB
+	movq	%cr3, %rax
+	movq	%rax, %cr3
+
 	ret
 
 k_memory_mode_64bit:
 	leaq	1f, %rax
 	jmp	*%rax
 1:
+
+	lgdt	gdt_desc
 
 	lidt	first_idt
 
@@ -187,11 +194,12 @@ k_memory_mode_64bit:
 
 	.data
 #include "include/gdt-descriptor.S"
+	.globl	first_gdt
 	.p2align 3
 first_gdt:
-	K_GDT_ENTRY
-	K_GDT_ENTRY base=0x0 limit=0xfffff type=0xa s=1 dpl=0 p=1 l=1 db=1 g=1
-	K_GDT_ENTRY base=0x0 limit=0xfffff type=0x2 s=1 dpl=0 p=1 l=1 db=1 g=1
+	K_GDT_ENTRY g=0
+	K_GDT_ENTRY base=0x0 limit=0x0 type=0xa s=1 dpl=0 p=1 l=1 g=1
+	K_GDT_ENTRY base=0x0 limit=0x0 type=0x2 s=1 dpl=0 p=1
 first_gdt_end:
 
 	.p2align 3
@@ -200,7 +208,12 @@ first_gdt_desc:
 	.long	K_PHYSICAL_ADDRESS(first_gdt)
 
 	.p2align 3
+gdt_desc:
+	.word	first_gdt_end-first_gdt-1
+	.quad	first_gdt
+
+	.p2align 3
 first_idt:
 	.word	0
-	.long	0
+	.quad	0
 

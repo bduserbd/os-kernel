@@ -45,10 +45,10 @@ typedef u64	__u64;
 typedef unsigned	__u;
 
 /* Various */
-typedef u16	k_wchar_t;
-typedef u32	k_size_t;
-typedef u32	k_addr_t;
-typedef s32	k_ssize_t;
+typedef u16		k_wchar_t;
+typedef unsigned long	k_size_t;
+typedef unsigned long	k_addr_t;
+typedef signed long	k_ssize_t;
 
 #define K_OFFSETOF(st, m)	((k_size_t)&(((st *)0)->m))
 

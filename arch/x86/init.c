@@ -2,8 +2,10 @@
 #include "include/cpu.h"
 #include "include/lapic.h"
 #include "include/ioapic.h"
+#include "include/tsc.h"
 #include "include/hpet.h"
 #include "include/smbios.h"
+#include "include/8259a.h"
 #include "include/8253.h"
 #include "include/video.h"
 #include "include/paging.h"
@@ -14,10 +16,12 @@
 #include "kernel/include/irq/irq-info.h"
 #include "kernel/include/video/print.h"
 
+extern unsigned long k_initramfs_start;
+extern unsigned long k_initramfs_length;
+
 void k_init(void);
 
-void k_x86_init(void *smbios, void *rsdp,
-		k_uint32_t initramfs_start, k_uint32_t initramfs_length)
+void k_x86_init(void *smbios, void *rsdp)
 {
 	k_error_t error;
 
@@ -36,27 +40,25 @@ void k_x86_init(void *smbios, void *rsdp,
 	k_mp_get_info();
 #endif
 
-#if 0
-	k_printf("%x ", k_malloc(4));
-	k_printf("%x ", k_malloc(7));
-	k_printf("%x ", k_malloc(12));
-	k_printf("%x ", k_malloc(12));
-	k_printf("%x ", k_malloc(40));
-	k_printf("%x ", k_malloc(512));
-	k_printf("%x ", k_malloc(516));
-	k_printf("%x ", k_malloc(780));
-	k_printf("%x ", k_malloc(16));
-	k_printf("\n");
-#endif
-
 	k_acpi_get_info(rsdp);
 	k_smbios_get_info(smbios);
 
-	//k_pit_init();
+	k_pit_init();
+	k_tsc_init();
 
-	k_ioapic_init();
-	k_lapic_init();
-	k_hpet_init();
+	k_pic_uninit();
+
+	error = k_lapic_init();
+	if (!error) {
+		error = k_ioapic_init();
+		if (error)
+			k_pic_init();
+		else
+			k_hpet_init();
+	} else
+		k_pic_init();
+
+	asm volatile("sti");
 
 #if 0
 #ifdef K_CONFIG_SMP

@@ -1,4 +1,5 @@
 #include "include/ioapic.h"
+#include "include/lapic.h"
 #include "include/idt.h"
 #include "kernel/include/acpi/acpi.h"
 #include "kernel/include/mm/mm.h"
@@ -52,7 +53,7 @@ static inline void k_ioapic_set_redirect_reg(int reg, k_uint64_t data)
 
 static void k_ioapic_ack(struct k_irq_chip *chip, unsigned int irq)
 {
-
+	k_lapic_eoi(irq);
 }
 
 static void k_ioapic_mask(struct k_irq_chip *chip, unsigned int irq)
@@ -96,6 +97,11 @@ static unsigned int k_ioapic_int_to_irq(struct k_irq_chip *chip, unsigned int in
 	return interrupt - K_IRQ_MASTER_START;
 }
 
+static unsigned int k_ioapic_int_from_irq(struct k_irq_chip *chip, unsigned int irq)
+{
+	return irq + K_IRQ_MASTER_START;
+}
+
 static struct k_irq_chip k_ioapic_irq_chip = {
 	.name = "I/O APIC",
 	.start = k_ioapic_start,
@@ -104,22 +110,23 @@ static struct k_irq_chip k_ioapic_irq_chip = {
 	.mask = k_ioapic_mask,
 	.unmask = k_ioapic_unmask,
 	.int_to_irq = k_ioapic_int_to_irq,
+	.int_from_irq = k_ioapic_int_from_irq,
 	.data = NULL,
 };
 
-void k_ioapic_init(void)
+k_error_t k_ioapic_init(void)
 {
 	k_uint32_t version;
 
 	if (!k_acpi.found)
-		return;
+		return K_ERROR_NOT_FOUND;
 
 #ifdef K_CONFIG_BIOS
 	if (!k_mp.found)
-		return;
+		return K_ERROR_NOT_FOUND;
 
 	if (k_acpi.ioapic_address != k_mp.ioapic_address)
-		return;
+		return K_ERROR_NOT_FOUND;
 #endif
 
 	if (!(k_ioapic.address = k_p2v_l(k_acpi.ioapic_address))) {
@@ -130,8 +137,12 @@ void k_ioapic_init(void)
 	version = k_ioapic_get_reg(K_IOAPIC_VER);
 	k_ioapic.redirect_entries = K_IOAPIC_VER_MAX_REDIRECT_ENTRIES(version);
 
+	k_ioapic_irq_chip.irqs = k_ioapic.redirect_entries;
+
 	k_irq_register_chip(&k_ioapic_irq_chip);
 
-	k_printf("I/O APIC: %x\n", k_ioapic.address);
+	k_printf("I/O APIC: %lx\n", k_ioapic.address);
+
+	return K_ERROR_NONE;
 }
 

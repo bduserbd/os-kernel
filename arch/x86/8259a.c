@@ -91,6 +91,7 @@ static unsigned int k_pic_int_to_irq(struct k_irq_chip *chip, unsigned int inter
 
 static struct k_irq_chip k_8259a_irq_chip = {
 	.name = "8259A",
+	.irqs = 0xf,
 	.start = k_pic_start,
 	.reset = k_pic_reset,
 	.ack = k_pic_ack,
@@ -100,10 +101,13 @@ static struct k_irq_chip k_8259a_irq_chip = {
 	.data = NULL,
 };
 
+void k_pic_uninit(void)
+{
+	k_8259a_irq_chip.reset(&k_8259a_irq_chip);
+}
+
 void k_pic_init(void)
 {
-	k_outb(0xff, K_PIC_MASTER_DATA);
-	k_outb(0xff, K_PIC_SLAVE_DATA);
-	//k_irq_register_chip(&k_8259a_irq_chip);
+	k_irq_register_chip(&k_8259a_irq_chip);
 }
 

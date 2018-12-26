@@ -26,6 +26,7 @@
 #define K_PIC_ICW4_SFNM		(1 << 4)
 
 void k_pic_init(void);
+void k_pic_uninit(void);
 
 #endif
 

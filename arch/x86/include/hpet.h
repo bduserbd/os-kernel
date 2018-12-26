@@ -1,6 +1,8 @@
 #ifndef K_HPET_H
 #define K_HPET_H
 
+#include "kernel/include/error.h"
+
 /* HPET registers. */
 enum {
 	K_HPET_CAPABILITIES	= 0x00,
@@ -11,6 +13,7 @@ enum {
 
 /* HPET general capabilities and ID register. */
 #define K_HPET_NUM_TIM_CAP(caps)	(((caps >> 8) & 0x1f) + 1)
+#define K_HPET_LEG_RT_CAP		(1 << 15)
 #define K_HPET_COUNTER_CLK_PERIOD(caps)	((caps >> 32) & 0xffffffff)
 
 /* HPET general configuration register. */
@@ -34,6 +37,8 @@ enum {
 
 #define K_HPET_TIMER_VAL_SET_CNF	(1 << 6)
 
+#define K_HPET_TIMER_32MODE_CNF		(1 << 8)
+
 #define K_HPET_TIMER_INT_ROUTE_CNF_MASK		(0x1f << 9)
 #define K_HPET_TIMER_INT_ROUTE_CNF(irq)		((irq & 0x1f) << 9)
 
@@ -45,7 +50,7 @@ enum {
 /* HPET timer FSB interrupt route register. */
 #define K_HPET_TIMER_INTERRUPT_ROUTE(i)	(0x100 + i * 0x20 + 0x10)
 
-void k_hpet_init(void);
+k_error_t k_hpet_init(void);
 
 #endif
 

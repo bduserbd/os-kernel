@@ -4,10 +4,6 @@
 
 struct k_cpu_x86 k_boot_cpu;
 
-#ifdef K_BITS_64
-void k_cpu_amd_get_info(struct k_cpu_x86 *cpu);
-#endif
-
 void k_cpuid_count(k_uint32_t function, unsigned long *eax, unsigned long *ebx,
 		unsigned long *ecx, unsigned long *edx)
 {
@@ -240,8 +236,7 @@ _out:
 
 void k_cpu_print_info(struct k_cpu_x86 *cpu)
 {
-#if 0
-	k_uint32_t i;
+	int i;
 
 	k_printf("CPU vendor: %s\n", cpu->vendor);
 
@@ -263,7 +258,6 @@ void k_cpu_print_info(struct k_cpu_x86 *cpu)
 			i == K_CPU_CACHE_TYPE_L3 ? "L3" : "Unknown",
 			cpu->cache[i].size, cpu->cache[i].way_associative, cpu->cache[i].line_size);
 	}
-#endif
 }
 
 unsigned int k_cpu_cache_line_size(void)
@@ -283,9 +277,5 @@ void k_cpu_get_info(void)
 	k_cpu_get_processor_name(&k_boot_cpu);
 
 	k_cpu_get_cache_info(&k_boot_cpu);
-
-#ifdef K_BITS_64
-	k_cpu_amd_get_info(&k_boot_cpu);
-#endif
 }
 
