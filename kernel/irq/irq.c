@@ -21,7 +21,8 @@ k_error_t k_irq_register_chip(struct k_irq_chip *chip)
 		return K_ERROR_INVALID_PARAMETER;
 
 	if (!chip->start || !chip->reset || !chip->ack ||
-			!chip->mask || !chip->unmask || !chip->int_to_irq)
+			!chip->mask || !chip->unmask ||
+			!chip->int_to_irq || !chip->int_from_irq)
 		return K_ERROR_INVALID_PARAMETER;
 
 	if (chip->irqs > K_NUMBER_OF_IRQS)
@@ -109,6 +110,14 @@ unsigned int k_irq_from_int(unsigned int interrupt)
 		return K_INVALID_IRQ;
 
 	return k_irq_chip->int_to_irq(k_irq_chip, interrupt);
+}
+
+unsigned int k_irq_to_int(unsigned int irq)
+{
+	if (!k_irq_chip)
+		return K_INVALID_IRQ;
+
+	return k_irq_chip->int_from_irq(k_irq_chip, irq);
 }
 
 k_error_t k_irq_request(unsigned int irq, k_irq_handler_t handler,

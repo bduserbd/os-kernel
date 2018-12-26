@@ -11,12 +11,33 @@ k_tick_t k_ticks = 0;
 static struct k_timer_device *k_timer_device = NULL;
 static struct k_binary_heap *k_timers = NULL;
 
+static void k_timer_check_expired(void)
+{
+	struct k_timer *timer;
+
+	timer = k_binary_heap_get_root(k_timers);
+	if (!timer)
+		return;
+
+	if (timer->expire <= k_ticks) {
+		timer->expired = true;
+		k_binary_heap_fetch_root(k_timers);
+	}
+}
+
 static k_error_t k_timer_device_irq_handler(unsigned int irq, void *data)
 {
 	k_ticks++;
 
-	if (!(k_ticks & 0xff))
+#if 0
+	static int i = 0;
+
+	i++;
+	if ((i % (1 * 1000)) == 0)
 		k_printf("%u", irq);
+#endif
+
+	k_timer_check_expired();
 
 	return K_ERROR_NONE;
 }
@@ -53,7 +74,7 @@ void k_timer_init(void)
 	if (error)
 		return;
 
-	k_timers = k_binary_heap_init(K_BINARY_HEAP_MIN, 0xff, k_timers_compare);
+	k_timers = k_binary_heap_init(K_BINARY_HEAP_MIN, 0x3, k_timers_compare);
 	if (!k_timers)
 		return;
 
@@ -63,19 +84,19 @@ void k_timer_init(void)
 void k_sleep(unsigned int milliseconds)
 {
 	k_error_t error;
-	struct k_timer *timer;
+	struct k_timer timer;
 
-	timer = k_malloc(sizeof(struct k_timer));
-	if (!timer)
-		return;
+	//timer = k_malloc(sizeof(struct k_timer));
+	//if (!timer)
+	//	return;
 
-	timer->expired = false;
-	timer->expire = k_ticks + k_milliseconds_to_k_ticks(milliseconds);
+	timer.expired = false;
+	timer.expire = k_ticks + k_milliseconds_to_k_ticks(milliseconds);
 
-	error = k_binary_heap_insert(k_timers, timer);
+	error = k_binary_heap_insert(k_timers, &timer);
 	if (error)
 		return;
 
-	while (!timer->expired) ;
+	while (!timer.expired) ;
 }
 

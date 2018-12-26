@@ -2,13 +2,14 @@
 #include "include/8253.h"
 #include "kernel/include/time/time.h"
 #include "kernel/include/div64.h"
+#include "kernel/include/video/print.h"
 
 k_uint64_t k_tsc_frequency = 0;
 
 void k_tsc_sleep(unsigned int milliseconds)
 {
-	k_uint64_t ticks;
 	k_uint64_t end;
+	k_uint64_t ticks;
 
 	if (!milliseconds || !k_tsc_frequency)
 		return;
@@ -54,6 +55,6 @@ void k_tsc_init(void)
 #endif
 
 	k_tsc_frequency = frequency * K_MILLISECONDS_PER_SECOND;
-	k_printf("%llu\n", k_tsc_frequency);
+	k_printf("CPU speed :%lluHz\n", k_tsc_frequency);
 }
 

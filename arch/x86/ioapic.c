@@ -97,6 +97,11 @@ static unsigned int k_ioapic_int_to_irq(struct k_irq_chip *chip, unsigned int in
 	return interrupt - K_IRQ_MASTER_START;
 }
 
+static unsigned int k_ioapic_int_from_irq(struct k_irq_chip *chip, unsigned int irq)
+{
+	return irq + K_IRQ_MASTER_START;
+}
+
 static struct k_irq_chip k_ioapic_irq_chip = {
 	.name = "I/O APIC",
 	.start = k_ioapic_start,
@@ -105,6 +110,7 @@ static struct k_irq_chip k_ioapic_irq_chip = {
 	.mask = k_ioapic_mask,
 	.unmask = k_ioapic_unmask,
 	.int_to_irq = k_ioapic_int_to_irq,
+	.int_from_irq = k_ioapic_int_from_irq,
 	.data = NULL,
 };
 

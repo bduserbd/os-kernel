@@ -76,6 +76,6 @@ void k_x86_init(void *smbios, void *rsdp)
 	k_irq_unmask(0);
 #endif
 
-	//k_init();
+	k_init();
 }
 

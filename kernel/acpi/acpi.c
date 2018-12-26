@@ -3,7 +3,7 @@
 #include "kernel/include/mm/mm.h"
 #include "kernel/include/video/print.h"
 
-struct k_acpi_info k_acpi;
+struct k_acpi_info k_acpi = { 0 };
 
 static k_error_t k_acpi_checksum(void *ptr, int length)
 {
@@ -26,9 +26,19 @@ static void k_acpi_parse_lapic_nmi(struct k_acpi_lapic_nmi *lapic_nmi)
 
 }
 
+static void k_acpi_parse_non_maskable_interrupt(struct k_acpi_non_maskable_interrupt *interrupt)
+{
+	k_printf("$");
+}
+
 static void k_acpi_parse_interrupt_override(struct k_acpi_interrupt_override *interrupt)
 {
+	int i;
 
+	i = k_acpi.interrupts++;
+
+	k_acpi.interrupt[i].source = interrupt->source_irq;
+	k_acpi.interrupt[i].destination = interrupt->global_irq;
 }
 
 static void k_acpi_parse_ioapic(struct k_acpi_ioapic *ioapic)
@@ -83,6 +93,10 @@ static void k_acpi_parse_madt(struct k_acpi_madt *madt)
 
 		case K_ACPI_MADT_INTERRUPT_OVERRIDE:
 			k_acpi_parse_interrupt_override((struct k_acpi_interrupt_override *)type);
+			break;
+
+		case K_ACPI_MADT_NON_MASKABLE_INTERRUPT:
+			k_acpi_parse_non_maskable_interrupt((struct k_acpi_non_maskable_interrupt *)type);
 			break;
 
 		case K_ACPI_MADT_LAPIC_NMI:

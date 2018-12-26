@@ -253,7 +253,7 @@ k_error_t k_main(void)
 
 	k_paging_reserve_pages(k_initramfs_start, k_initramfs_length);
 
-	k_x86_init(smbios, rsdp, k_initramfs_start, k_initramfs_length);
+	k_x86_init(smbios, rsdp);
 
 	return K_ERROR_FAILURE;
 }

@@ -4,7 +4,9 @@
 #include "include/ap.h"
 #include "include/msr.h"
 #include "include/tsc.h"
+#include "kernel/include/div64.h"
 #include "kernel/include/io/io.h"
+#include "kernel/include/irq/irq-info.h"
 #include "kernel/include/video/print.h"
 #include "kernel/include/acpi/acpi.h"
 #include "kernel/include/time/device.h"
@@ -12,6 +14,8 @@
 static struct k_lapic_info {
 	int version;
 	int max_lvt;
+
+	k_uint64_t frequency;
 
 	unsigned long address;
 } k_lapic;
@@ -98,12 +102,44 @@ static void k_lapic_spurious_vector_init(void)
 	k_lapic_set_reg(K_LAPIC_SVR, svr);
 }
 
+static void k_lapic_timer_set_mode(struct k_timer_device *device, k_uint32_t mode)
+{
+	k_uint32_t timer;
+	k_uint64_t ticks;
+
+	timer = mode | k_irq_to_int(device->irq);
+	k_lapic_set_reg(K_LAPIC_LVT_TIMER, timer);
+
+	k_lapic_set_reg(K_LAPIC_DIV_CONFIG, K_LAPIC_DIV_BY_16);
+
+	k_div64(k_lapic.frequency, K_HZ, &ticks, NULL);
+
+	k_lapic_set_reg(K_LAPIC_TIMER_ICR, (k_uint32_t)ticks);
+}
+
+static k_error_t k_lapic_timer_set_periodic_mode(struct k_timer_device *device)
+{
+	k_lapic_timer_set_mode(device, K_LAPIC_LVT_TIMER_MODE_PERIODIC);
+
+	return K_ERROR_NONE;
+}
+
+static k_error_t k_lapic_timer_set_oneshot_mode(struct k_timer_device *device)
+{
+	k_lapic_timer_set_mode(device, K_LAPIC_LVT_TIMER_MODE_ONESHOT);
+
+	return K_ERROR_NONE;
+}
+
 static struct k_timer_device k_lapic_timer = {
 	.type = K_TIMER_DEVICE_LAPIC,
 	.flags = K_TIMER_DEVICE_FLAGS_PERIODIC | K_TIMER_DEVICE_FLAGS_ONESHOT,
+	.irq = 0,
+	.set_periodic_mode = k_lapic_timer_set_periodic_mode,
+	.set_oneshot_mode = k_lapic_timer_set_oneshot_mode,
 };
 
-static k_uint32_t k_lapic_count_ticks(void)
+static k_uint32_t k_lapic_timer_count_ticks(void)
 {
 	k_uint32_t timer;
 
@@ -128,15 +164,19 @@ void k_lapic_timer_init(void)
 
 	k_lapic_set_reg(K_LAPIC_DIV_CONFIG, K_LAPIC_DIV_BY_16);
 
-	k_lapic_count_ticks();
+	k_lapic_timer_count_ticks();
 
 	sum = 0;
-	for (i = 0; i < 16; i++) {
-		k_uint32_t ccr = k_lapic_count_ticks();
-		k_printf("%u ", ccr);
+
+#define LOG2_TIMES	3
+	for (i = 0; i < (1 << LOG2_TIMES); i++) {
+		k_uint32_t ccr = k_lapic_timer_count_ticks();
+		//k_printf("%u ", ccr);
 		sum += ccr;
 	}
-	k_printf("\n%llu\n", sum >> 4);
+
+	k_lapic.frequency = (sum >> LOG2_TIMES) * K_MILLISECONDS_PER_SECOND;
+	k_lapic_timer.frequency = k_lapic.frequency;
 
 	k_timer_device_register(&k_lapic_timer);
 }

@@ -14,6 +14,13 @@ struct k_acpi_info {
 
 	struct k_acpi_id ids[K_CONFIG_CPUS];
 
+	int interrupts;
+
+	struct {
+		int source;
+		int destination;
+	} interrupt[16];
+
 	unsigned long ioapic_address;
 
 	unsigned long lapic_address;

@@ -21,6 +21,7 @@ struct k_irq_chip {
 	void (*unmask)(struct k_irq_chip *, unsigned int);
 
 	unsigned int (*int_to_irq)(struct k_irq_chip *, unsigned int);
+	unsigned int (*int_from_irq)(struct k_irq_chip *, unsigned int);
 
 	void *data;
 
@@ -56,6 +57,7 @@ void k_irq_ack(unsigned int);
 void k_irq_mask(unsigned int);
 void k_irq_unmask(unsigned int);
 unsigned int k_irq_from_int(unsigned int);
+unsigned int k_irq_to_int(unsigned int);
 
 #endif
 
