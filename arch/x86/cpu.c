@@ -4,10 +4,6 @@
 
 struct k_cpu_x86 k_boot_cpu;
 
-#ifdef K_BITS_64
-void k_cpu_amd_get_info(struct k_cpu_x86 *cpu);
-#endif
-
 void k_cpuid_count(k_uint32_t function, unsigned long *eax, unsigned long *ebx,
 		unsigned long *ecx, unsigned long *edx)
 {
@@ -281,9 +277,5 @@ void k_cpu_get_info(void)
 	k_cpu_get_processor_name(&k_boot_cpu);
 
 	k_cpu_get_cache_info(&k_boot_cpu);
-
-#ifdef K_BITS_64
-	k_cpu_amd_get_info(&k_boot_cpu);
-#endif
 }
 

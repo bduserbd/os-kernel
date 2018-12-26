@@ -1,8 +1,9 @@
 #include "include/lapic.h"
+#include "include/time.h"
 #include "include/cpu.h"
 #include "include/ap.h"
 #include "include/msr.h"
-#include "include/8253.h"
+#include "include/tsc.h"
 #include "kernel/include/io/io.h"
 #include "kernel/include/video/print.h"
 #include "kernel/include/acpi/acpi.h"
@@ -104,7 +105,6 @@ static struct k_timer_device k_lapic_timer = {
 
 static k_uint32_t k_lapic_count_ticks(void)
 {
-	int i;
 	k_uint32_t timer;
 
 	timer = k_lapic_get_reg(K_LAPIC_LVT_TIMER);
@@ -113,7 +113,7 @@ static k_uint32_t k_lapic_count_ticks(void)
 
 	k_lapic_set_reg(K_LAPIC_TIMER_ICR, K_LAPIC_TIMER_ICR_VALUE);
 
-	k_pit_channel2_sleep(1);
+	k_tsc_sleep(1);
 
 	timer |= K_LAPIC_LVT_MASK;
 	k_lapic_set_reg(K_LAPIC_LVT_TIMER, timer);
@@ -124,30 +124,27 @@ static k_uint32_t k_lapic_count_ticks(void)
 void k_lapic_timer_init(void)
 {
 	int i;
-	k_uint32_t div;
 	k_uint64_t sum;
 
 	k_lapic_set_reg(K_LAPIC_DIV_CONFIG, K_LAPIC_DIV_BY_16);
-	div = k_lapic_get_reg(K_LAPIC_DIV_CONFIG);
-	k_printf("%x\n", div);
 
 	k_lapic_count_ticks();
 
 	sum = 0;
-	for (i = 0; i < 32; i++) {
+	for (i = 0; i < 16; i++) {
 		k_uint32_t ccr = k_lapic_count_ticks();
-		//k_printf("%u ", ccr);
+		k_printf("%u ", ccr);
 		sum += ccr;
 	}
-	k_printf("%llu\n", sum >> 5);
+	k_printf("\n%llu\n", sum >> 4);
 
 	k_timer_device_register(&k_lapic_timer);
 }
 
-void k_lapic_init(void)
+k_error_t k_lapic_init(void)
 {
 	if (!k_acpi.found)
-		return;
+		return K_ERROR_NOT_FOUND;
 
 	k_lapic.address = k_acpi.lapic_address;
 	k_printf("Local APIC: %lx\n", k_lapic.address);
@@ -155,5 +152,7 @@ void k_lapic_init(void)
 	k_lapic_basic_info_init();
 	k_lapic_spurious_vector_init();
 	k_lapic_timer_init();
+
+	return K_ERROR_NONE;
 }
 

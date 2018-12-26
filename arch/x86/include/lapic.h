@@ -111,7 +111,7 @@
 #define K_LAPIC_DIV_BY_128	0xa
 #define K_LAPIC_DIV_BY_1	0xb
 
-void k_lapic_init(void);
+k_error_t k_lapic_init(void);
 
 k_uint8_t k_lapic_id(void);
 void k_lapic_icr_init(k_uint8_t);

@@ -1,4 +1,5 @@
 #include "include/8253.h"
+#include "include/time.h"
 #include "include/speaker.h"
 #include "kernel/include/time/device.h"
 #include "kernel/include/io/io.h"
@@ -6,21 +7,24 @@
 
 static void k_pit_set_mode(int channel, k_uint16_t ticks)
 {
-	k_uint8_t command;
+	k_uint8_t command, data_port;
 
 	command = K_PIT_COMMAND_PORT_BINARY |
-			K_PIT_COMMAND_PORT_MODE_RATE_GENERATOR |
 			K_PIT_COMMAND_PORT_ACCESS_MODE_LOW_HIGH_BYTES;
 
-	if (channel == 0)
+	if (channel == 0) {
 		command |= K_PIT_COMMAND_PORT_CHANNEL0;
-	else if (channel == 2)
+		data_port = K_PIT_CHANNEL0_DATA_PORT;		
+	} else if (channel == 2) {
 		command |= K_PIT_COMMAND_PORT_CHANNEL2;
+		data_port = K_PIT_CHANNEL2_DATA_PORT;
+	} else
+		return;
 
 	k_outb(command, K_PIT_COMMAND_PORT);
 
-	k_outb(ticks & 0xff, K_PIT_CHANNEL0_DATA_PORT);
-	k_outb((ticks >> 8) & 0xff, K_PIT_CHANNEL0_DATA_PORT);
+	k_outb(ticks & 0xff, data_port);
+	k_outb((ticks >> 8) & 0xff, data_port);
 }
 
 static k_error_t k_pit_set_periodic_mode(struct k_timer_device *timer)
@@ -30,18 +34,18 @@ static k_error_t k_pit_set_periodic_mode(struct k_timer_device *timer)
 	return K_ERROR_NONE;
 }
 
-void k_pit_channel2_sleep(unsigned int microseconds)
+void k_pit_channel2_sleep(unsigned int milliseconds)
 {
 	k_uint8_t speaker;
 	k_uint16_t ticks;
 
-	if (!microseconds)
+	if (!milliseconds)
 		return;
 
 	speaker = k_inb(K_PC_SPEAKER_PORT);
 	k_outb((speaker & ~K_PC_SPEAKER_SPKR) | K_PC_SPEAKER_GATE2, K_PC_SPEAKER_PORT);
 
-	ticks = microseconds * (K_PIT_FREQUENCY / K_MILLISECONDS_PER_SECOND);
+	ticks = milliseconds * (K_PIT_FREQUENCY / K_MILLISECONDS_PER_SECOND);
 	k_pit_set_mode(2, ticks);
 
 	while (!(k_inb(K_PC_SPEAKER_PORT) & K_PC_SPEAKER_OUT2)) ;

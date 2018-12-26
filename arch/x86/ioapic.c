@@ -108,19 +108,19 @@ static struct k_irq_chip k_ioapic_irq_chip = {
 	.data = NULL,
 };
 
-void k_ioapic_init(void)
+k_error_t k_ioapic_init(void)
 {
 	k_uint32_t version;
 
 	if (!k_acpi.found)
-		return;
+		return K_ERROR_NOT_FOUND;
 
 #ifdef K_CONFIG_BIOS
 	if (!k_mp.found)
-		return;
+		return K_ERROR_NOT_FOUND;
 
 	if (k_acpi.ioapic_address != k_mp.ioapic_address)
-		return;
+		return K_ERROR_NOT_FOUND;
 #endif
 
 	if (!(k_ioapic.address = k_p2v_l(k_acpi.ioapic_address))) {
@@ -136,5 +136,7 @@ void k_ioapic_init(void)
 	k_irq_register_chip(&k_ioapic_irq_chip);
 
 	k_printf("I/O APIC: %lx\n", k_ioapic.address);
+
+	return K_ERROR_NONE;
 }
 

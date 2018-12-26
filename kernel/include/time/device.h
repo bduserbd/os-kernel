@@ -4,11 +4,6 @@
 #include "kernel/include/error.h"
 #include "kernel/include/time/time.h"
 
-enum {
-	K_CLOCK_DEVICE_HPET,
-	K_CLOCK_DEVICE_TSC,
-};
-
 struct k_clock_device {
 	int type;
 
@@ -16,12 +11,6 @@ struct k_clock_device {
 	k_tick_t (*get_tick)(struct k_clock_device *);
 
 	struct k_clock_device *next;
-};
-
-enum {
-	K_TIMER_DEVICE_PIT,
-	K_TIMER_DEVICE_HPET,
-	K_TIMER_DEVICE_LAPIC,
 };
 
 #define K_TIMER_DEVICE_FLAGS_PERIODIC	(1 << 0)

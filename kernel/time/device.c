@@ -14,11 +14,6 @@ void k_clock_device_register(struct k_clock_device *device)
 	k_clock_devices = device;
 }
 
-struct k_timer_device *k_timer_device_choose(void)
-{
-	return k_timer_devices;
-}
-
 void k_timer_device_register(struct k_timer_device *device)
 {
 	device->next = k_timer_devices;

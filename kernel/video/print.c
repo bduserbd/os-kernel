@@ -1,5 +1,5 @@
 #include "include/video/print.h"
-#include "include/divmod64.h"
+#include "include/div64.h"
 #include "include/modules/export-symbol.h"
 
 static void (*k_print_callback)(const char *) = NULL;
@@ -109,7 +109,7 @@ void k_putn64(k_uint64_t number, int decimal)
 		}
 
 	for (i = 0; number; i++) {
-		k_divmod64(number, 10, &q, &r);
+		k_div64(number, 10, &q, &r);
 		reverse[i] = r;
 		number = q;
 	}

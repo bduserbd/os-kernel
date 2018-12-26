@@ -1,10 +1,11 @@
 #include "include/hpet.h"
+#include "include/time.h"
 #include "include/paging.h"
 #include "kernel/include/bits.h"
 #include "kernel/include/acpi/acpi.h"
 #include "kernel/include/time/device.h"
 #include "kernel/include/mm/mm.h"
-#include "kernel/include/divmod64.h"
+#include "kernel/include/div64.h"
 #include "kernel/include/video/print.h"
 
 static struct k_hpet_info {
@@ -59,7 +60,7 @@ static void k_hpet_set_periodic_mode_index(int timer)
 	k_hpet_stop_main_counter();
 
 	counter = k_hpet_get_reg(K_HPET_MAIN_COUNTER);
-	k_divmod64(k_hpet.frequency, K_HZ, &ticks, NULL);
+	k_div64(k_hpet.frequency, K_HZ, &ticks, NULL);
 
 	config |= K_HPET_TIMER_INT_ENB_CNF | K_HPET_TIMER_TYPE_CNF |
 			K_HPET_TIMER_VAL_SET_CNF;
@@ -125,7 +126,7 @@ static void k_hpet_info_init(void)
 
 	k_hpet.period = K_HPET_COUNTER_CLK_PERIOD(caps);
 
-	k_divmod64(K_FEMTOSECONDS_PER_SECOND, k_hpet.period, &frequency, NULL);
+	k_div64(K_FEMTOSECONDS_PER_SECOND, k_hpet.period, &frequency, NULL);
 	k_hpet.frequency = frequency;
 
 	k_hpet_clock.frequency = k_hpet.frequency;

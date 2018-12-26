@@ -2,8 +2,15 @@
 *.elf
 *.bin
 *.iso
+
 .*.swp
 .*.swl
 .*.swo
+.*.swm
 .*.swn
 .*.swl
+
+*.img
+*.EFI
+*.vdi
+
