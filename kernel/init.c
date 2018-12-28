@@ -23,10 +23,9 @@ void k_init(void)
 	k_initramfs_get_info(k_initramfs_start, k_initramfs_length);
 
 	while (1) {
-		k_sleep(1000);
 		k_printf("#");
+		k_sleep(1000);
 	}
-
 /*
 	k_task_init();
 

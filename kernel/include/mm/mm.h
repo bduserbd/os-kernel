@@ -3,6 +3,8 @@
 
 #include "kernel/include/types.h"
 
+#define K_PAGE_NUMBER(address)	((address) >> 12)
+
 void k_slab_init(void);
 
 void *k_malloc(k_size_t);

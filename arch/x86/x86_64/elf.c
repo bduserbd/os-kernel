@@ -1,4 +1,5 @@
 #include "kernel/include/elf/elf-loader.h"
+#include "kernel/include/video/print.h"
 
 k_error_t k_elf_arch_check(Elf(Ehdr) *elf, k_size_t size)
 {
@@ -33,7 +34,7 @@ k_error_t k_elf_arch_relocate_addend_section(k_uint8_t *applied_section,
 	case R_X86_64_PC32:
 		*rela32 = (k_int32_t)*rela32 +
 				symbol[ELF_R_SYM(rela->r_info)].st_value + rela->r_addend -
-				(unsigned long)applied_section;
+				(unsigned long)rela32;
 		break;
 
 	case R_X86_64_32S:
@@ -42,7 +43,7 @@ k_error_t k_elf_arch_relocate_addend_section(k_uint8_t *applied_section,
 		break;
 
 	default:
-		k_printf("d");
+		k_printf("Unhandled relocation");
 		break;
 	}
 

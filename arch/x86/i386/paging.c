@@ -164,6 +164,11 @@ void k_paging_reserve_pages(unsigned long start, unsigned long range)
 	k_paging_flush_tlb();
 }
 
+void k_paging_reserve_execute_pages(unsigned long start, unsigned long range)
+{
+	k_paging_reserve_pages(start, range);
+}
+
 void k_paging_identity_map(void)
 {
 	unsigned long a, b;
