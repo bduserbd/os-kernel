@@ -27,6 +27,7 @@ static struct k_buddy k_buddy;
 static struct k_buddy k_user_buddy;
 
 void k_paging_reserve_pages(unsigned long, unsigned long);
+void k_paging_reserve_execute_pages(unsigned long, unsigned long);
 
 static struct k_buddy_node *k_buddy_get(struct k_buddy *buddy, struct k_buddy_node *node)
 {
@@ -163,21 +164,35 @@ static void *k_buddy_alloc_generic(struct k_buddy *buddy, k_size_t size)
 	}
 }
 
-void *k_buddy_alloc(k_size_t size)
+static void *k_buddy_alloc_type(k_size_t size, int executable)
 {
-	int log2;
 	void *ptr;
+	unsigned long pages;
 
 	ptr = k_buddy_alloc_generic(&k_buddy, size);
 	if (!ptr)
 		return NULL;
 
-	log2 = k_buddy.max_block_log2 - k_buddy_best_fit_group(&k_buddy, size);
-	k_paging_reserve_pages((unsigned long)ptr, 1 << log2);
+	pages = 1 << (k_buddy.max_block_log2 - k_buddy_best_fit_group(&k_buddy, size));
+
+	if (executable)
+		k_paging_reserve_execute_pages((unsigned long)ptr, pages);
+	else
+		k_paging_reserve_pages((unsigned long)ptr, pages);
 
 	return ptr;
 }
+
+void *k_buddy_alloc(k_size_t size)
+{
+	return k_buddy_alloc_type(size, false);
+}
 K_EXPORT_FUNC(k_buddy_alloc);
+
+void *k_buddy_alloc_execute(k_size_t size)
+{
+	return k_buddy_alloc_type(size, true);
+}
 
 void *k_buddy_user_alloc(k_size_t size)
 {

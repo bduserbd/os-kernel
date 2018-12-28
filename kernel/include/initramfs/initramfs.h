@@ -16,7 +16,7 @@ struct k_initramfs_header {
 	char cpio[0];
 } __attribute__((packed));
 
-void k_initramfs_get_info(k_uint32_t, k_uint32_t);
+void k_initramfs_get_info(unsigned long, unsigned long);
 
 #endif
 

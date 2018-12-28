@@ -11,13 +11,8 @@
 #include "include/paging.h"
 #include "kernel/include/acpi/acpi.h"
 #include "kernel/include/mm/mm.h"
-#include "kernel/include/modules/loader.h"
-#include "kernel/include/initramfs/initramfs.h"
 #include "kernel/include/irq/irq-info.h"
 #include "kernel/include/video/print.h"
-
-extern unsigned long k_initramfs_start;
-extern unsigned long k_initramfs_length;
 
 void k_init(void);
 
@@ -67,9 +62,6 @@ void k_x86_init(void *smbios, void *rsdp)
 #endif
 
 #if 0
-	k_loader_init();
-	k_initramfs_get_info(initramfs_start, initramfs_length);
-
 	k_irq_mask(0);
 	for (int i = 0; i < 100000000; i++)
 		asm volatile("nop");

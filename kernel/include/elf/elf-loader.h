@@ -7,6 +7,8 @@
 
 #ifdef K_BITS_32
 #define Elf(x) Elf32_##x
+#elif K_BITS_64
+#define Elf(x) Elf64_##x
 #endif
 
 #define K_ELF_MAX_SECTION_NAME_LENGTH	32

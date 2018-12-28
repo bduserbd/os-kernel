@@ -1,4 +1,5 @@
-FINAL_CFLAGS := $(BUILD_CFLAGS) $(CFLAGS)
+FINAL_CFLAGS := $(filter-out -g,$(BUILD_CFLAGS) $(CFLAGS))
+FINAL_OBJCOPYFLAGS := $(filter-out -O binary,$(BUILD_OBJCOPYFLAGS))
 
 .PHONY: build
 build: $(TARGET)
@@ -6,4 +7,5 @@ build: $(TARGET)
 %.o:%.c
 	$(V)echo '  CC ' $(CURDIR)/$@
 	$(V)$(CC) $(FINAL_CFLAGS) -c $^ -o $(BUILD_MODULES_OBJDIR)/$@
+	$(V)$(OBJCOPY) $(BUILD_MODULES_OBJDIR)/$@ $(FINAL_OBJCOPYFLAGS)
 

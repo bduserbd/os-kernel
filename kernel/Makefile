@@ -18,9 +18,9 @@ dirs:
 	$(V)$(MAKE) -C fb/
 	$(V)$(MAKE) -C mm/
 	$(V)$(MAKE) -C video/
-	#$(V)$(MAKE) -C network/
-	#$(V)$(MAKE) -C modules/
-	#$(V)$(MAKE) -C initramfs/
+	$(V)$(MAKE) -C network/
+	$(V)$(MAKE) -C modules/
+	$(V)$(MAKE) -C initramfs/
 	#$(V)$(MAKE) -C user-mode/
 	$(V)$(MAKE) -C data-structures/
 

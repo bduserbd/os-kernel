@@ -1,5 +1,6 @@
 #include "include/x86_64/paging.h"
 #include "kernel/include/string.h"
+#include "kernel/include/modules/export-symbol.h"
 
 k_pml4e_t *k_page_table = NULL;
 
@@ -24,6 +25,36 @@ static k_pde_t *k_paging_get_pde(unsigned long address)
 
 	return (k_pde_t *)(K_IMAGE_BASE + (pdpe[i] & K_PAGE_MASK));
 }
+
+void *k_v2p(const void *virtual)
+{
+	k_pde_t *pde;
+	k_pte_t *pte;
+	unsigned long a, i;
+
+	pde = k_paging_get_pde(K_IMAGE_BASE);
+	if (!pde)
+		return NULL;
+
+	a = (unsigned long)virtual;
+
+	i = K_PDE_INDEX(a);
+	if (pde[i] & K_PDE_P) {
+		pte = (k_pte_t *)(K_IMAGE_BASE + (pde[i] & K_PAGE_MASK));
+		i = K_PTE_INDEX(a);
+		if (pte[i] & K_PTE_P)
+			return (void *)((pte[i] & K_PAGE_MASK) + (a & K_PAGE_BITS));
+	}
+
+	return NULL;
+}
+K_EXPORT_FUNC(k_v2p);
+
+unsigned long k_v2p_l(unsigned long virtual)
+{
+	return (unsigned long)k_v2p((const void *)virtual);
+}
+K_EXPORT_FUNC(k_v2p_l);
 
 void k_paging_build_frame_array(unsigned long total_frames)
 {

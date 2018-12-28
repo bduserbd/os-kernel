@@ -8,8 +8,8 @@ void k_slab_init(void);
 void *k_malloc(k_size_t);
 void k_free(const void *);
 
-// TODO: Maybe separate into DMA page frame allocation ?
 void *k_buddy_alloc(k_size_t);
+void *k_buddy_alloc_execute(k_size_t);
 void k_buddy_free(const void *);
 
 void *k_p2v(const void *);
