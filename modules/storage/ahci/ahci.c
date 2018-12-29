@@ -13,6 +13,10 @@ struct k_ahci_port {
 	volatile struct k_ahci_port_registers *regs;
 
 	volatile struct k_ahci_command_header *command_list;
+
+	volatile struct k_ahci_command_table **command_table;
+
+	volatile struct k_ahci_received_fis *received_fis;
 };
 
 struct k_ahci_controller {
@@ -29,11 +33,48 @@ struct k_ahci_controller {
 
 	int command_slots;
 
-	struct k_cache *command_list_cache;
-
 	struct k_ahci_controller *next;
 };
 static struct k_ahci_controller *k_ahci_list = NULL;
+
+static struct k_cache *k_ahci_command_list_cache = NULL;
+static struct k_cache *k_ahci_command_table_cache = NULL;
+static struct k_cache *k_ahci_received_fis_cache = NULL;
+
+static k_error_t k_ahci_caches_init(void)
+{
+	k_ahci_command_list_cache = k_cache_create("AHCI Command List",
+			32 * sizeof(struct k_ahci_command_header), 0x400, 0x0);
+	if (!k_ahci_command_list_cache)
+		return K_ERROR_MEMORY_ALLOCATION_FAILED;
+
+	k_ahci_command_table_cache = k_cache_create("AHCI Command Table",
+			sizeof(struct k_ahci_command_table), 0x80, 0x0);
+	if (!k_ahci_command_table_cache)
+		return K_ERROR_MEMORY_ALLOCATION_FAILED;
+
+	k_ahci_received_fis_cache = k_cache_create("AHCI Received FIS",
+			sizeof(struct k_ahci_received_fis), 0x100, 0x0);
+	if (!k_ahci_received_fis_cache)
+		return K_ERROR_MEMORY_ALLOCATION_FAILED;
+
+	return K_ERROR_NONE;
+}
+
+static inline void *k_ahci_command_list_alloc(void)
+{
+	return k_cache_alloc(k_ahci_command_list_cache);
+}
+
+static inline void *k_ahci_command_table_alloc(void)
+{
+	return k_cache_alloc(k_ahci_command_table_cache);
+}
+
+static inline void *k_ahci_received_fis_alloc(void)
+{
+	return k_cache_alloc(k_ahci_received_fis_cache);
+}
 
 static inline void k_ahci_add(struct k_ahci_controller *ahci)
 {
@@ -58,41 +99,109 @@ static k_error_t k_ahci_perform_reset(struct k_ahci_controller *ahci)
 	return K_ERROR_DISK_CONTROLLER_INTERNAL;
 }
 
-static k_error_t k_ahci_caches_init(struct k_ahci_controller *ahci)
-{
-	ahci->command_list_cache = k_cache_create("AHCI", ahci->command_slots *
-			sizeof(struct k_ahci_command_header), 0x400, 0x0);
-	if (!ahci->command_list_cache)
-		return K_ERROR_MEMORY_ALLOCATION_FAILED;
-
-	return K_ERROR_NONE;
-}
-
-static inline void *k_ahci_command_list_alloc(struct k_ahci_controller *ahci)
-{
-	return k_cache_alloc(ahci->command_list_cache);
-}
-
 static k_error_t k_ahci_command_list_init(struct k_ahci_controller *ahci, int port)
 {
+	unsigned long address;
 	volatile struct k_ahci_command_header *command_list;
 
-	command_list = k_ahci_command_list_alloc(ahci);
-	if (!command_list) {
-		k_printf("WTF: %u\n", port);
+	command_list = k_ahci_command_list_alloc();
+	if (!command_list)
 		return K_ERROR_MEMORY_ALLOCATION_FAILED;
-	} else {
-		k_printf("%llx ", command_list);
-	}
 
-	ahci->port_regs[port].clb = (k_uint32_t)((k_uint64_t)command_list & 0xffffffff);
+	address = k_v2p_l((unsigned long)command_list);
+
+	ahci->port_regs[port].clb = (k_uint32_t)address;
 	if (ahci->address_64bit)
-		ahci->port_regs[port].clbu = (k_uint32_t)((k_uint64_t)command_list >> 32);
+#ifdef K_BITS_32
+		ahci->port_regs[port].clbu = 0x0;
+#elif K_BITS_64
+		ahci->port_regs[port].clbu = (k_uint32_t)(address >> 32);
+#endif
 
 	ahci->ports[port].command_list = command_list;
 
 	return K_ERROR_NONE;
 }
+
+static k_error_t k_ahci_command_table_init(struct k_ahci_controller *ahci, int port)
+{
+	int i;
+	unsigned long address;
+	volatile struct k_ahci_command_table **command_table, *table;
+
+	command_table = k_malloc(ahci->command_slots * sizeof(volatile struct k_ahci_command_table *));
+	if (!command_table)
+		return K_ERROR_MEMORY_ALLOCATION_FAILED;
+
+	for (i = 0; i < ahci->command_slots; i++) {
+		table = k_ahci_command_table_alloc();
+		if (!table)
+			return K_ERROR_MEMORY_ALLOCATION_FAILED;
+
+		command_table[i] = table;
+
+		address = k_v2p_l((unsigned long)table);
+
+		ahci->ports[port].command_list[i].ctba = (k_uint32_t)address;
+		if (ahci->address_64bit)
+#ifdef K_BITS_32
+			ahci->ports[port].command_list[i].ctbau = 0x0;
+#elif K_BITS_64
+			ahci->ports[port].command_list[i].ctbau = (k_uint32_t)(address >> 32);
+#endif
+	}
+
+	ahci->ports[port].command_table = command_table;
+
+	return K_ERROR_NONE;
+}
+
+static k_error_t k_ahci_received_fis_init(struct k_ahci_controller *ahci, int port)
+{
+	unsigned long address;
+	volatile struct k_ahci_received_fis *received_fis;
+
+	received_fis = k_ahci_received_fis_alloc();
+	if (!received_fis)
+		return K_ERROR_MEMORY_ALLOCATION_FAILED;
+
+	address = k_v2p_l((unsigned long)received_fis);
+
+	ahci->port_regs[port].fb = (k_uint32_t)address;
+	if (ahci->address_64bit)
+#ifdef K_BITS_32
+		ahci->port_regs[port].fbu = 0x0;
+#elif K_BITS_64
+		ahci->port_regs[port].fbu = (k_uint32_t)(address >> 32);
+#endif
+
+	ahci->ports[port].received_fis = received_fis;
+
+	return K_ERROR_NONE;
+}
+
+static k_error_t k_ahci_detect_devices(struct k_ahci_controller *ahci)
+{
+	int i;
+
+	for (i = 0; i < ahci->number_of_ports; i++) {
+		if (!ahci->ports[i].implemented)
+			continue;
+
+		if ((ahci->port_regs[i].tfd & (K_AHCI_PORT_TFD_STS_DRQ | K_AHCI_PORT_TFD_STS_BSY)) ||
+				K_AHCI_PORT_SSTS_DET(ahci->port_regs[i].ssts) !=
+				K_AHCI_PORT_SSTS_DET_PRESENT_PHYS)
+			continue;
+
+		ahci->port_regs[i].cmd |= K_AHCI_PORT_CMD_ST;
+
+		k_printf("AHCI Device on port: %u ", i);
+	}
+	k_printf("\n");
+
+	return K_ERROR_NONE;
+}
+
 
 static k_error_t k_ahci_init(struct k_ahci_controller *ahci)
 {
@@ -144,10 +253,6 @@ static k_error_t k_ahci_init(struct k_ahci_controller *ahci)
 
 	ahci->command_slots = K_AHCI_CAP_NCS(ahci->ghc->cap);
 
-	error = k_ahci_caches_init(ahci);
-	if (error)
-		return error;
-
 	if (ahci->ghc->cap & K_AHCI_CAP_S64A)
 		ahci->address_64bit = true;
 	else
@@ -162,14 +267,27 @@ static k_error_t k_ahci_init(struct k_ahci_controller *ahci)
 		error = k_ahci_command_list_init(ahci, i);
 		if (error)
 			return error;
+
+		error = k_ahci_command_table_init(ahci, i);
+		if (error)
+			return error;
+
+		error = k_ahci_received_fis_init(ahci, i);
+		if (error)
+			return error;
+
+		ahci->port_regs[i].cmd |= K_AHCI_PORT_CMD_FRE;
 	}
 
 	for (i = 0; i < ahci->number_of_ports; i++)
 		if (ahci->ports[i].implemented)
 			ahci->port_regs[i].serr = ahci->port_regs[i].serr;
 
+	error = k_ahci_detect_devices(ahci);
+	if (error)
+		return error;
+
 	k_printf("Ports: %u Command slots: %u\n", ahci->number_of_ports, ahci->command_slots);
-	k_printf("%lx\n", ahci->dma);
 
 	return K_ERROR_NONE;
 }
@@ -210,6 +328,12 @@ static k_error_t k_ahci_pci_init(struct k_pci_index index)
 
 K_MODULE_INIT()
 {
+	k_error_t error;
+
+	error = k_ahci_caches_init();
+	if (error)
+		return;
+
 	k_pci_iterate_devices(k_ahci_pci_init);
 }
 

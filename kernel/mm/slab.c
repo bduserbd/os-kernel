@@ -209,6 +209,16 @@ static inline void k_cache_add_full_slab(struct k_cache *cache, struct k_slab *s
 	cache->full_slabs = slab;
 }
 
+static inline void k_cache_transfer_full_slab(struct k_cache *cache)
+{
+	struct k_slab *slab;
+
+	slab = cache->partial_slabs;
+	cache->partial_slabs = slab->next;
+
+	k_cache_add_full_slab(cache, slab);
+}
+
 static void *k_cache_transfer_and_alloc(struct k_cache *cache)
 {
 	void *ptr;
@@ -232,26 +242,23 @@ static void *k_cache_transfer_and_alloc(struct k_cache *cache)
 
 void *k_cache_alloc(struct k_cache *cache)
 {
-	void *ptr;
 	struct k_slab *slab;
 
-	if (cache->partial_slabs) {
-		slab = cache->partial_slabs;
-
-		if (cache->objects == slab->active) {
-			struct k_slab *full_slab = slab, *partial_slab = slab->next;
-
-			k_cache_add_full_slab(cache, full_slab);
-
-			if (partial_slab)
-				slab = partial_slab;
-			else
-				return k_cache_transfer_and_alloc(cache);
-		}
-
-		return k_cache_alloc_object(cache, slab);
-	} else
+	if (!cache->partial_slabs)
 		return k_cache_transfer_and_alloc(cache);
+
+	slab = cache->partial_slabs;
+
+	if (cache->objects == slab->active) {
+		k_cache_transfer_full_slab(cache);
+
+		if (cache->partial_slabs)
+			slab = cache->partial_slabs;
+		else
+			return k_cache_transfer_and_alloc(cache);
+	}
+
+	return k_cache_alloc_object(cache, slab);
 }
 K_EXPORT_FUNC(k_cache_alloc);
 

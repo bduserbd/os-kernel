@@ -43,7 +43,7 @@ void *k_v2p(const void *virtual)
 		pte = (k_pte_t *)(K_IMAGE_BASE + (pde[i] & K_PAGE_MASK));
 		i = K_PTE_INDEX(a);
 		if (pte[i] & K_PTE_P)
-			return (void *)((pte[i] & K_PAGE_MASK) + (a & K_PAGE_BITS));
+			return (void *)(((pte[i] & K_PAGE_MASK) + (a & K_PAGE_BITS)) & ~K_PTE_NX);
 	}
 
 	return NULL;
