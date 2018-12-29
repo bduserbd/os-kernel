@@ -9,17 +9,27 @@ K_MODULE_NAME("Advanced Host Controller Interface");
 
 struct k_ahci_port {
 	int implemented;
+
+	volatile struct k_ahci_port_registers *regs;
+
+	volatile struct k_ahci_command_header *command_list;
 };
 
 struct k_ahci_controller {
 	unsigned long dma;
 	unsigned int irq;
 
+	bool address_64bit;
+
 	volatile struct k_ahci_generic_host_control *ghc;
 
 	int number_of_ports;
 	struct k_ahci_port *ports;
 	volatile struct k_ahci_port_registers *port_regs;
+
+	int command_slots;
+
+	struct k_cache *command_list_cache;
 
 	struct k_ahci_controller *next;
 };
@@ -48,6 +58,42 @@ static k_error_t k_ahci_perform_reset(struct k_ahci_controller *ahci)
 	return K_ERROR_DISK_CONTROLLER_INTERNAL;
 }
 
+static k_error_t k_ahci_caches_init(struct k_ahci_controller *ahci)
+{
+	ahci->command_list_cache = k_cache_create("AHCI", ahci->command_slots *
+			sizeof(struct k_ahci_command_header), 0x400, 0x0);
+	if (!ahci->command_list_cache)
+		return K_ERROR_MEMORY_ALLOCATION_FAILED;
+
+	return K_ERROR_NONE;
+}
+
+static inline void *k_ahci_command_list_alloc(struct k_ahci_controller *ahci)
+{
+	return k_cache_alloc(ahci->command_list_cache);
+}
+
+static k_error_t k_ahci_command_list_init(struct k_ahci_controller *ahci, int port)
+{
+	volatile struct k_ahci_command_header *command_list;
+
+	command_list = k_ahci_command_list_alloc(ahci);
+	if (!command_list) {
+		k_printf("WTF: %u\n", port);
+		return K_ERROR_MEMORY_ALLOCATION_FAILED;
+	} else {
+		k_printf("%llx ", command_list);
+	}
+
+	ahci->port_regs[port].clb = (k_uint32_t)((k_uint64_t)command_list & 0xffffffff);
+	if (ahci->address_64bit)
+		ahci->port_regs[port].clbu = (k_uint32_t)((k_uint64_t)command_list >> 32);
+
+	ahci->ports[port].command_list = command_list;
+
+	return K_ERROR_NONE;
+}
+
 static k_error_t k_ahci_init(struct k_ahci_controller *ahci)
 {
 	int i;
@@ -69,37 +115,61 @@ static k_error_t k_ahci_init(struct k_ahci_controller *ahci)
 	if (!ahci->ports)
 		return K_ERROR_MEMORY_ALLOCATION_FAILED;
 
-	ahci->port_regs = (k_uint8_t *)ahci->ghc + 0x100;
+	ahci->port_regs = (void *)((k_uint8_t *)ahci->ghc + 0x100);
 
 	for (i = 0; i < ahci->number_of_ports; i++) {
-		if (!(ahci->ghc->pi & (1 << i))) {
-			ahci->ports[i].implemented = false;
+		ahci->ports[i].implemented = false;
+
+		if (!(ahci->ghc->pi & (1 << i)))
 			continue;
+
+		if (ahci->port_regs[i].cmd & K_AHCI_PORT_CMD_ST) {
+			ahci->port_regs[i].cmd &= ~K_AHCI_PORT_CMD_ST;
+			k_sleep(500);
+
+			if (ahci->port_regs[i].cmd & K_AHCI_PORT_CMD_CR)
+				continue;
 		}
 
-		if (ahci->port_regs[i].cmd & (K_AHCI_PORT_CMD_ST | K_AHCI_PORT_CMD_FRE |
-					K_AHCI_PORT_CMD_FR | K_AHCI_PORT_CMD_CR)) {
-			if (ahci->port_regs[i].cmd & K_AHCI_PORT_CMD_ST) {
-				ahci->port_regs[i].cmd &= ~K_AHCI_PORT_CMD_ST;
-				k_sleep(500);
+		if (ahci->port_regs[i].cmd & K_AHCI_PORT_CMD_FRE) {
+			ahci->port_regs[i].cmd &= ~K_AHCI_PORT_CMD_FRE;
+			k_sleep(500);
 
-				if (ahci->port_regs[i].cmd & K_AHCI_PORT_CMD_CR)
-					return K_ERROR_DISK_CONTROLLER_INTERNAL;
-			}
-
-			if (ahci->port_regs[i].cmd & K_AHCI_PORT_CMD_FRE) {
-				ahci->port_regs[i].cmd &= ~K_AHCI_PORT_CMD_FRE;
-				k_sleep(500);
-
-				if (ahci->port_regs[i].cmd & K_AHCI_PORT_CMD_FR)
-					return K_ERROR_DISK_CONTROLLER_INTERNAL;
-			}
+			if (ahci->port_regs[i].cmd & K_AHCI_PORT_CMD_FR)
+				continue;
 		}
 
 		ahci->ports[i].implemented = true;
 	}
 
-	k_printf("Ports: %u\n", ahci->number_of_ports);
+	ahci->command_slots = K_AHCI_CAP_NCS(ahci->ghc->cap);
+
+	error = k_ahci_caches_init(ahci);
+	if (error)
+		return error;
+
+	if (ahci->ghc->cap & K_AHCI_CAP_S64A)
+		ahci->address_64bit = true;
+	else
+		ahci->address_64bit = false;
+
+	for (i = 0; i < ahci->number_of_ports; i++) {
+		if (!ahci->ports[i].implemented)
+			continue;
+
+		ahci->ports[i].regs = &ahci->port_regs[i];
+
+		error = k_ahci_command_list_init(ahci, i);
+		if (error)
+			return error;
+	}
+
+	for (i = 0; i < ahci->number_of_ports; i++)
+		if (ahci->ports[i].implemented)
+			ahci->port_regs[i].serr = ahci->port_regs[i].serr;
+
+	k_printf("Ports: %u Command slots: %u\n", ahci->number_of_ports, ahci->command_slots);
+	k_printf("%lx\n", ahci->dma);
 
 	return K_ERROR_NONE;
 }

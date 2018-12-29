@@ -197,37 +197,63 @@ void *k_cache_alloc_object(struct k_cache *cache, struct k_slab *slab)
 	return ptr;
 }
 
+static inline void k_cache_add_partial_slab(struct k_cache *cache, struct k_slab *slab)
+{
+	slab->next = cache->partial_slabs;
+	cache->partial_slabs = slab;
+}
+
+static inline void k_cache_add_full_slab(struct k_cache *cache, struct k_slab *slab)
+{
+	slab->next = cache->full_slabs;
+	cache->full_slabs = slab;
+}
+
+static void *k_cache_transfer_and_alloc(struct k_cache *cache)
+{
+	void *ptr;
+	struct k_slab *slab;
+
+	slab = cache->free_slabs;
+
+	ptr = k_cache_alloc_object(cache, slab);
+	if (!ptr)
+		return NULL;
+
+	cache->free_slabs = slab->next;
+
+	k_cache_add_partial_slab(cache, slab);
+
+	if (!cache->free_slabs)
+		k_cache_grow(cache);
+
+	return ptr;
+}
+
 void *k_cache_alloc(struct k_cache *cache)
 {
-	struct k_slab *slab;
 	void *ptr;
+	struct k_slab *slab;
 
 	if (cache->partial_slabs) {
 		slab = cache->partial_slabs;
 
-		ptr = k_cache_alloc_object(cache, slab);
-		if (!ptr)
-			return NULL;
-
 		if (cache->objects == slab->active) {
-			slab->next = cache->full_slabs;
-			cache->full_slabs = slab;
+			struct k_slab *full_slab = slab, *partial_slab = slab->next;
+
+			k_cache_add_full_slab(cache, full_slab);
+
+			if (partial_slab)
+				slab = partial_slab;
+			else
+				return k_cache_transfer_and_alloc(cache);
 		}
-	} else {
-		slab = cache->free_slabs;
 
-		ptr = k_cache_alloc_object(cache, slab);
-		if (!ptr)
-			return NULL;
-
-		cache->free_slabs = slab->next;
-		cache->partial_slabs = slab;
-
-		k_cache_grow(cache);
-	}
-
-	return ptr;
+		return k_cache_alloc_object(cache, slab);
+	} else
+		return k_cache_transfer_and_alloc(cache);
 }
+K_EXPORT_FUNC(k_cache_alloc);
 
 struct k_cache *k_cache_create(const char *name, unsigned int object_size,
 		unsigned int alignment, unsigned int flags)
@@ -244,6 +270,7 @@ struct k_cache *k_cache_create(const char *name, unsigned int object_size,
 
 	return cache;
 }
+K_EXPORT_FUNC(k_cache_create);
 
 static void k_cache_malloc_create(int index, const char *name, unsigned int object_size)
 {
