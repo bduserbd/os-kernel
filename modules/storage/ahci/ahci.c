@@ -436,7 +436,7 @@ static k_error_t k_ahci_init(struct k_ahci_controller *ahci)
 
 static k_error_t k_ahci_pci_init(struct k_pci_index index)
 {
-	k_uint8_t irq;
+	k_uint8_t irq, pin;
 	k_error_t error;
 	k_uint32_t bar5;
 	struct k_ahci_controller *ahci;
@@ -455,6 +455,7 @@ static k_error_t k_ahci_pci_init(struct k_pci_index index)
 		return K_ERROR_MEMORY_ALLOCATION_FAILED;
 
 	irq = k_pci_read_config_byte(index.bus, index.dev, index.func, K_PCI_CONFIG_REG_IRQ);
+	pin = k_pci_read_config_byte(index.bus, index.dev, index.func, K_PCI_CONFIG_REG_PIN);
 
 	ahci->dma = bar5 & ~0xfffUL;
 	ahci->irq = irq;

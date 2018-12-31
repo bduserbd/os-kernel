@@ -13,6 +13,9 @@ export V
 # Flags.
 MAKEFLAGS += --no-print-directory
 
+# Check for external packages.
+include imports/Makefile
+
 # Include configuration.
 include Makefile.config
 

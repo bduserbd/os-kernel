@@ -68,6 +68,7 @@
 #define K_PCI_CONFIG_REG_HEADER_TYPE	0x0e
 #define K_PCI_CONFIG_REG_BIST		0x0f
 #define K_PCI_CONFIG_REG_IRQ		0x3c
+#define K_PCI_CONFIG_REG_PIN		0x3d
 
 /* Base Address - BAR. */
 #define K_PCI_CONFIG_REG_BAR0	0x10

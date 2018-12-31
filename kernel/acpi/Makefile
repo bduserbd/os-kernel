@@ -1,4 +1,5 @@
 OBJS += acpi.o
+OBJS += acpica-osl.o
 
 CFLAGS = -I ../
 
