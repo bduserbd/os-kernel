@@ -1,5 +1,6 @@
 #include "include/mm/mm.h"
 #include "include/mm/slab.h"
+#include "include/string.h"
 #include "include/video/print.h"
 #include "include/modules/export-symbol.h"
 
@@ -359,6 +360,20 @@ void *k_malloc(k_size_t size)
 	return k_cache_alloc(k_malloc_caches[index]);
 }
 K_EXPORT_FUNC(k_malloc);
+
+void *k_zalloc(k_size_t size)
+{
+	void *ptr;
+
+	ptr = k_malloc(size);
+	if (!ptr)
+		return NULL;
+
+	k_memset(ptr, 0, size);
+
+	return ptr;
+}
+K_EXPORT_FUNC(k_zalloc);
 
 void k_free(const void *ptr)
 {

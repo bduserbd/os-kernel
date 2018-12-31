@@ -1,8 +1,11 @@
 #include "ahci.h"
+#include "modules/storage/include/ata.h"
+#include "kernel/include/storage/device.h"
 #include "kernel/include/modules/export.h"
 #include "kernel/include/pci/pci.h"
 #include "kernel/include/mm/mm.h"
 #include "kernel/include/time/sleep.h"
+#include "kernel/include/string.h"
 #include "kernel/include/video/print.h"
 
 K_MODULE_NAME("Advanced Host Controller Interface");
@@ -36,6 +39,16 @@ struct k_ahci_controller {
 	struct k_ahci_controller *next;
 };
 static struct k_ahci_controller *k_ahci_list = NULL;
+
+struct k_ahci_device {
+	struct k_ata_identification id;
+
+	struct k_ahci_port *port;
+	struct k_ahci_controller *controller;
+
+	struct k_ahci_device *next;
+};
+static struct k_ahci_device *k_ahci_device_list = NULL;
 
 static struct k_cache *k_ahci_command_list_cache = NULL;
 static struct k_cache *k_ahci_command_table_cache = NULL;
@@ -80,6 +93,12 @@ static inline void k_ahci_add(struct k_ahci_controller *ahci)
 {
 	ahci->next = k_ahci_list;
 	k_ahci_list = ahci;
+}
+
+static inline void k_ahci_device_add(struct k_ahci_device *device)
+{
+	device->next = k_ahci_device_list;
+	k_ahci_device_list = device;
 }
 
 static k_error_t k_ahci_perform_reset(struct k_ahci_controller *ahci)
@@ -180,6 +199,119 @@ static k_error_t k_ahci_received_fis_init(struct k_ahci_controller *ahci, int po
 	return K_ERROR_NONE;
 }
 
+static int k_ahci_find_free_command_slot(struct k_ahci_device *device)
+{
+	int i;
+	k_uint32_t slots;
+
+	slots = device->port->regs->sact | device->port->regs->ci;
+
+	for (i = 0; i < device->controller->command_slots; i++) {
+		if (!(slots & 0x1))
+			return i;
+
+		slots >>= 1;
+	}
+
+	return -1;
+}
+
+static k_error_t k_ahci_do_command(struct k_ahci_device *device, int command, k_uint8_t *buf,
+		k_sector_t lba, k_sector_t sectors)
+{
+	int i, slot;
+	unsigned long address;
+	volatile struct k_ahci_command_table *table;
+	struct k_ahci_fis_host_to_device *h2d;
+	static const k_sector_t prdt_sectors = K_AHCI_PRDT_MAX_DBC / K_SECTOR_SIZE;
+
+	if (sectors > (K_AHCI_PRDT_ENTRIES * prdt_sectors))
+		return K_ERROR_INVALID_PARAMETER;
+
+	slot = k_ahci_find_free_command_slot(device);
+	if (slot == -1)
+		return K_ERROR_INSUFFICIENT_RESOURCES;
+
+	device->port->command_list[slot].cfl = sizeof(struct k_ahci_fis_host_to_device) / sizeof(k_uint32_t);
+	device->port->command_list[slot].w = 0;
+	device->port->command_list[slot].prdtl = sectors / prdt_sectors + ((sectors % prdt_sectors) > 0);
+
+	table = device->port->command_table[slot];
+	k_memset((void *)table, 0, sizeof(struct k_ahci_command_table));
+
+	k_int64_t count = sectors;
+	k_uint64_t off = 0;
+
+	for (i = 0; i < device->port->command_list[slot].prdtl; i++) {
+		address = k_v2p_l((unsigned long)(buf + off));
+
+		table->prdt[i].dba = (k_uint32_t)address;
+		if (device->controller->address_64bit)
+#ifdef K_BITS_32
+			table->prdt[i].dbau = 0x0;
+#elif K_BITS_64
+			table->prdt[i].dbau = (k_uint32_t)(address >> 32);
+#endif
+
+		int read_size = K_MIN(count, prdt_sectors) * K_SECTOR_SIZE;
+		table->prdt[i].dbc = read_size - 1;
+
+		table->prdt[i].i = 1;
+
+		off += read_size;
+		count -= prdt_sectors;
+	}
+
+	h2d = (void *)table->cfis;
+
+	h2d->fis_type = K_AHCI_FIS_TYPE_REGISTER_HOST_TO_DEVICE;
+	h2d->c = 1;
+
+	h2d->command = command;
+	switch (h2d->command) {
+	case K_SATA_COMMAND_READ_SECTORS_DMA_EXT:
+		h2d->lba0 = lba & 0xff;
+		h2d->lba1 = (lba >> 8) & 0xff;
+		h2d->lba2 = (lba >> 16) & 0xff;
+		h2d->lba3 = (lba >> 24) & 0xff;
+		h2d->lba4 = (lba >> 32) & 0xff;
+		h2d->lba5 = (lba >> 40) & 0xff;
+
+		h2d->count0 = sectors & 0xff;
+		h2d->count1 = (sectors >> 8) & 0xff;
+
+		h2d->device = (1 << 6); /* LBA */
+
+		break;
+
+	default:
+		break;
+	}
+
+	device->port->regs->ci |= (1 << slot);
+
+	int timeout = 100;
+	while (--timeout) {
+		if ((device->port->regs->ci & (1 << slot)) == 0)
+			break;
+
+		k_sleep(1);
+	}
+
+	if (device->port->regs->ci & (1 << slot))
+		return K_ERROR_DISK_CONTROLLER_TIMEOUT;
+
+	if (device->port->regs->is & K_AHCI_PORT_IS_TFES)
+		return K_ERROR_DISK_CONTROLLER_INTERNAL;
+
+	return K_ERROR_NONE;
+}
+
+static inline k_error_t k_ahci_identify_device(struct k_ahci_device *device)
+{
+	return k_ahci_do_command(device, K_SATA_COMMAND_IDENTIFY, (void *)&device->id, 0, 1);
+}
+
 static k_error_t k_ahci_detect_devices(struct k_ahci_controller *ahci)
 {
 	int i;
@@ -195,7 +327,20 @@ static k_error_t k_ahci_detect_devices(struct k_ahci_controller *ahci)
 
 		ahci->port_regs[i].cmd |= K_AHCI_PORT_CMD_ST;
 
-		k_printf("AHCI Device on port: %u ", i);
+		struct k_ahci_device *device = k_malloc(sizeof(struct k_ahci_device));
+		if (!device)
+			return K_ERROR_MEMORY_ALLOCATION_FAILED;
+
+		device->port = &ahci->ports[i];
+		device->controller = ahci;
+
+		k_printf("%u@", k_ahci_identify_device(device));
+		k_ata_print_string(device->id.serial_number, 20);
+		k_ata_print_string(device->id.firmware_revision, 8);
+		k_ata_print_string(device->id.model_number, 40);
+		k_printf("Sectors: %llx ", device->id.sectors_lba28);
+
+		k_ahci_device_add(device);
 	}
 	k_printf("\n");
 
@@ -253,10 +398,7 @@ static k_error_t k_ahci_init(struct k_ahci_controller *ahci)
 
 	ahci->command_slots = K_AHCI_CAP_NCS(ahci->ghc->cap);
 
-	if (ahci->ghc->cap & K_AHCI_CAP_S64A)
-		ahci->address_64bit = true;
-	else
-		ahci->address_64bit = false;
+	ahci->address_64bit = !!(ahci->ghc->cap & K_AHCI_CAP_S64A);
 
 	for (i = 0; i < ahci->number_of_ports; i++) {
 		if (!ahci->ports[i].implemented)

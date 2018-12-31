@@ -75,7 +75,7 @@ void k_timer_init(void)
 	if (error)
 		return;
 
-	k_timers = k_binary_heap_init(K_BINARY_HEAP_MIN, 0x3, k_timers_compare);
+	k_timers = k_binary_heap_init(K_BINARY_HEAP_MIN, 0x1f, k_timers_compare);
 	if (!k_timers)
 		return;
 

@@ -33,6 +33,11 @@ struct k_ahci_generic_host_control {
 	__u32	bohc;
 } __attribute__((packed));
 
+/* AHCI port PxIS. */
+enum {
+	K_AHCI_PORT_IS_TFES	= (1 << 30),
+};
+
 /* AHCI port PxCMD. */
 enum {
 	K_AHCI_PORT_CMD_ST	= (1 << 0),
