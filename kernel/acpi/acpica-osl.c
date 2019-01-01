@@ -1,5 +1,7 @@
 #include "kernel/include/acpi/acpi.h"
 #include "kernel/include/mm/mm.h"
+#include "kernel/include/io/io.h"
+#include "kernel/include/pci/pci.h"
 
 #ifdef K_BITS_32
 #define ACPI_MACHINE_WIDTH	32
@@ -7,10 +9,6 @@
 #define ACPI_MACHINE_WIDTH	64
 #endif
 
-#if 0
-#define COMPILER_DEPENDENT_INT64	k_int64_t
-#define COMPILER_DEPENDENT_UINT64	k_uint64_t
-#endif
 #define ACPI_SYSTEM_XFACE
 
 #include "imports/acpica/source/include/platform/acgcc.h"
@@ -132,7 +130,7 @@ BOOLEAN AcpiOsWritable(void *Memory, ACPI_SIZE Length)
 /* Multithreading and Scheduling Services. */
 ACPI_THREAD_ID AcpiOsGetThreadId(void)
 {
-	return 0x12345678;
+
 }
 
 ACPI_STATUS AcpiOsExecute(ACPI_EXECUTE_TYPE Type, ACPI_OSD_EXEC_CALLBACK Function,
@@ -301,4 +299,138 @@ ACPI_STATUS AcpiOsWriteMemory(ACPI_PHYSICAL_ADDRESS Address, UINT64 Value, UINT3
 }
 
 /* Port Input/Output. */
+
+ACPI_STATUS AcpiOsReadPort(ACPI_IO_ADDRESS Address, UINT32 *Value, UINT32 Width)
+{
+	switch (Width) {
+	case 8:
+		*Value = k_inb(Address);
+		break;
+
+	case 16:
+		*Value = k_inw(Address);
+		break;
+
+	case 32:
+		*Value = k_inl(Address);
+		break;
+
+	default:
+		return AE_BAD_PARAMETER;
+	}
+
+	return AE_OK;
+}
+
+ACPI_STATUS AcpiOsWritePort(ACPI_IO_ADDRESS Address, UINT32 Value, UINT32 Width)
+{
+	switch (Width) {
+	case 8:
+		k_outb((k_uint8_t)Value, Address);
+		break;
+
+	case 16:
+		k_outw((k_uint16_t)Value, Address);
+		break;
+
+	case 32:
+		k_outl(Value, Address);
+		break;
+
+	default:
+		return AE_BAD_PARAMETER;
+	}
+
+	return AE_OK;
+}
+
+/* PCI Configuration Space Access. */
+
+ACPI_STATUS AcpiOsReadPciConfiguration(ACPI_PCI_ID *PciId, UINT32 Register, UINT64 *Value,
+		UINT32 Width)
+{
+	switch (Width) {
+	case 8:
+		*Value = k_pci_read_config_byte(PciId->Bus, PciId->Device, PciId->Function,
+				(k_uint8_t)Register);
+		break;
+
+	case 16:
+		*Value = k_pci_read_config_word(PciId->Bus, PciId->Device, PciId->Function,
+				(k_uint8_t)Register);
+		break;
+
+	case 32:
+		*Value = k_pci_read_config_long(PciId->Bus, PciId->Device, PciId->Function,
+				(k_uint8_t)Register);
+		break;
+
+	default:
+		return AE_BAD_PARAMETER;
+	}
+
+	return AE_OK;
+}
+
+ACPI_STATUS AcpiOsWritePciConfiguration(ACPI_PCI_ID *PciId, UINT32 Register, UINT64 Value,
+		UINT32 Width)
+{
+	switch (Width) {
+	case 8:
+		k_pci_write_config_byte(PciId->Bus, PciId->Device, PciId->Function,
+				(k_uint8_t)Register, (k_uint8_t)Value);
+		break;
+
+	case 16:
+		k_pci_write_config_word(PciId->Bus, PciId->Device, PciId->Function,
+				(k_uint8_t)Register, (k_uint16_t)Value);
+		break;
+
+	case 32:
+		k_pci_write_config_long(PciId->Bus, PciId->Device, PciId->Function,
+				(k_uint8_t)Register, (k_uint32_t)Value);
+		break;
+
+	default:
+		return AE_BAD_PARAMETER;
+	}
+
+	return AE_OK;
+}
+
+/* Formatted Output. */
+
+void ACPI_INTERNAL_VAR_XFACE AcpiOsPrintf(const char *Format, ...)
+{
+
+}
+
+void AcpiOsVprintf(const char *Format, va_list Args)
+{
+
+}
+
+void AcpiOsRedirectOutput(void *Destination)
+{
+
+}
+
+/* System ACPI Table Access. */
+
+/* Miscellaneous. */
+
+UINT64 AcpiOsGetTimer(void)
+{
+
+}
+
+ACPI_STATUS AcpiOsSignal(UINT32 Function, void *Info)
+{
+
+}
+
+ACPI_STATUS AcpiOsGetLine(char *Buffer, UINT32 BufferLength, UINT32 *BytesRead)
+{
+
+}
 
