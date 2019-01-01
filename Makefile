@@ -13,11 +13,11 @@ export V
 # Flags.
 MAKEFLAGS += --no-print-directory
 
-# Check for external packages.
-include imports/Makefile
-
 # Include configuration.
 include Makefile.config
+
+# Check for external packages.
+include imports/Makefile
 
 # Tools.
 CC = $(CROSS_COMPILE)gcc
