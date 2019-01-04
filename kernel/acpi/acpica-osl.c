@@ -62,6 +62,32 @@ ACPI_STATUS AcpiOsPhysicalTableOverride(ACPI_TABLE_HEADER *ExistingTable,
 
 /* Memory Management. */
 
+ACPI_STATUS AcpiOsCreateCache(char *CacheName, UINT16 ObjectSize, UINT16 MaxDepth,
+		ACPI_CACHE_T **ReturnCache)
+{
+
+}
+
+ACPI_STATUS AcpiOsDeleteCache(ACPI_CACHE_T *Cache)
+{
+
+}
+
+ACPI_STATUS AcpiOsPurgeCache(ACPI_CACHE_T *Cache)
+{
+
+}
+
+void *AcpiOsAcquireObject(ACPI_CACHE_T *Cache)
+{
+
+}
+
+ACPI_STATUS AcpiOsReleaseObject(ACPI_CACHE_T *Cache, void *Object)
+{
+
+}
+
 void *AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS PhysicalAddress, ACPI_SIZE Length)
 {
 	/* I guess you want to map only ACPI stuff, which is already mapped. */
@@ -432,5 +458,10 @@ ACPI_STATUS AcpiOsSignal(UINT32 Function, void *Info)
 ACPI_STATUS AcpiOsGetLine(char *Buffer, UINT32 BufferLength, UINT32 *BytesRead)
 {
 
+}
+
+ACPI_STATUS AcpiOsEnterSleep(UINT8 SleepState, UINT32 RegaValue, UINT32 RegbValue)
+{
+	return AE_NOT_IMPLEMENTED;
 }
 

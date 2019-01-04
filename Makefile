@@ -16,9 +16,6 @@ MAKEFLAGS += --no-print-directory
 # Include configuration.
 include Makefile.config
 
-# Check for external packages.
-include imports/Makefile
-
 # Tools.
 CC = $(CROSS_COMPILE)gcc
 LD = $(CROSS_COMPILE)ld
@@ -63,9 +60,10 @@ export BUILD_CFLAGS BUILD_LDFLAGS BUILD_OBJCOPYFLAGS BUILD_CPPFLAGS
 # Targets.
 PHONY += all clean prep
 PHONY += arch kernel modules
+PHONY += imports
 PHONY += link initramfs grub-iso
 
-all: clean prep arch kernel modules link initramfs $(FIRMWARE_TARGET)
+all: clean prep imports arch kernel modules link initramfs $(FIRMWARE_TARGET)
 
 arch:
 	$(V)$(MAKE) -C arch/$(ARCH)/
@@ -121,6 +119,9 @@ uefi-grub:
 	$(V)cp initramfs.img boot/initramfs.img
 	$(V)cp /usr/lib/grub/$(SUB_X86_ARCH)-efi/* boot/grub/$(SUB_X86_ARCH)-efi
 	$(V)grub-mkstandalone -O $(SUB_X86_ARCH)-efi -o $(UEFI_IMAGE_NAME) boot/
+
+imports:
+	$(V)$(MAKE) -C imports/
 
 prep:
 	$(V)$(MAKE) -C linker/

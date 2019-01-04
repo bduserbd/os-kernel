@@ -10,6 +10,7 @@ compile:
 
 dirs:
 	$(V)$(MAKE) -C utils/
+	$(V)$(MAKE) -C os-interface/
 	$(V)$(MAKE) -C pci/
 	$(V)$(MAKE) -C irq/
 	$(V)$(MAKE) -C time/
