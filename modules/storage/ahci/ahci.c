@@ -315,6 +315,7 @@ static inline k_error_t k_ahci_identify_device(struct k_ahci_device *device)
 static k_error_t k_ahci_detect_devices(struct k_ahci_controller *ahci)
 {
 	int i;
+	k_error_t error;
 
 	for (i = 0; i < ahci->number_of_ports; i++) {
 		if (!ahci->ports[i].implemented)
@@ -334,7 +335,13 @@ static k_error_t k_ahci_detect_devices(struct k_ahci_controller *ahci)
 		device->port = &ahci->ports[i];
 		device->controller = ahci;
 
-		k_printf("%u@", k_ahci_identify_device(device));
+		error = k_ahci_identify_device(device);
+		if (error) {
+			k_free(device);
+
+			return error;
+		}
+
 		k_ata_print_string(device->id.serial_number, 20);
 		k_ata_print_string(device->id.firmware_revision, 8);
 		k_ata_print_string(device->id.model_number, 40);
@@ -436,7 +443,7 @@ static k_error_t k_ahci_init(struct k_ahci_controller *ahci)
 
 static k_error_t k_ahci_pci_init(struct k_pci_index index)
 {
-	k_uint8_t irq, pin;
+	k_uint8_t irq;
 	k_error_t error;
 	k_uint32_t bar5;
 	struct k_ahci_controller *ahci;
@@ -455,7 +462,6 @@ static k_error_t k_ahci_pci_init(struct k_pci_index index)
 		return K_ERROR_MEMORY_ALLOCATION_FAILED;
 
 	irq = k_pci_read_config_byte(index.bus, index.dev, index.func, K_PCI_CONFIG_REG_IRQ);
-	pin = k_pci_read_config_byte(index.bus, index.dev, index.func, K_PCI_CONFIG_REG_PIN);
 
 	ahci->dma = bar5 & ~0xfffUL;
 	ahci->irq = irq;

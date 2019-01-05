@@ -1,24 +1,9 @@
+#include "kernel/include/acpi/acpica.h"
 #include "kernel/include/acpi/acpi.h"
 #include "kernel/include/mm/mm.h"
 #include "kernel/include/io/io.h"
 #include "kernel/include/pci/pci.h"
-
-#ifdef K_BITS_32
-#define ACPI_MACHINE_WIDTH	32
-#elif K_BITS_64
-#define ACPI_MACHINE_WIDTH	64
-#endif
-
-#define ACPI_SYSTEM_XFACE
-
-#include "imports/acpica/source/include/platform/acgcc.h"
-#include "imports/acpica/source/include/platform/aclinux.h"
-#include "imports/acpica/source/include/platform/acenv.h"
-
-#include "imports/acpica/source/include/actypes.h"
-#include "imports/acpica/source/include/acexcep.h"
-#include "imports/acpica/source/include/actbl.h"
-#include "imports/acpica/source/include/acpiosxf.h"
+#include "kernel/include/video/print.h"
 
 /* Environmental and ACPI Tables. */
 
@@ -34,6 +19,7 @@ ACPI_STATUS AcpiOsTerminate(void)
 
 ACPI_PHYSICAL_ADDRESS AcpiOsGetRootPointer(void)
 {
+	k_printf("%lx\n", k_acpi.physical_rsdp);
 	return k_acpi.physical_rsdp;
 }
 
@@ -428,12 +414,17 @@ ACPI_STATUS AcpiOsWritePciConfiguration(ACPI_PCI_ID *PciId, UINT32 Register, UIN
 
 void ACPI_INTERNAL_VAR_XFACE AcpiOsPrintf(const char *Format, ...)
 {
+	va_list Args;
 
+	va_start(Args, Format);
+	k_vprintf(Format, Args);
+
+	va_end(Args);
 }
 
 void AcpiOsVprintf(const char *Format, va_list Args)
 {
-
+	k_vprintf(Format, Args);
 }
 
 void AcpiOsRedirectOutput(void *Destination)

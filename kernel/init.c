@@ -4,6 +4,7 @@
 #include "include/time/sleep.h"
 #include "include/modules/loader.h"
 #include "include/initramfs/initramfs.h"
+#include "include/acpi/acpica.h"
 #include "include/task/task.h"
 #include "include/network/network.h"
 #include "include/irq/late-irq.h"
@@ -18,6 +19,8 @@ void k_init(void)
 	k_cmos_init();
 	k_clock_init();
 	k_timer_init();
+
+	k_acpica_init();
 
 	k_loader_init();
 	k_initramfs_get_info(k_initramfs_start, k_initramfs_length);

@@ -1,4 +1,5 @@
 #include "include/video/print.h"
+#include "include/string.h"
 #include "include/div64.h"
 #include "include/modules/export-symbol.h"
 
@@ -133,6 +134,7 @@ void k_putn64(k_uint64_t number, int decimal)
 int k_vprintf(const char *fmt, va_list ap)
 {
 	int n;
+	int width, precision;
 	int length_modifier;
 	unsigned int flags;
 
@@ -169,6 +171,16 @@ int k_vprintf(const char *fmt, va_list ap)
 		}
 #endif
 
+		/* Width. */
+		for (width = 0; k_isdigit(*fmt); fmt++, width++) ;
+
+		/* Precision. */
+		if (*fmt == '.') {
+			fmt++;
+			for (precision = 0; k_isdigit(*fmt); fmt++, precision++) ;
+		}
+
+		/* Length. */
 		switch (*fmt) {
 		case 'h':
 			fmt++;
@@ -196,6 +208,7 @@ int k_vprintf(const char *fmt, va_list ap)
 			break;
 		}
 
+		/* Type. */
 		switch (*fmt) {
 		case 'd':
 		case 'i':

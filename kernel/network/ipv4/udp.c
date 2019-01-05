@@ -1,5 +1,6 @@
 #include "include/network/protocol/udp.h"
 #include "include/network/ipv4/ipv4.h"
+#include "include/network/protocol/dhcp.h"
 
 static k_uint16_t k_udp_checksum(struct k_udp_header *udp, k_ipv4_t ip_src, k_ipv4_t ip_dest)
 {
