@@ -51,7 +51,18 @@ ACPI_STATUS AcpiOsPhysicalTableOverride(ACPI_TABLE_HEADER *ExistingTable,
 ACPI_STATUS AcpiOsCreateCache(char *CacheName, UINT16 ObjectSize, UINT16 MaxDepth,
 		ACPI_CACHE_T **ReturnCache)
 {
+	struct k_cache *cache;
 
+	if (ObjectSize < 16 || !ReturnCache)
+		return AE_BAD_PARAMETER;
+
+	cache = k_cache_create(CacheName, ObjectSize, 0x40, 0x0);
+	if (!cache)
+		return AE_NO_MEMORY;
+
+	*ReturnCache = cache;
+
+	return AE_OK;
 }
 
 ACPI_STATUS AcpiOsDeleteCache(ACPI_CACHE_T *Cache)
