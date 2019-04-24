@@ -14,7 +14,7 @@ dirs:
 	$(V)$(MAKE) -C pci/
 	$(V)$(MAKE) -C irq/
 	$(V)$(MAKE) -C time/
-	#$(V)$(MAKE) -C task/
+	$(V)$(MAKE) -C task/
 	$(V)$(MAKE) -C acpi/
 	$(V)$(MAKE) -C fb/
 	$(V)$(MAKE) -C mm/

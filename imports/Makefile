@@ -13,6 +13,7 @@ endif
 ACPICA_SOURCES := $(wildcard $(ACPICA_COMPONENTS_DIR)/*/*.c)
 ACPICA_SOURCES := $(filter-out $(ACPICA_COMPONENTS_DIR)/debugger/%,$(ACPICA_SOURCES))
 ACPICA_SOURCES := $(filter-out $(ACPICA_COMPONENTS_DIR)/disassembler/%,$(ACPICA_SOURCES))
+ACPICA_SOURCES := $(filter-out $(ACPICA_COMPONENTS_DIR)/resources/rsdump.c,$(ACPICA_SOURCES))
 
 ACPICA_OBJS := $(ACPICA_SOURCES:%.c=%.o)
 

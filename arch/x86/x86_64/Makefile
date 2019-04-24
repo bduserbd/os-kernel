@@ -4,6 +4,7 @@ OBJS += idt.o interrupt.o
 OBJS += paging.o
 OBJS += elf.o
 OBJS += system-call.o
+OBJS += task.o task-switch.o
 
 CFLAGS += -I ../
 

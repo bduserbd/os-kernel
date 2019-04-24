@@ -38,9 +38,10 @@ BUILD_OBJS +=
 
 BUILD_LD_SCRIPT = linker.ld
 
-BUILD_CFLAGS += -Wall -O2
+BUILD_CFLAGS += -Wall #-O2
 BUILD_CFLAGS += -I $(CURDIR)
 BUILD_CFLAGS += -Wno-main -nostdlib -fno-builtin -fno-strict-aliasing
+BUILD_CFLAGS += -fno-stack-protector -ffreestanding
 BUILD_CFLAGS += $(BUILD_CPPFLAGS)
 BUILD_CFLAGS += -g
 
@@ -80,7 +81,7 @@ link:
 	$(V)if [ "$(ARCH)" = "x86" ] && [ "$(CPUS)" != "1" ]; then			\
 		$(OBJCOPY) target.elf --update-section .ap_start=$(BUILD_OBJDIR)/$(AP_BIN);	\
 	fi;
-	$(OBJCOPY) target.elf --update-section .user=user-mode/init.o;	\
+#	$(OBJCOPY) target.elf --update-section .user=user-mode/init.o;	\
 
 initramfs:
 	$(V)$(patsubst $(CURDIR)/%,%,find $(BUILD_MODULES_OBJDIR))	\

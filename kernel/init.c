@@ -14,12 +14,48 @@
 extern unsigned long k_initramfs_start;
 extern unsigned long k_initramfs_length;
 
+k_error_t foo1(void *param)
+{
+	while (1) {
+		k_printf("B%llx ", (k_uint64_t)param);
+		k_task_switch(k_task->next);
+	}
+}
+
+k_error_t foo2(void *param)
+{
+	while (1) {
+		k_printf("C%llx ", (k_uint64_t)param);
+		k_task_switch(k_task->next);
+	}
+}
+
+k_error_t foo3(void *param)
+{
+	while (1) {
+		k_printf("D%llx ", (k_uint64_t)param);
+		k_task_switch(k_task->next);
+	}
+}
+
 void k_init(void)
 {
 	k_cmos_init();
 	k_clock_init();
 	k_timer_init();
 
+	k_task_init();
+
+	k_task_create(foo3, (void *)3);
+	k_task_create(foo2, (void *)2);
+	k_task_create(foo1, (void *)1);
+
+	while (1) {
+		k_printf("A0 ");
+		k_task_switch(k_task->next);
+	}
+
+/*
 	k_acpica_init();
 
 	k_loader_init();
@@ -29,8 +65,6 @@ void k_init(void)
 		k_printf("#");
 		k_sleep(1000);
 	}
-/*
-	k_task_init();
 
 	k_task_create(k_late_irq_task, NULL);
 	k_network_init();

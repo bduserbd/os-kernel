@@ -4,7 +4,7 @@
 struct k_task *k_task = NULL;
 
 void *k_task_arch_info_alloc(k_task_entry_point_t, void *, void *);
-void k_task_arch_switch_context(struct k_task *, void *, struct k_task *);
+void k_task_arch_switch_context(struct k_task *, struct k_task *);
 
 static k_pid_t k_task_get_free_pid(void)
 {
@@ -20,6 +20,27 @@ static k_error_t k_task_main(void *parameter)
 	for(;;) ;
 
 	return K_ERROR_FATAL;
+}
+
+void k_task_switch(struct k_task *new_task)
+{
+	struct k_task *a, *b;
+
+	if (!k_task)
+		return;
+
+	if (k_task == k_task->next)
+		return;
+
+	a = k_task;
+	a->state = K_TASK_STATE_SLEEPING;
+
+	b = new_task;
+	b->state = K_TASK_STATE_RUNNING;
+
+	k_task = new_task;
+
+	k_task_arch_switch_context(a, b);
 }
 
 void k_task_create(k_task_entry_point_t func, void *parameter)
@@ -53,27 +74,6 @@ void k_task_create(k_task_entry_point_t func, void *parameter)
 	temp = k_task->next;
 	k_task->next = task;
 	task->next = temp;
-}
-
-void k_task_switch(void *context)
-{
-	struct k_task *a, *b;
-
-	if (!k_task)
-		return;
-
-	if (k_task == k_task->next)
-		return;
-
-	a = k_task;
-	a->state = K_TASK_STATE_SLEEPING;
-
-	b = k_task->next;
-	b->state = K_TASK_STATE_RUNNING;
-
-	k_task = k_task->next;
-
-	k_task_arch_switch_context(a, context, b);
 }
 
 extern __u8 __k_stack_start[];
