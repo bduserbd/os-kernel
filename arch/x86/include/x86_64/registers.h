@@ -7,61 +7,61 @@ struct k_registers {
 	// 0x0
 	union {
 		struct { k_uint64_t rax; };
-		//struct { k_uint32_t eax; };
-		//struct { k_uint16_t ax; };
-		//struct { k_uint8_t al, ah; };
+		struct { k_uint32_t eax; };
+		struct { k_uint16_t ax; };
+		struct { k_uint8_t al, ah; };
 	};
 
 	// 0x8
 	union {
 		struct { k_uint64_t rbx; };
-		//struct { k_uint32_t ebx; };
-		//struct { k_uint16_t bx; };
-		//struct { k_uint8_t bl, bh; };
+		struct { k_uint32_t ebx; };
+		struct { k_uint16_t bx; };
+		struct { k_uint8_t bl, bh; };
 	};
 
 	// 0x10
 	union {
 		struct { k_uint64_t rcx; };
-		//struct { k_uint32_t ecx; };
-		//struct { k_uint16_t cx; };
-		//struct { k_uint8_t cl, ch; };
+		struct { k_uint32_t ecx; };
+		struct { k_uint16_t cx; };
+		struct { k_uint8_t cl, ch; };
 	};
 
 	// 0x18
 	union {
 		struct { k_uint64_t rdx; };
-		//struct { k_uint32_t edx; };
-		//struct { k_uint16_t dx; };
-		//struct { k_uint8_t dl, dh; };
+		struct { k_uint32_t edx; };
+		struct { k_uint16_t dx; };
+		struct { k_uint8_t dl, dh; };
 	};
 
 	// 0x20
 	union {
 		struct { k_uint64_t rsp; };
-		//struct { k_uint32_t esp; };
-		//struct { k_uint16_t sp; };
+		struct { k_uint32_t esp; };
+		struct { k_uint16_t sp; };
 	};
 
 	// 0x28
 	union {
 		struct { k_uint64_t rbp; };
-		//struct { k_uint32_t ebp; };
-		//struct { k_uint16_t bp; };
+		struct { k_uint32_t ebp; };
+		struct { k_uint16_t bp; };
 	};
 
 	// 0x30
 	union {
 		struct { k_uint64_t rdi; };
-		//struct { k_uint32_t edi; };
-		//struct { k_uint16_t di; };
+		struct { k_uint32_t edi; };
+		struct { k_uint16_t di; };
 	};
 
 	// 0x38
 	union {
 		struct { k_uint64_t rsi; };
-		//struct { k_uint32_t esi; };
-		//struct { k_uint16_t si; };
+		struct { k_uint32_t esi; };
+		struct { k_uint16_t si; };
 	};
 
 	// 0x40
@@ -76,8 +76,8 @@ struct k_registers {
 	// 0x50
 	union {
 		struct { k_uint64_t rip; };
-		//struct { k_uint32_t eip; };
-		//struct { k_uint16_t ip; };
+		struct { k_uint32_t eip; };
+		struct { k_uint16_t ip; };
 	};
 
 	// 0x58
