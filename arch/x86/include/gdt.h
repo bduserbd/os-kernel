@@ -35,6 +35,7 @@ struct k_gdt_entry {
 	__u8	base2;
 } __attribute__((packed));
 
+void k_gdb_load(void);
 void k_gdt_init(void);
 k_error_t k_tss_init(void);
 

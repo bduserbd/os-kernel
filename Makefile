@@ -38,8 +38,8 @@ BUILD_OBJS +=
 
 BUILD_LD_SCRIPT = linker.ld
 
-BUILD_CFLAGS += -Wall #-O2
-BUILD_CFLAGS += -I $(CURDIR)
+BUILD_CFLAGS += -Wall -O2
+BUILD_CFLAGS += -I $(CURDIR) -I $(CURDIR)/arch/$(ARCH)/include
 BUILD_CFLAGS += -Wno-main -nostdlib -fno-builtin -fno-strict-aliasing
 BUILD_CFLAGS += -fno-stack-protector -ffreestanding
 BUILD_CFLAGS += $(BUILD_CPPFLAGS)
@@ -61,10 +61,11 @@ export BUILD_CFLAGS BUILD_LDFLAGS BUILD_OBJCOPYFLAGS BUILD_CPPFLAGS
 # Targets.
 PHONY += all clean prep
 PHONY += arch kernel modules
-PHONY += imports
+#PHONY += imports
 PHONY += link initramfs grub-iso
 
-all: clean prep imports arch kernel modules link initramfs $(FIRMWARE_TARGET)
+#imports 
+all: clean prep arch kernel modules link initramfs $(FIRMWARE_TARGET)
 
 arch:
 	$(V)$(MAKE) -C arch/$(ARCH)/

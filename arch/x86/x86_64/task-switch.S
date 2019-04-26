@@ -20,12 +20,7 @@ k_task_arch_set_new_context:
 	movq	%rbx, 0x8(%rdi)
 	movq	%rax, (%rdi)
 
-	popq	0x50(%rdi)
-
 	# Set new context
-	movq	0x20(%rsi), %rsp
-	pushq	0x50(%rsi)
-
 	movq	0x90(%rsi), %r15
 	movq	0x88(%rsi), %r14
 	movq	0x80(%rsi), %r13
@@ -37,11 +32,12 @@ k_task_arch_set_new_context:
 
 	movq	0x30(%rsi), %rdi
 	movq	0x28(%rsi), %rbp
+	movq	0x20(%rsi), %rsp
 	movq	0x18(%rsi), %rdx
 	movq	0x10(%rsi), %rcx
 	movq	0x8(%rsi), %rbx
 	movq	(%rsi), %rax
 	movq	0x38(%rsi), %rsi
 
-	ret
+	retq
 

@@ -17,24 +17,24 @@ extern unsigned long k_initramfs_length;
 k_error_t foo1(void *param)
 {
 	while (1) {
-		k_printf("B%llx ", (k_uint64_t)param);
-		k_task_switch(k_task->next);
+		k_printf("B%llu ", (k_uint64_t)param);
+		k_schedule();
 	}
 }
 
 k_error_t foo2(void *param)
 {
 	while (1) {
-		k_printf("C%llx ", (k_uint64_t)param);
-		k_task_switch(k_task->next);
+		k_printf("C%llu ", (k_uint64_t)param);
+		k_schedule();
 	}
 }
 
 k_error_t foo3(void *param)
 {
 	while (1) {
-		k_printf("D%llx ", (k_uint64_t)param);
-		k_task_switch(k_task->next);
+		k_printf("D%llu ", (k_uint64_t)param);
+		k_schedule();
 	}
 }
 
@@ -52,7 +52,7 @@ void k_init(void)
 
 	while (1) {
 		k_printf("A0 ");
-		k_task_switch(k_task->next);
+		k_schedule();
 	}
 
 /*

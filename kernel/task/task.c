@@ -13,8 +13,24 @@ static k_pid_t k_task_get_free_pid(void)
 	return k_pid_counter++;
 }
 
+static int k_irq_disable_counter = 0;
+
+static void k_schedule_lock(void)
+{
+	asm volatile("cli");
+	k_irq_disable_counter++;
+}
+
+static void k_schedule_unlock(void)
+{
+	k_irq_disable_counter--;
+	if (k_irq_disable_counter == 0)
+		asm volatile("sti");
+}
+
 static k_error_t k_task_main(void *parameter)
 {
+	k_schedule_unlock();
 	k_task->func(parameter);
 
 	for(;;) ;
@@ -22,7 +38,7 @@ static k_error_t k_task_main(void *parameter)
 	return K_ERROR_FATAL;
 }
 
-void k_task_switch(struct k_task *new_task)
+void k_task_switch(void)
 {
 	struct k_task *a, *b;
 
@@ -35,12 +51,18 @@ void k_task_switch(struct k_task *new_task)
 	a = k_task;
 	a->state = K_TASK_STATE_SLEEPING;
 
-	b = new_task;
+	b = a->next;
 	b->state = K_TASK_STATE_RUNNING;
 
-	k_task = new_task;
+	k_task = k_task->next;
 
 	k_task_arch_switch_context(a, b);
+}
+
+void k_schedule(void)
+{
+	k_schedule_lock();
+	k_task_switch();
 }
 
 void k_task_create(k_task_entry_point_t func, void *parameter)

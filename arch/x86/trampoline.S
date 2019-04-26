@@ -1,10 +1,8 @@
 #include "include/gdt-descriptor.S"
 
-	.section ".smp_start", "ax"
-
 	.code16
-	.globl	_start
-_start:
+	.globl	ap_start
+ap_start:
 	cli
 
 	/* Got to protected mode. */
@@ -25,14 +23,22 @@ ap_in_protected_mode:
 	movw	%bx, %gs
 	movw	%bx, %ss
 
-	/* Jump to kernel with specific paramters per CPU. */
+	# Specific paramters per CPU
 	movl	$0x8180, %ebx
 
-	movl	4(%ebx), %esp
+	# Load cr3
+	movl	12(%ebx), %eax
+	movl	%eax, %cr3
 
-	movl	(%ebx), %eax
+	# Enable paging
+	movl	%cr0, %eax
+	orl	$0x80010000, %eax
+	movl	%eax, %cr0
+
+	movl	4(%ebx), %esp
 	pushl	8(%ebx)
 
+	movl	(%ebx), %eax
 	call	*%eax
 
 loop:

@@ -46,14 +46,16 @@ die:
 	hlt
 	jmp die
 
+#if 0
 	.p2align 5
 	.section ".user", "a"
 	.skip	K_CONFIG_USER_MODE_EXECUTABLE
+#endif
 
 /* The kernel stack. */
-	.p2align 5
 	.section ".kernel_stack", "a"
 	.skip   K_CONFIG_STACK_SIZE
+	.p2align 12
 
 #ifdef K_CONFIG_SMP
 /* Empty space for AP start. */

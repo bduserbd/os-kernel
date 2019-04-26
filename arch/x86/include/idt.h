@@ -6,6 +6,7 @@
 
 #ifndef __ASSEMBLER__
 
+void k_idt_load(void);
 void k_idt_init(void);
 
 extern void k_idt_int0(void);

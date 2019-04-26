@@ -46,6 +46,11 @@ static inline void k_gdt_set_tss_entry(struct k_gdt_entry *entry)
 			0x9, 0, 3, 0, 0);
 }
 
+void k_gdt_load(void)
+{
+	asm volatile("lgdt %0" : : "m" (k_gdt_reg));
+}
+
 void k_gdt_init(void)
 {
 	k_memset(&k_gdt[0], 0, sizeof(struct k_gdt_entry));
@@ -61,7 +66,7 @@ void k_gdt_init(void)
 	k_gdt_reg.limit = sizeof(k_gdt) - 1;
 	k_gdt_reg.address = (k_uint32_t)&k_gdt;
 
-	asm volatile("lgdt %0" : : "m" (k_gdt_reg));
+	k_gdt_load();
 
 	asm volatile(
 		"mov	%0, %%ax	\n"

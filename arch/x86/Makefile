@@ -18,7 +18,7 @@ endif
 CFLAGS += -I ../
 
 ifdef AP_BIN
-  #OBJS += smp.o ap.o
+  OBJS += smp.o ap.o
   AP_TRAMPOLINE += trampoline.o
   LDFLAGS += -melf_$(SUB_X86_ARCH) -Tap.ld
   AP_TARGET := ap

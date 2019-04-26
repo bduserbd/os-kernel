@@ -3,6 +3,7 @@
 #include "include/paging.h"
 #include "kernel/include/irq/irq-info.h"
 #include "kernel/include/video/print.h"
+#include "kernel/include/task/task.h"
 
 struct k_idt_interrupt_gate k_idt[256] __attribute__((aligned(0x8)));
 struct k_idt_register k_idt_reg __attribute__((aligned(0x8)));
@@ -30,8 +31,8 @@ void k_int_handler(struct k_int_registers regs)
 		k_printf("CR2: %llx", k_paging_fault_address());
 	}
 
-		for (;;)
-			asm volatile("hlt");
+	for (;;)
+		asm volatile("hlt");
 }
 
 void k_irq_handler(struct k_int_registers regs)

@@ -1,23 +1,19 @@
 	.text
 	.globl	k_task_arch_set_new_context
 k_task_arch_set_new_context:
-	movl	4(%esp), %eax
-	
-	movl	0x10(%eax), %esp
-	pushl	0x2c(%eax)
-
-	movl	0x4(%eax), %ebx
-	movl	0x8(%eax), %ecx
-	movl	0xc(%eax), %edx
-
-	movl	0x14(%eax), %ebp
-
-	movl	0x18(%eax), %edi
-	movl	0x1c(%eax), %esi
-
+	# Save old context
+	pusha
+	movl	%esp, %eax
+	addl	$(32 + 4), %eax
 	movl	(%eax), %eax
+	movl	%esp, 0x10(%eax)
 
-	sti
+	# Set new context
+	movl	%esp, %eax
+	addl	$(32 + 8), %eax
+	movl	(%eax), %eax
+	movl	0x10(%eax), %esp
+	popa
 
 	ret
 

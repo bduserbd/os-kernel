@@ -111,6 +111,7 @@ void k_putn64(k_uint64_t number, int decimal)
 
 	for (i = 0; number; i++) {
 		k_div64(number, 10, &q, &r);
+
 		reverse[i] = r;
 		number = q;
 	}

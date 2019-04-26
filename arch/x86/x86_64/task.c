@@ -15,7 +15,10 @@ void *k_task_arch_info_alloc(k_task_entry_point_t func, void *stack, void *param
 	if (func) {
 		regs->rip = func;
 
-		regs->rsp = (k_uint64_t)stack;
+		k_uint64_t real_rsp = (k_uint64_t)stack & ~0xfULL - sizeof(k_uint64_t);
+		*(k_uint64_t *)real_rsp = regs->rip;
+
+		regs->rsp = real_rsp;
 		regs->rbp = regs->rsp;
 
 		regs->rdi = (k_uint64_t)parameter;
