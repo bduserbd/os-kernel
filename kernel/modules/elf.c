@@ -83,7 +83,7 @@ k_error_t k_elf_load_image(Elf(Ehdr) *elf, struct k_module *mod)
 		goto _exit;
 	}
 
-	image_ptr = k_buddy_alloc(image_size);
+	image_ptr = k_buddy_alloc_execute(image_size);
 	if (!image_ptr) {
 		error = K_ERROR_MEMORY_ALLOCATION_FAILED;
 		goto _exit;
@@ -241,6 +241,33 @@ static k_error_t k_elf_relocate_section(Elf(Ehdr) *elf, const Elf(Shdr) *rel_sec
 	return K_ERROR_NONE;
 }
 
+k_error_t k_elf_arch_relocate_addend_section(k_uint8_t *, const Elf(Rela) *, const Elf(Sym) *);
+
+static k_error_t k_elf_relocate_addend_section(Elf(Ehdr) *elf, const Elf(Shdr) *rela_section,
+		const Elf(Shdr) *sym_section, struct k_module *mod)
+{
+	int i;
+	k_uint8_t *applied_section;
+	const Elf(Rela) *rela;
+	const Elf(Sym) *symbol;
+	k_error_t error;
+
+	applied_section = k_elf_section_by_index(mod, rela_section->sh_info);
+	if (!applied_section)
+		return K_ERROR_NONE;
+
+	rela = (const Elf(Rela) *)((k_uint8_t *)elf + rela_section->sh_offset);
+	symbol = (const Elf(Sym) *)((k_uint8_t *)elf + sym_section->sh_offset);
+
+	for (i = 0; i < rela_section->sh_size / rela_section->sh_entsize; i++) {
+		error = k_elf_arch_relocate_addend_section(applied_section, &rela[i], symbol);
+		if (error)
+			return error;
+	}
+
+	return K_ERROR_NONE;
+}
+
 k_error_t k_elf_relocate_symbols(Elf(Ehdr) *elf, struct k_module *mod)
 {
 	int i;
@@ -249,13 +276,18 @@ k_error_t k_elf_relocate_symbols(Elf(Ehdr) *elf, struct k_module *mod)
 
 	section = (const Elf(Shdr) *)((k_uint8_t *)elf + elf->e_shoff);
 
-	for (i = 0; i < elf->e_shnum; i++)
+	for (i = 0; i < elf->e_shnum; i++) {
 		if (section[i].sh_type == SHT_REL) {
 			error = k_elf_relocate_section(elf, &section[i],
 					&section[section[i].sh_link], mod);
-			if (error)
-				return error;
+		} else if (section[i].sh_type == SHT_RELA) {
+			error = k_elf_relocate_addend_section(elf, &section[i],
+					&section[section[i].sh_link], mod);
 		}
+
+		if (error)
+			return error;
+	}
 
 	return K_ERROR_NONE;
 }

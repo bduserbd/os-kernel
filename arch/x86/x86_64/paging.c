@@ -1,5 +1,7 @@
 #include "include/x86_64/paging.h"
 #include "kernel/include/string.h"
+#include "kernel/include/modules/export-symbol.h"
+#include "kernel/include/mm/mm.h"
 
 k_pml4e_t *k_page_table = NULL;
 
@@ -24,6 +26,36 @@ static k_pde_t *k_paging_get_pde(unsigned long address)
 
 	return (k_pde_t *)(K_IMAGE_BASE + (pdpe[i] & K_PAGE_MASK));
 }
+
+void *k_v2p(const void *virtual)
+{
+	k_pde_t *pde;
+	k_pte_t *pte;
+	unsigned long a, i;
+
+	pde = k_paging_get_pde(K_IMAGE_BASE);
+	if (!pde)
+		return NULL;
+
+	a = (unsigned long)virtual;
+
+	i = K_PDE_INDEX(a);
+	if (pde[i] & K_PDE_P) {
+		pte = (k_pte_t *)(K_IMAGE_BASE + (pde[i] & K_PAGE_MASK));
+		i = K_PTE_INDEX(a);
+		if (pte[i] & K_PTE_P)
+			return (void *)(((pte[i] & K_PAGE_MASK) + (a & K_PAGE_BITS)) & ~K_PTE_NX);
+	}
+
+	return NULL;
+}
+K_EXPORT_FUNC(k_v2p);
+
+unsigned long k_v2p_l(unsigned long virtual)
+{
+	return (unsigned long)k_v2p((const void *)virtual);
+}
+K_EXPORT_FUNC(k_v2p_l);
 
 void k_paging_build_frame_array(unsigned long total_frames)
 {
@@ -123,6 +155,50 @@ static void k_paging_reserve_pages_ptr(unsigned long start, unsigned long range,
 void k_paging_reserve_dma(unsigned long start, unsigned long dma, unsigned long range)
 {
 	k_paging_reserve_pages_ptr(start, range, dma, K_PAGING_RESERVE_DMA);
+	k_paging_flush_tlb();
+}
+
+static k_pdpe_t *ap_pdpe = NULL;
+static k_pde_t *ap_pde = NULL;
+static k_pte_t *ap_pte = NULL;
+
+void k_paging_map_ap_start(unsigned long address)
+{
+	unsigned long i;
+
+	/* PML4E */
+	ap_pdpe = k_zalloc(K_PAGE_TABLE_ENTRIES * sizeof(k_pdpe_t));
+	if (!ap_pdpe)
+		return;
+
+	i = K_PML4E_INDEX(address);
+	k_page_table[i] = ((unsigned long)ap_pdpe - K_IMAGE_BASE) |
+		K_PML4E_P | K_PML4E_RW;
+
+	/* PDPE */
+	ap_pde = k_zalloc(K_PAGE_TABLE_ENTRIES * sizeof(k_pde_t));
+	if (!ap_pde)
+		return;
+
+	i = K_PDPE_INDEX(address);
+	ap_pdpe[i] = ((unsigned long)ap_pde - K_IMAGE_BASE) |
+		K_PDPE_P | K_PDPE_RW;
+
+
+	/* PDE */
+	ap_pte = k_zalloc(K_PAGE_TABLE_ENTRIES * sizeof(k_pte_t));
+	if (!ap_pte)
+		return;
+
+	i = K_PDE_INDEX(address);
+	ap_pde[i] = ((unsigned long)ap_pte - K_IMAGE_BASE) |
+		K_PDE_P | K_PDE_RW;
+
+	/* PTE */
+	i = K_PTE_INDEX(address);
+	ap_pte[i] = (address & K_PAGE_MASK) | K_PTE_P | K_PTE_RW;
+	
+	k_paging_flush_tlb();
 }
 
 void k_paging_reserve_pages(unsigned long start, unsigned long range)

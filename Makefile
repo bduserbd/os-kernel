@@ -39,8 +39,9 @@ BUILD_OBJS +=
 BUILD_LD_SCRIPT = linker.ld
 
 BUILD_CFLAGS += -Wall -O2
-BUILD_CFLAGS += -I $(CURDIR)
+BUILD_CFLAGS += -I $(CURDIR) -I $(CURDIR)/arch/$(ARCH)/include
 BUILD_CFLAGS += -Wno-main -nostdlib -fno-builtin -fno-strict-aliasing
+BUILD_CFLAGS += -fno-stack-protector -ffreestanding
 BUILD_CFLAGS += $(BUILD_CPPFLAGS)
 BUILD_CFLAGS += -g
 
@@ -60,8 +61,10 @@ export BUILD_CFLAGS BUILD_LDFLAGS BUILD_OBJCOPYFLAGS BUILD_CPPFLAGS
 # Targets.
 PHONY += all clean prep
 PHONY += arch kernel modules
+#PHONY += imports
 PHONY += link initramfs grub-iso
 
+#imports 
 all: clean prep arch kernel modules link initramfs $(FIRMWARE_TARGET)
 
 arch:
@@ -79,7 +82,7 @@ link:
 	$(V)if [ "$(ARCH)" = "x86" ] && [ "$(CPUS)" != "1" ]; then			\
 		$(OBJCOPY) target.elf --update-section .ap_start=$(BUILD_OBJDIR)/$(AP_BIN);	\
 	fi;
-	$(OBJCOPY) target.elf --update-section .user=user-mode/init.o;	\
+#	$(OBJCOPY) target.elf --update-section .user=user-mode/init.o;	\
 
 initramfs:
 	$(V)$(patsubst $(CURDIR)/%,%,find $(BUILD_MODULES_OBJDIR))	\
@@ -118,6 +121,9 @@ uefi-grub:
 	$(V)cp initramfs.img boot/initramfs.img
 	$(V)cp /usr/lib/grub/$(SUB_X86_ARCH)-efi/* boot/grub/$(SUB_X86_ARCH)-efi
 	$(V)grub-mkstandalone -O $(SUB_X86_ARCH)-efi -o $(UEFI_IMAGE_NAME) boot/
+
+imports:
+	$(V)$(MAKE) -C imports/
 
 prep:
 	$(V)$(MAKE) -C linker/

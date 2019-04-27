@@ -164,6 +164,11 @@ void k_paging_reserve_pages(unsigned long start, unsigned long range)
 	k_paging_flush_tlb();
 }
 
+void k_paging_reserve_execute_pages(unsigned long start, unsigned long range)
+{
+	k_paging_reserve_pages(start, range);
+}
+
 void k_paging_identity_map(void)
 {
 	unsigned long a, b;
@@ -240,6 +245,51 @@ void k_paging_table_set_start(unsigned long start)
 				0, 0);
 	}
 }
+
+#ifdef K_CONFIG_SMP
+
+void k_paging_map_ap_start(unsigned long start)
+{
+	k_pde_t *pde;
+	k_pte_t *pte;
+
+	unsigned long table = (start >> 22) & 0x3ff;
+	unsigned long page = (start >> 12) & 0x3ff;
+
+	pde = k_page_table;
+
+	if (!(pde[table] & K_PDE_P)) {
+		pde[table] = ((unsigned long)pde - K_IMAGE_BASE + 
+			0x1000 + table * 0x1000) | K_PDE_P | K_PDE_RW;
+
+		pte = (k_pte_t *)(K_IMAGE_BASE + (pde[table] & ~0xfff));
+		if (!(pte[page] & K_PTE_P)) {
+			pte[page] = (start & ~0xfff) | K_PTE_P | K_PTE_RW;
+			k_paging_flush_tlb();
+		}
+	}
+}
+
+void k_paging_unmap_ap_start(unsigned long start)
+{
+	k_pde_t *pde;
+	k_pte_t *pte;
+
+	unsigned long table = (start >> 22) & 0x3ff;
+	unsigned long page = (start >> 12) & 0x3ff;
+
+	pde = k_page_table;
+
+	if (pde[table] & K_PDE_P) {
+		pte = (k_pte_t *)(K_IMAGE_BASE + (pde[table] & ~0xfff));
+		if (pte[page] & K_PTE_P) {
+			pte[page] = 0x0;
+			k_paging_flush_tlb();
+		}
+	}
+}
+
+#endif
 
 void k_paging_arch_init(void)
 {

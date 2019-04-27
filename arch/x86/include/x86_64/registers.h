@@ -50,35 +50,59 @@ struct k_registers {
 		struct { k_uint16_t bp; };
 	};
 
-	// 0x28
+	// 0x30
 	union {
 		struct { k_uint64_t rdi; };
 		struct { k_uint32_t edi; };
 		struct { k_uint16_t di; };
 	};
 
-	// 0x30
+	// 0x38
 	union {
 		struct { k_uint64_t rsi; };
 		struct { k_uint32_t esi; };
 		struct { k_uint16_t si; };
 	};
 
-	// 0x38
+	// 0x40
 	k_uint16_t ds;
 	k_uint16_t es;
 	k_uint16_t fs;
 	k_uint16_t gs;
 
-	// 0x40
+	// 0x48
 	k_uint64_t rflags;
 
-	// 0x48
+	// 0x50
 	union {
 		struct { k_uint64_t rip; };
 		struct { k_uint32_t eip; };
 		struct { k_uint16_t ip; };
 	};
+
+	// 0x58
+	k_uint64_t r8;
+
+	// 0x60
+	k_uint64_t r9;
+
+	// 0x68
+	k_uint64_t r10;
+
+	// 0x70
+	k_uint64_t r11;
+
+	// 0x78
+	k_uint64_t r12;
+
+	// 0x80
+	k_uint64_t r13;
+
+	// 0x88
+	k_uint64_t r14;
+
+	// 0x90
+	k_uint64_t r15;
 } __attribute__((packed));
 
 struct k_int_registers {

@@ -4,6 +4,7 @@
 #include "kernel/include/irq/irq.h"
 #include "kernel/include/data-structures/heap/binary-heap.h"
 #include "kernel/include/mm/mm.h"
+#include "kernel/include/modules/export-symbol.h"
 #include "kernel/include/video/print.h"
 
 k_tick_t k_ticks = 0;
@@ -74,7 +75,7 @@ void k_timer_init(void)
 	if (error)
 		return;
 
-	k_timers = k_binary_heap_init(K_BINARY_HEAP_MIN, 0x3, k_timers_compare);
+	k_timers = k_binary_heap_init(K_BINARY_HEAP_MIN, 0x1f, k_timers_compare);
 	if (!k_timers)
 		return;
 
@@ -99,4 +100,5 @@ void k_sleep(unsigned int milliseconds)
 
 	while (!timer.expired) ;
 }
+K_EXPORT_FUNC(k_sleep);
 

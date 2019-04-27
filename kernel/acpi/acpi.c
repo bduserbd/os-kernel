@@ -242,6 +242,9 @@ void k_acpi_get_info(void *_rsdp)
 		return;
 	}
 
+	/* For ACPICA. */
+	k_acpi.physical_rsdp = k_v2p_l((unsigned long)rsdp);
+
 	if (rsdp->revision == 0x0)
 		k_acpi_parse_rsdt((struct k_acpi_rsdt *)k_p2v_l(rsdp->rsdt_address));
 	else {

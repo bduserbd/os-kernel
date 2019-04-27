@@ -1,5 +1,6 @@
 #include "include/mm/mm.h"
 #include "include/mm/slab.h"
+#include "include/string.h"
 #include "include/video/print.h"
 #include "include/modules/export-symbol.h"
 
@@ -197,37 +198,70 @@ void *k_cache_alloc_object(struct k_cache *cache, struct k_slab *slab)
 	return ptr;
 }
 
-void *k_cache_alloc(struct k_cache *cache)
+static inline void k_cache_add_partial_slab(struct k_cache *cache, struct k_slab *slab)
+{
+	slab->next = cache->partial_slabs;
+	cache->partial_slabs = slab;
+}
+
+static inline void k_cache_add_full_slab(struct k_cache *cache, struct k_slab *slab)
+{
+	slab->next = cache->full_slabs;
+	cache->full_slabs = slab;
+}
+
+static inline void k_cache_transfer_full_slab(struct k_cache *cache)
 {
 	struct k_slab *slab;
+
+	slab = cache->partial_slabs;
+	cache->partial_slabs = slab->next;
+
+	k_cache_add_full_slab(cache, slab);
+}
+
+static void *k_cache_transfer_and_alloc(struct k_cache *cache)
+{
 	void *ptr;
+	struct k_slab *slab;
 
-	if (cache->partial_slabs) {
-		slab = cache->partial_slabs;
+	slab = cache->free_slabs;
 
-		ptr = k_cache_alloc_object(cache, slab);
-		if (!ptr)
-			return NULL;
+	ptr = k_cache_alloc_object(cache, slab);
+	if (!ptr)
+		return NULL;
 
-		if (cache->objects == slab->active) {
-			slab->next = cache->full_slabs;
-			cache->full_slabs = slab;
-		}
-	} else {
-		slab = cache->free_slabs;
+	cache->free_slabs = slab->next;
 
-		ptr = k_cache_alloc_object(cache, slab);
-		if (!ptr)
-			return NULL;
+	k_cache_add_partial_slab(cache, slab);
 
-		cache->free_slabs = slab->next;
-		cache->partial_slabs = slab;
-
+	if (!cache->free_slabs)
 		k_cache_grow(cache);
-	}
 
 	return ptr;
 }
+
+void *k_cache_alloc(struct k_cache *cache)
+{
+	struct k_slab *slab;
+
+	if (!cache->partial_slabs)
+		return k_cache_transfer_and_alloc(cache);
+
+	slab = cache->partial_slabs;
+
+	if (cache->objects == slab->active) {
+		k_cache_transfer_full_slab(cache);
+
+		if (cache->partial_slabs)
+			slab = cache->partial_slabs;
+		else
+			return k_cache_transfer_and_alloc(cache);
+	}
+
+	return k_cache_alloc_object(cache, slab);
+}
+K_EXPORT_FUNC(k_cache_alloc);
 
 struct k_cache *k_cache_create(const char *name, unsigned int object_size,
 		unsigned int alignment, unsigned int flags)
@@ -244,6 +278,7 @@ struct k_cache *k_cache_create(const char *name, unsigned int object_size,
 
 	return cache;
 }
+K_EXPORT_FUNC(k_cache_create);
 
 static void k_cache_malloc_create(int index, const char *name, unsigned int object_size)
 {
@@ -325,6 +360,20 @@ void *k_malloc(k_size_t size)
 	return k_cache_alloc(k_malloc_caches[index]);
 }
 K_EXPORT_FUNC(k_malloc);
+
+void *k_zalloc(k_size_t size)
+{
+	void *ptr;
+
+	ptr = k_malloc(size);
+	if (!ptr)
+		return NULL;
+
+	k_memset(ptr, 0, size);
+
+	return ptr;
+}
+K_EXPORT_FUNC(k_zalloc);
 
 void k_free(const void *ptr)
 {

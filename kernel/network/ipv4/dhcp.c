@@ -1,5 +1,6 @@
 #include "include/network/protocol/dhcp.h"
 #include "include/network/protocol/ethernet.h"
+#include "include/video/print.h"
 #include "include/string.h"
 
 static k_uint8_t k_dhcp_magic_cookie[4] = { 99, 130, 83, 99 };

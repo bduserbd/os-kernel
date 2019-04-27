@@ -12,6 +12,8 @@ struct k_acpi_id {
 struct k_acpi_info {
 	int found;
 
+	unsigned long physical_rsdp;
+
 	struct k_acpi_id ids[K_CONFIG_CPUS];
 
 	int interrupts;

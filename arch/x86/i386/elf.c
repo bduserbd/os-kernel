@@ -33,3 +33,9 @@ k_error_t k_elf_arch_relocate_section(k_uint8_t *applied_section,
 	return K_ERROR_NONE;
 }
 
+k_error_t k_elf_arch_relocate_addend_section(k_uint8_t *applied_section,
+		const Elf(Rel) *rel, const Elf(Sym) *symbol)
+{
+	return K_ERROR_NOT_IMPLEMENTED;
+}
+

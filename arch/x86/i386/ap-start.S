@@ -1,45 +1,52 @@
+#include "include/ap.h"
 #include "include/gdt-descriptor.S"
-
-	.section ".smp_start", "ax"
+#include "include/cr0.h"
 
 	.code16
 	.globl	_start
 _start:
 	cli
 
-	/* Got to protected mode. */
+	# Goto to protected mode
 	lgdtl	ap_first_gdt_desc
 
-	movl	%cr0, %ebx
-	orl	$0x1, %ebx
-	movl	%ebx, %cr0
+	movl	%cr0, %eax
+	orl	$K_CR0_PE, %eax
+	movl	%eax, %cr0
 
 	ljmpl	$0x8, $ap_in_protected_mode
 
 	.code32
 ap_in_protected_mode:
-	movw	$0x10, %bx
-	movw	%bx, %ds
-	movw	%bx, %es
-	movw	%bx, %fs
-	movw	%bx, %gs
-	movw	%bx, %ss
+	movw	$0x10, %ax
+	movw	%ax, %ds
+	movw	%ax, %es
+	movw	%ax, %fs
+	movw	%ax, %gs
+	movw	%ax, %ss
 
-	/* Jump to kernel with specific paramters per CPU. */
-	movl	$0x8180, %ebx
+	# Specific paramters per CPU
+	movl	$K_AP_START_INFO, %ebx
 
-	movl	4(%ebx), %esp
-
+	# Load cr3
 	movl	(%ebx), %eax
-	pushl	8(%ebx)
+	movl	%eax, %cr3
 
+	# Enable paging
+	movl	%cr0, %eax
+	orl	$K_CR0_PG, %eax
+	movl	%eax, %cr0
+
+	movl	8(%ebx), %esp
+
+	movl	4(%ebx), %eax
 	call	*%eax
 
 loop:
 	hlt
 	jmp	loop
 
-	/* Basic GDT. */
+	# Basic GDT
 	.p2align	3
 ap_first_gdt:
 	K_GDT_ENTRY
@@ -51,9 +58,4 @@ ap_first_gdt_end:
 ap_first_gdt_desc:
 	.word	ap_first_gdt_end-ap_first_gdt-1
 	.long	ap_first_gdt
-
-	/* Just give it the impression of being boot sector .. */
-	.=0x200-2
-	.byte	0x55
-	.byte	0xaa
 

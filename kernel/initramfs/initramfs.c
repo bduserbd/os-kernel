@@ -62,7 +62,7 @@ static void k_cpio_newc_scan_files(struct k_cpio_newc *cpio)
 	}
 }
 
-void k_initramfs_get_info(k_uint32_t start, k_uint32_t length)
+void k_initramfs_get_info(unsigned long start, unsigned long length)
 {
 	struct k_initramfs_header *initramfs;
 
