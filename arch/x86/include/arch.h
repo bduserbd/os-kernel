@@ -7,6 +7,8 @@
 
 #elif K_BITS_64
 
+#include "x86_64/spinlock.h"
+
 #endif
 
 #endif

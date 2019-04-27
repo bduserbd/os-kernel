@@ -13,15 +13,14 @@ void *k_task_arch_info_alloc(k_task_entry_point_t func, void *stack, void *param
 	k_memset(regs, 0, sizeof(struct k_registers));
 
 	if (func) {
-		regs->rip = func;
+		regs->rip = (k_uint64_t)func;
 
-		k_uint64_t real_rsp = (k_uint64_t)stack & ~0xfULL - sizeof(k_uint64_t);
-		*(k_uint64_t *)real_rsp = regs->rip;
+		k_uint64_t rsp = ((k_uint64_t)stack & ~0xfULL) - sizeof(k_uint64_t);
 
-		regs->rsp = real_rsp;
-		regs->rbp = regs->rsp;
+		*(k_uint64_t *)rsp = regs->rip;
+		*(k_uint64_t *)(rsp - 0x48) = (k_uint64_t)parameter;
 
-		regs->rdi = (k_uint64_t)parameter;
+		regs->rsp = rsp - 16 * sizeof(k_uint64_t);
 	}
 
 	return regs;

@@ -63,6 +63,11 @@ static void k_idt_set_gate(int i, k_uint64_t offset, int type)
 	k_idt[i].p = 1;
 }
 
+void k_idt_load(void)
+{
+	asm volatile("lidtq %0" : : "m" (k_idt_reg));
+}
+
 void k_idt_init(void)
 {
 	int i, j;
@@ -79,6 +84,6 @@ void k_idt_init(void)
 	k_idt_reg.limit = 256 * sizeof(struct k_idt_interrupt_gate) - 1;
 	k_idt_reg.address = (k_uint64_t)&k_idt;
 
-	asm volatile("lidtq %0" : : "m" (k_idt_reg));
+	k_idt_load();
 }
 

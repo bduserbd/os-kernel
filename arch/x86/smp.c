@@ -20,22 +20,21 @@ void k_smp_init(void)
 	int i;
 	struct k_acpi_id *id;
 	struct k_ap_start_info *info;
-
-	k_uint32_t esp;
-	static const k_uint32_t cpu_stack_size = K_CONFIG_STACK_SIZE / K_CONFIG_CPUS;
+	unsigned long sp;
+	static const int cpu_stack_size = K_CONFIG_STACK_SIZE / K_CONFIG_CPUS;
 
 	if (!k_acpi.found)
 		return;
 
-	esp = (k_uint32_t)__k_stack_start - cpu_stack_size;
+	sp = (unsigned long)__k_stack_start - cpu_stack_size;
 
 	k_paging_map_ap_start(K_AP_START_ADDRESS);
 
 	k_memcpy((void *)K_AP_START_ADDRESS, __k_ap_start, __k_ap_end - __k_ap_start);
 
 	info = (void *)(K_AP_START_ADDRESS + 0x180);
-	info->entry = (k_uint32_t)k_ap_main;
-	info->page_table_physical = (k_uint32_t)k_page_table - K_IMAGE_BASE;
+	info->entry = (unsigned long)k_ap_main;
+	info->page_table_physical = (unsigned long)k_page_table - K_IMAGE_BASE;
 
 	id = &k_acpi.ids[0];
 
@@ -44,13 +43,13 @@ void k_smp_init(void)
 			continue;
 
 		if (id[i].lapic != k_lapic_id()) {
-			info->esp = esp;
+			info->sp = sp;
 			info->processor = id[i].processor;
 
 			k_lapic_icr_init(id[i].processor);
 			k_lapic_icr_start_up(id[i].processor, K_AP_START_ADDRESS >> 12);
 
-			esp -= cpu_stack_size;
+			sp -= cpu_stack_size;
 		}
 	}
 }

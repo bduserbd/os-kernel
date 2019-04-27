@@ -19,9 +19,6 @@ CFLAGS += -I ../
 
 ifdef AP_BIN
   OBJS += smp.o ap.o
-  AP_TRAMPOLINE += trampoline.o
-  LDFLAGS += -melf_$(SUB_X86_ARCH) -Tap.ld
-  AP_TARGET := ap
 endif
 
 .PHONY := all
@@ -33,8 +30,4 @@ compile:
 dirs:
 	$(V)$(MAKE) -C $(SUB_X86_ARCH)/
 	$(V)$(MAKE) -C boot/
-
-ap:
-	$(V)$(MAKE) $(BUILD_BIN) TARGETS="$(AP_TRAMPOLINE)" OUTPUT="$(AP_BIN)"	\
-		CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)"
 

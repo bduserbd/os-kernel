@@ -1,4 +1,4 @@
-FINAL_CFLAGS := $(BUILD_CFLAGS) $(CFLAGS)
+FINAL_CFLAGS := $(CFLAGS)
 
 .PHONY: build
 build: $(TARGETS)

@@ -1,8 +1,8 @@
 #include "include/gdt-descriptor.S"
 
 	.code16
-	.globl	ap_start
-ap_start:
+	.globl	_start
+_start:
 	cli
 
 	/* Got to protected mode. */
