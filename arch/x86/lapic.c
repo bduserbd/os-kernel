@@ -44,9 +44,6 @@ void k_lapic_icr_init(k_uint8_t lapic_id)
 			K_LAPIC_ICR_DELIVERY_MODE_INIT);
 
 	while (k_lapic_get_reg(K_LAPIC_ICR) & K_LAPIC_ICR_STATUS_PENDING) ;
-
-	// TODO ..
-	for (int i = 0; i < 100000000; i++) asm volatile("nop");
 }
 
 void k_lapic_icr_start_up(k_uint8_t lapic_id, k_uint8_t page)
@@ -56,9 +53,6 @@ void k_lapic_icr_start_up(k_uint8_t lapic_id, k_uint8_t page)
 			K_LAPIC_ICR_DELIVERY_MODE_START_UP | page);
 
 	while (k_lapic_get_reg(K_LAPIC_ICR) & K_LAPIC_ICR_STATUS_PENDING) ;
-
-	// TODO ..
-	for (int i = 0; i < 100000000; i++) asm volatile("nop");
 }
 
 #endif

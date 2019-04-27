@@ -1,67 +1,72 @@
+#include "include/ap.h"
 #include "include/gdt-descriptor.S"
+#include "include/cr0.h"
+#include "include/cr4.h"
+#include "include/msr.h"
 
 	.code16
 	.globl	_start
 _start:
 	cli
 
-	/* Got to protected mode. */
-	lgdtl	ap_first_gdt_desc
-
-	movl	%cr0, %ebx
-	orl	$0x1, %ebx
-	movl	%ebx, %cr0
-
-	ljmpl	$0x8, $ap_in_protected_mode
-
-	.code32
-ap_in_protected_mode:
-	movw	$0x10, %bx
-	movw	%bx, %ds
-	movw	%bx, %es
-	movw	%bx, %fs
-	movw	%bx, %gs
-	movw	%bx, %ss
+	# PAE
+	movl	%cr4, %eax
+	orl	$K_CR4_PAE, %eax
+	movl	%eax, %cr4
 
 	# Specific paramters per CPU
-	movl	$0x8180, %ebx
+	movl	$K_AP_START_INFO, %ebx
 
-#if 0
 	# Load cr3
-	movl	12(%ebx), %eax
+	movl	(%ebx), %eax
 	movl	%eax, %cr3
 
-	# Enable paging
+	# Long mode & NXE
+	movl	$K_MSR_IA32_EFER, %ecx
+	rdmsr
+	orl	$(K_MSR_IA32_EFER_LME | K_MSR_IA32_EFER_NXE), %eax
+	wrmsr
+
+	# Enable paging & set protected mode
 	movl	%cr0, %eax
-	orl	$0x80010000, %eax
+	orl	$(K_CR0_PG | K_CR0_PE), %eax
 	movl	%eax, %cr0
 
-	movl	4(%ebx), %esp
-	pushl	8(%ebx)
+	# Load GDT
+	lgdt	ap_gdt_desc
+	movw	$0x10, %ax
+	movw	%ax, %ds
+	movw	%ax, %es
+	movw	%ax, %fs
+	movw	%ax, %gs
+	movw	%ax, %ss
 
-	movl	(%ebx), %eax
-	call	*%eax
-#endif
+	jmp	$0x8, $ap_in_long_mode
+
+	.code64
+ap_in_long_mode:
+	# Specific paramters per CPU
+	movq	$K_AP_START_INFO, %rbx
+
+	movq	12(%rbx), %rsp
+
+	movq	4(%rbx), %rax
+	call	*%rax
 
 loop:
 	hlt
 	jmp	loop
 
-	/* Basic GDT. */
+	# Basic GDT
 	.p2align	3
-ap_first_gdt:
-	K_GDT_ENTRY
-	K_GDT_ENTRY base=0 limit=0xfffff type=0xb s=1 p=1 db=1 g=1
-	K_GDT_ENTRY base=0 limit=0xfffff type=0x3 s=1 p=1 db=1 g=1
-ap_first_gdt_end:
+ap_gdt:
+	K_GDT_ENTRY g=0
+	K_GDT_ENTRY base=0x0 limit=0x0 type=0xb s=1 dpl=0 p=1 l=1 g=1
+	K_GDT_ENTRY base=0x0 limit=0x0 type=0x3 s=1 dpl=0 p=1
+ap_gdt_end:
 
 	.p2align	3
-ap_first_gdt_desc:
-	.word	ap_first_gdt_end-ap_first_gdt-1
-	.long	ap_first_gdt
-
-	/* Just give it the impression of being boot sector .. */
-	.=0x200-2
-	.byte	0x55
-	.byte	0xaa
+ap_gdt_desc:
+	.word	ap_gdt_end-ap_gdt-1
+	.quad	ap_gdt
 

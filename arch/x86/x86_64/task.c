@@ -1,4 +1,5 @@
 #include "include/x86_64/registers.h"
+#include "kernel/include/string.h"
 #include "kernel/include/task/task.h"
 #include "kernel/include/mm/mm.h"
 

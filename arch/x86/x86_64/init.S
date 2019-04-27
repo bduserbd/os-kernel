@@ -1,8 +1,8 @@
 #include "include/x86_64/paging.h"
 #include "include/cpu.h"
 #include "include/gdt.h"
-#include "include/cr4.h"
 #include "include/cr0.h"
+#include "include/cr4.h"
 #include "include/msr.h"
 
 	.text

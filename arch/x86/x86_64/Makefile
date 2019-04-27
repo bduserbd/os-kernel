@@ -13,8 +13,8 @@ ifdef AP_BIN
   AP_START += ap-start.o
 
   AP_CFLAGS += $(CFLAGS)
-  AP_CFLAGS += -Wall -m32
-  AP_LDFLAGS += -melf_i386 -Tap.ld
+  AP_CFLAGS += -Wall -m64
+  AP_LDFLAGS += -melf_x86_64 -Tap.ld
 
   AP_TARGET := ap
 endif

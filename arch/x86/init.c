@@ -59,10 +59,12 @@ void k_x86_init(void *smbios, void *rsdp)
 	k_smp_init();
 #endif
 
+#if 0
 	k_irq_mask(0);
+	k_irq_unmask(0);
+#endif
 	for (int i = 0; i < 100000000; i++)
 		asm volatile("nop");
-	k_irq_unmask(0);
 
 	k_init();
 }

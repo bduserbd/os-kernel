@@ -1,4 +1,4 @@
-#include "include/i386/spinlock.h"
+#include "include/x86_64/spinlock.h"
 
 static void k_spin_lock_loop(volatile int *ptr, k_uint32_t value)
 {

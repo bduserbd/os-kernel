@@ -32,9 +32,9 @@ void k_smp_init(void)
 
 	k_memcpy((void *)K_AP_START_ADDRESS, __k_ap_start, __k_ap_end - __k_ap_start);
 
-	info = (void *)(K_AP_START_ADDRESS + 0x180);
-	info->entry = (unsigned long)k_ap_main;
+	info = (void *)K_AP_START_INFO;
 	info->page_table_physical = (unsigned long)k_page_table - K_IMAGE_BASE;
+	info->entry = (unsigned long)k_ap_main;
 
 	id = &k_acpi.ids[0];
 
@@ -43,8 +43,8 @@ void k_smp_init(void)
 			continue;
 
 		if (id[i].lapic != k_lapic_id()) {
+			/* TODO: Check that each processor gets its own stack. */
 			info->sp = sp;
-			info->processor = id[i].processor;
 
 			k_lapic_icr_init(id[i].processor);
 			k_lapic_icr_start_up(id[i].processor, K_AP_START_ADDRESS >> 12);
