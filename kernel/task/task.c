@@ -1,7 +1,10 @@
 #include "include/task/task.h"
 #include "kernel/include/mm/mm.h"
+#include "kernel/include/spinlock.h"
 
 struct k_task *k_task = NULL;
+
+static k_spin_lock_t k_task_lock;
 
 void *k_task_arch_info_alloc(k_task_entry_point_t, void *, void *);
 void k_task_arch_switch_context(struct k_task *, struct k_task *);
@@ -30,7 +33,9 @@ static void k_schedule_unlock(void)
 
 static k_error_t k_task_main(void *parameter)
 {
-	k_schedule_unlock();
+	//k_schedule_unlock();
+	k_spin_unlock(&k_task_lock);
+
 	k_task->func(parameter);
 
 	for(;;) ;
@@ -45,8 +50,13 @@ void k_task_switch(void)
 	if (!k_task)
 		return;
 
-	if (k_task == k_task->next)
+	if (k_spin_is_locked(&k_task_lock))
 		return;
+
+	k_spin_lock(&k_task_lock);
+
+	if (k_task == k_task->next)
+		goto _exit;
 
 	a = k_task;
 	a->state = K_TASK_STATE_SLEEPING;
@@ -57,11 +67,14 @@ void k_task_switch(void)
 	k_task = k_task->next;
 
 	k_task_arch_switch_context(a, b);
+
+_exit:
+	k_spin_unlock(&k_task_lock);
 }
 
 void k_schedule(void)
 {
-	k_schedule_lock();
+	//k_schedule_lock();
 	k_task_switch();
 }
 
@@ -71,6 +84,8 @@ void k_task_create(k_task_entry_point_t func, void *parameter)
 
 	if (!k_task)
 		return;
+
+	k_spin_lock(&k_task_lock);
 
 	if (!func)
 		return;
@@ -96,6 +111,8 @@ void k_task_create(k_task_entry_point_t func, void *parameter)
 	temp = k_task->next;
 	k_task->next = task;
 	task->next = temp;
+
+	k_spin_unlock(&k_task_lock);
 }
 
 extern __u8 __k_stack_start[];
@@ -104,6 +121,8 @@ void k_task_init(void)
 {
 	if (k_task)
 		return;
+
+	k_spin_lock(&k_task_lock);
 
 	k_task = k_malloc(sizeof(struct k_task));
 	if (!k_task)
@@ -120,5 +139,7 @@ void k_task_init(void)
 	k_task->stack = __k_stack_start; // Unneeded.
 
 	k_task->next = k_task;
+
+	k_spin_unlock(&k_task_lock);
 }
 

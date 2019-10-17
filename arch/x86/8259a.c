@@ -89,6 +89,11 @@ static unsigned int k_pic_int_to_irq(struct k_irq_chip *chip, unsigned int inter
 		return K_INVALID_IRQ;
 }
 
+static unsigned int k_pic_int_from_irq(struct k_irq_chip *chip, unsigned int irq)
+{
+	return irq - K_IRQ_MASTER_START;
+}
+
 static struct k_irq_chip k_8259a_irq_chip = {
 	.name = "8259A",
 	.irqs = 0xf,
@@ -98,6 +103,7 @@ static struct k_irq_chip k_8259a_irq_chip = {
 	.mask = k_pic_mask,
 	.unmask = k_pic_unmask,
 	.int_to_irq = k_pic_int_to_irq,
+	.int_from_irq = k_pic_int_from_irq,
 	.data = NULL,
 };
 

@@ -36,6 +36,7 @@ extern struct k_task *k_task;
 void k_task_init(void);
 void k_task_create(k_task_entry_point_t, void *);
 void k_task_switch(void);
+void k_schedule(void);
 
 #endif
 

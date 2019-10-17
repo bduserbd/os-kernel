@@ -17,24 +17,24 @@ extern unsigned long k_initramfs_length;
 k_error_t foo1(void *param)
 {
 	while (1) {
-		k_printf("B%llu ", (k_uint64_t)param);
-		k_schedule();
+		//k_printf("B%u ", (unsigned long)param);
+		//for (int i = 0; i < 10000; i++) asm volatile("nop");
 	}
 }
 
 k_error_t foo2(void *param)
 {
 	while (1) {
-		k_printf("C%llu ", (k_uint64_t)param);
-		k_schedule();
+		//k_printf("C%u ", (unsigned long)param);
+		//for (int i = 0; i < 10000; i++) asm volatile("nop");
 	}
 }
 
 k_error_t foo3(void *param)
 {
 	while (1) {
-		k_printf("D%llu ", (k_uint64_t)param);
-		k_schedule();
+		//k_printf("D%u ", (unsigned long)param);
+		//for (int i = 0; i < 10000; i++) asm volatile("nop");
 	}
 }
 
@@ -51,9 +51,10 @@ void k_init(void)
 	k_task_create(foo1, (void *)1);
 
 	while (1) {
-		k_printf("A0 ");
-		k_schedule();
+		//k_printf("A0 ");
+		//for (int i = 0; i < 10000; i++) asm volatile("nop");
 	}
+
 
 /*
 	k_acpica_init();

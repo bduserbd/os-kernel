@@ -24,3 +24,8 @@ void k_spin_unlock(struct k_spin_lock *lock)
 	asm volatile("sti");
 }
 
+int k_spin_is_locked(struct k_spin_lock *lock)
+{
+	return lock->lock == 1;
+}
+

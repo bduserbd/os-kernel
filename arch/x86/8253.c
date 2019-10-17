@@ -13,7 +13,9 @@ static void k_pit_set_mode(int channel, k_uint16_t ticks)
 			K_PIT_COMMAND_PORT_ACCESS_MODE_LOW_HIGH_BYTES;
 
 	if (channel == 0) {
-		command |= K_PIT_COMMAND_PORT_CHANNEL0;
+		command |= K_PIT_COMMAND_PORT_CHANNEL0 |
+			K_PIT_COMMAND_PORT_MODE_SQUARE_WAVE_GENERATOR;
+
 		data_port = K_PIT_CHANNEL0_DATA_PORT;		
 	} else if (channel == 2) {
 		command |= K_PIT_COMMAND_PORT_CHANNEL2;

@@ -30,15 +30,11 @@ static k_error_t k_timer_device_irq_handler(unsigned int irq, void *data)
 {
 	k_ticks++;
 
-#if 0
-	static int i = 0;
-
-	i++;
-	if ((i % (1 * 1000)) == 0)
-		k_printf("%u", irq);
-#endif
+	//k_printf("%u", irq);
 
 	k_timer_check_expired();
+
+	k_schedule();
 
 	return K_ERROR_NONE;
 }
