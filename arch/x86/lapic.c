@@ -82,7 +82,7 @@ static void k_lapic_basic_info_init(void)
 	}
 }
 
-static void k_lapic_spurious_vector_init(void)
+void k_lapic_spurious_vector_init(void)
 {
 	k_uint32_t svr;
 
@@ -94,6 +94,21 @@ static void k_lapic_spurious_vector_init(void)
 	svr |= K_LAPIC_SVR_SPURIOUS_VECTOR;
 
 	k_lapic_set_reg(K_LAPIC_SVR, svr);
+}
+
+void k_my_lapic(void)
+{
+	k_uint32_t timer;
+	k_uint64_t ticks;
+
+	timer = K_LAPIC_LVT_TIMER_MODE_PERIODIC | k_irq_to_int(0);
+	k_lapic_set_reg(K_LAPIC_LVT_TIMER, timer);
+
+	k_lapic_set_reg(K_LAPIC_DIV_CONFIG, K_LAPIC_DIV_BY_16);
+
+	k_div64(k_lapic.frequency, K_HZ, &ticks, NULL);
+
+	k_lapic_set_reg(K_LAPIC_TIMER_ICR, (k_uint32_t)ticks);
 }
 
 static void k_lapic_timer_set_mode(struct k_timer_device *device, k_uint32_t mode)

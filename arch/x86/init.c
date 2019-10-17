@@ -42,29 +42,26 @@ void k_x86_init(void *smbios, void *rsdp)
 	k_tsc_init();
 
 	k_pic_uninit();
-	k_pic_init();
-#if 0
 
 	error = k_lapic_init();
 	if (!error) {
 		error = k_ioapic_init();
-		if (error)
-			k_pic_init();
-		else
+		if (error) {
+			// k_pic_init();
+		} else
 			k_hpet_init();
-	} else
-		k_pic_init();
-
-#endif
+	} //else
+	//	k_pic_init();
 
 	asm volatile("sti");
 
-#if 0
 #ifdef K_CONFIG_SMP
 	k_smp_init();
 #endif
 
+#if 0
 	k_irq_mask(0);
+	k_irq_unmask(0);
 
 	for (int i = 0; i < 100000000; i++)
 		asm volatile("nop");

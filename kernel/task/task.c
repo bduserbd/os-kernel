@@ -55,6 +55,8 @@ void k_task_switch(void)
 
 	k_spin_lock(&k_task_lock);
 
+	k_printf("L%d ", k_lapic_id());
+
 	if (k_task == k_task->next)
 		goto _exit;
 

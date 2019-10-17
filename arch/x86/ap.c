@@ -16,6 +16,11 @@ void k_ap_main(void)
 
 	k_spin_unlock(&test);
 
+	k_lapic_spurious_vector_init();
+	k_my_lapic();
+
+	//k_schedule();
+
 	while (1) ;
 }
 
