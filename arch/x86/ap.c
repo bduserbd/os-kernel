@@ -16,10 +16,12 @@ void k_ap_main(void)
 
 	k_spin_unlock(&test);
 
+	// TODO: Fix this
+	k_lapic_enable();
 	k_lapic_spurious_vector_init();
-	k_my_lapic();
+	k_lapic_timer_set_mode(K_LAPIC_LVT_TIMER_MODE_PERIODIC, 0);
 
-	//k_schedule();
+	k_schedule();
 
 	while (1) ;
 }

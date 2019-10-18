@@ -38,8 +38,6 @@ void k_irq_handler(struct k_int_registers regs)
 	if (irq == K_INVALID_IRQ)
 		return;
 
-	k_printf("%d ", k_lapic_id());
-
 	k_irq_ack(irq);
 
 	k_irq_execute_handler(irq);

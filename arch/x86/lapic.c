@@ -62,14 +62,8 @@ void k_lapic_eoi(unsigned int irq)
 	k_lapic_set_reg(K_LAPIC_EOI, 1 << irq);
 }
 
-static void k_lapic_basic_info_init(void)
+void k_lapic_enable(void)
 {
-	k_uint32_t version;
-
-	version = k_lapic_get_reg(K_LAPIC_VERSION_REGISTER);
-	k_lapic.version = K_LAPIC_VERSION_REGISTER_VERSION(version);
-	k_lapic.max_lvt = 1 + K_LAPIC_VERSION_REGISTER_MAX_LVT(version);
-
 	if (k_boot_cpu.family >= 6) {
 		k_uint32_t low, high;
 
@@ -80,6 +74,15 @@ static void k_lapic_basic_info_init(void)
 			k_wrmsr(K_MSR_IA32_APIC_BASE, low, high);
 		}
 	}
+}
+
+static void k_lapic_basic_info_init(void)
+{
+	k_uint32_t version;
+
+	version = k_lapic_get_reg(K_LAPIC_VERSION_REGISTER);
+	k_lapic.version = K_LAPIC_VERSION_REGISTER_VERSION(version);
+	k_lapic.max_lvt = 1 + K_LAPIC_VERSION_REGISTER_MAX_LVT(version);
 }
 
 void k_lapic_spurious_vector_init(void)
@@ -96,27 +99,12 @@ void k_lapic_spurious_vector_init(void)
 	k_lapic_set_reg(K_LAPIC_SVR, svr);
 }
 
-void k_my_lapic(void)
+void k_lapic_timer_set_mode(k_uint32_t mode, unsigned int irq)
 {
 	k_uint32_t timer;
 	k_uint64_t ticks;
 
-	timer = K_LAPIC_LVT_TIMER_MODE_PERIODIC | k_irq_to_int(0);
-	k_lapic_set_reg(K_LAPIC_LVT_TIMER, timer);
-
-	k_lapic_set_reg(K_LAPIC_DIV_CONFIG, K_LAPIC_DIV_BY_16);
-
-	k_div64(k_lapic.frequency, K_HZ, &ticks, NULL);
-
-	k_lapic_set_reg(K_LAPIC_TIMER_ICR, (k_uint32_t)ticks);
-}
-
-static void k_lapic_timer_set_mode(struct k_timer_device *device, k_uint32_t mode)
-{
-	k_uint32_t timer;
-	k_uint64_t ticks;
-
-	timer = mode | k_irq_to_int(device->irq);
+	timer = mode | k_irq_to_int(irq);
 	k_lapic_set_reg(K_LAPIC_LVT_TIMER, timer);
 
 	k_lapic_set_reg(K_LAPIC_DIV_CONFIG, K_LAPIC_DIV_BY_16);
@@ -128,14 +116,14 @@ static void k_lapic_timer_set_mode(struct k_timer_device *device, k_uint32_t mod
 
 static k_error_t k_lapic_timer_set_periodic_mode(struct k_timer_device *device)
 {
-	k_lapic_timer_set_mode(device, K_LAPIC_LVT_TIMER_MODE_PERIODIC);
+	k_lapic_timer_set_mode(K_LAPIC_LVT_TIMER_MODE_PERIODIC, device->irq);
 
 	return K_ERROR_NONE;
 }
 
 static k_error_t k_lapic_timer_set_oneshot_mode(struct k_timer_device *device)
 {
-	k_lapic_timer_set_mode(device, K_LAPIC_LVT_TIMER_MODE_ONESHOT);
+	k_lapic_timer_set_mode(K_LAPIC_LVT_TIMER_MODE_ONESHOT, device->irq);
 
 	return K_ERROR_NONE;
 }

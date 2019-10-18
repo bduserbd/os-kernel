@@ -16,24 +16,8 @@ static k_pid_t k_task_get_free_pid(void)
 	return k_pid_counter++;
 }
 
-static int k_irq_disable_counter = 0;
-
-static void k_schedule_lock(void)
-{
-	asm volatile("cli");
-	k_irq_disable_counter++;
-}
-
-static void k_schedule_unlock(void)
-{
-	k_irq_disable_counter--;
-	if (k_irq_disable_counter == 0)
-		asm volatile("sti");
-}
-
 static k_error_t k_task_main(void *parameter)
 {
-	//k_schedule_unlock();
 	k_spin_unlock(&k_task_lock);
 
 	k_task->func(parameter);
@@ -76,7 +60,6 @@ _exit:
 
 void k_schedule(void)
 {
-	//k_schedule_lock();
 	k_task_switch();
 }
 
