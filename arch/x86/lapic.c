@@ -35,6 +35,11 @@ k_uint8_t k_lapic_id(void)
 	return K_LAPIC_ID_VALUE(k_lapic_get_reg(K_LAPIC_ID));
 }
 
+int k_get_cpu_number(void)
+{
+	return k_lapic_id();
+}
+
 #ifdef K_CONFIG_SMP
 
 void k_lapic_icr_init(k_uint8_t lapic_id)

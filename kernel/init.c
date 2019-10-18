@@ -38,6 +38,13 @@ k_error_t foo3(void *param)
 	}
 }
 
+static void k_idle(void)
+{
+	for (;;) {
+		asm volatile("hlt");
+	}
+}
+
 void k_init(void)
 {
 	k_cmos_init();
@@ -50,11 +57,7 @@ void k_init(void)
 	k_task_create(foo2, (void *)2);
 	k_task_create(foo1, (void *)1);
 
-	while (1) {
-		//k_printf("A0 ");
-		//for (int i = 0; i < 10000; i++) asm volatile("nop");
-	}
-
+	k_idle();
 
 /*
 	k_acpica_init();
