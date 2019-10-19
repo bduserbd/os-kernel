@@ -5,8 +5,6 @@
 #include "kernel/include/spinlock.h"
 #include "kernel/include/video/print.h"
 
-int k_cpus_count = 1;
-
 k_spin_lock_t test;
 
 void k_ap_main(void)
@@ -16,7 +14,6 @@ void k_ap_main(void)
 	k_spin_lock(&test);
 
 	k_printf("AP CPU: APIC number: %u\n", k_lapic_id());
-	k_cpus_count++;
 
 	k_spin_unlock(&test);
 

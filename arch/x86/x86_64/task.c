@@ -27,6 +27,14 @@ void *k_task_arch_info_alloc(k_task_entry_point_t func, void *stack, void *param
 	return regs;
 }
 
+void k_task_arch_info_free(void *arch)
+{
+	if (arch) {
+		k_memset(arch, 0, sizeof(struct k_registers));
+		k_free(arch);
+	}
+}
+
 void k_task_arch_set_new_context(void *, void *);
 
 void k_task_arch_switch_context(struct k_task *a, struct k_task *b)

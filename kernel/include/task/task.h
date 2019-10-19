@@ -11,7 +11,9 @@ typedef k_uint16_t	k_pid_t;
 enum {
 	K_TASK_STATE_UNINITIALIZED,
 	K_TASK_STATE_RUNNING,
+	K_TASK_STATE_WAITING,
 	K_TASK_STATE_SLEEPING,
+	K_TASK_STATE_STOPPED,
 };
 
 #define K_TASK_STACK_SIZE	0x1000
@@ -32,7 +34,7 @@ struct k_task {
 
 	void *arch;
 
-	struct k_task *next;
+	//struct k_task *next;
 };
 
 extern struct k_task *k_task;

@@ -17,30 +17,32 @@ extern unsigned long k_initramfs_length;
 k_error_t foo1(void *param)
 {
 	while (1) {
-		//k_printf("B%u ", (unsigned long)param);
-		//for (int i = 0; i < 10000; i++) asm volatile("nop");
+		k_printf("B%u ", (unsigned long)param);
+		for (int i = 0; i < 10000000; i++) asm volatile("nop");
 	}
 }
 
 k_error_t foo2(void *param)
 {
 	while (1) {
-		//k_printf("C%u ", (unsigned long)param);
-		//for (int i = 0; i < 10000; i++) asm volatile("nop");
+		k_printf("C%u ", (unsigned long)param);
+		for (int i = 0; i < 10000000; i++) asm volatile("nop");
 	}
 }
 
 k_error_t foo3(void *param)
 {
 	while (1) {
-		//k_printf("D%u ", (unsigned long)param);
-		//for (int i = 0; i < 10000; i++) asm volatile("nop");
+		k_printf("D%u ", (unsigned long)param);
+		for (int i = 0; i < 10000000; i++) asm volatile("nop");
 	}
 }
 
 static void k_idle(void)
 {
 	for (;;) {
+		k_printf("A0 ");
+		for (int i = 0; i < 10000000; i++) asm volatile("nop");
 		asm volatile("hlt");
 	}
 }
@@ -53,9 +55,9 @@ void k_init(void)
 
 	k_task_init();
 
-	k_task_create(foo3, (void *)3);
-	k_task_create(foo2, (void *)2);
 	k_task_create(foo1, (void *)1);
+	k_task_create(foo2, (void *)2);
+	k_task_create(foo3, (void *)3);
 
 	k_idle();
 

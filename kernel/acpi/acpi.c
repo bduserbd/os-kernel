@@ -3,6 +3,8 @@
 #include "kernel/include/mm/mm.h"
 #include "kernel/include/video/print.h"
 
+int k_cpus_count;
+
 struct k_acpi_info k_acpi = { 0 };
 
 static k_error_t k_acpi_checksum(void *ptr, int length)
@@ -104,6 +106,8 @@ static void k_acpi_parse_madt(struct k_acpi_madt *madt)
 			break;
 		}
 	}
+
+	k_cpus_count = lapic_count;
 }
 
 static void k_acpi_parse_hpet(struct k_acpi_hpet *hpet)

@@ -40,6 +40,9 @@ void k_task_arch_set_new_context(void *, void *);
 
 void k_task_arch_switch_context(struct k_task *task, struct k_task *next_task)
 {
-	k_task_arch_set_new_context(task->arch, next_task->arch);
+	if (task)
+		k_task_arch_set_new_context(task->arch, next_task->arch);
+	else
+		k_task_arch_set_new_context(NULL, next_task->arch);
 }
 

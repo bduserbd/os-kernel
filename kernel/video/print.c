@@ -2,6 +2,10 @@
 #include "include/string.h"
 #include "include/div64.h"
 #include "include/modules/export-symbol.h"
+#include "include/spinlock.h"
+
+k_spin_lock_t s;
+extern bool k_task_is_init;
 
 static void (*k_print_callback)(const char *) = NULL;
 
@@ -12,8 +16,14 @@ void k_print_set_output_callback(void (*callback)(const char *))
 
 void k_puts(const char *str)
 {
+	if (k_task_is_init)
+		k_spin_lock(&s);
+
 	if (k_print_callback)
 		k_print_callback(str);
+
+	if (k_task_is_init)
+		k_spin_unlock(&s);
 }
 
 void k_putchar(char c)

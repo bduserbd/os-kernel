@@ -6,17 +6,17 @@
 
 extern int k_cpus_count;
 
-static bool k_task_is_init = false;
+bool k_task_is_init = false;
 
 struct k_task_cpu_info {
 	struct k_task *current;
 
-	struct k_binary_heap *ready;
+	struct k_binary_heap *waiting;
 };
 
 static struct k_task_cpu_info *k_task_cpu_info = NULL;
 
-static k_spin_lock_t k_task_lock;
+k_spin_lock_t k_task_lock;
 
 static k_pid_t k_task_get_free_pid(void)
 {
@@ -30,29 +30,53 @@ struct k_task *k_task_get_current(void)
 	return k_task_cpu_info[k_get_cpu_number()].current;	
 }
 
+k_pid_t k_task_get_pid(void)
+{
+	return k_task_get_current()->pid;
+}
+
+static void k_task_exit()
+{
+
+}
+
 static k_error_t k_task_main(void *parameter)
 {
 	k_spin_unlock(&k_task_lock);
 
 	k_task_get_current()->func(parameter);
 
+	k_task_exit();
+
 	for (;;) ;
 
 	return K_ERROR_FATAL;
 }
 
-void k_task_arch_switch_context(struct k_task *, struct k_task *);
-
-static struct k_task *k_task_get_next_schedule()
+static struct k_task *k_task_get_next_schedule(void)
 {
-	struct k_task *task;
-
-	do {
-		
-	} while (!task);
-
-	return task;
+	return k_binary_heap_fetch_root(k_task_cpu_info[k_get_cpu_number()].waiting);
 }
+
+static void k_task_put_waiting(struct k_task *task)
+{
+	int next_cpu;
+	k_error_t error;
+
+#ifdef K_CONFIG_SMP
+	next_cpu = k_get_cpu_number() + 1;
+	if (next_cpu == k_cpus_count)
+		next_cpu = 0;
+#else
+	next_cpu = 0;
+#endif
+
+	error = k_binary_heap_insert(k_task_cpu_info[next_cpu].waiting, task);
+	if (error)
+		return;
+}
+
+void k_task_arch_switch_context(struct k_task *, struct k_task *);
 
 void k_task_switch(void)
 {
@@ -66,13 +90,20 @@ void k_task_switch(void)
 
 	k_spin_lock(&k_task_lock);
 
-	k_printf("L%d ", k_lapic_id());
+	b = k_task_get_next_schedule();
+	if (!b)
+		goto _exit;
 
-	a = k_task;
-	a->state = K_TASK_STATE_SLEEPING;
-
-	b = a->next;
 	b->state = K_TASK_STATE_RUNNING;
+
+	a = k_task_get_current();
+	if (a) {
+		//k_printf("L%d:%d ", k_get_cpu_number(), k_task_get_pid());
+		a->state = K_TASK_STATE_WAITING;
+		k_task_put_waiting(a);
+	}
+
+	k_task_cpu_info[k_get_cpu_number()].current = b;
 
 	k_task_arch_switch_context(a, b);
 
@@ -100,7 +131,7 @@ static struct k_task *k_task_prepare_new(k_task_entry_point_t func, void *parame
 		goto _exit;
 
 	task->pid = k_task_get_free_pid();
-	task->state = K_TASK_STATE_SLEEPING;
+	task->state = K_TASK_STATE_WAITING;
 
 	task->func = func;
 
@@ -150,7 +181,7 @@ void k_task_create(k_task_entry_point_t func, void *parameter)
 		next_cpu = 0;
 #endif
 
-	error = k_binary_heap_insert(k_task_cpu_info[next_cpu].ready, task);
+	error = k_binary_heap_insert(k_task_cpu_info[next_cpu].waiting, task);
 	if (error)
 		return;
 
@@ -216,9 +247,9 @@ static k_error_t k_task_info_alloc(void)
 		k_task_cpu_info[i].current = NULL;
 
 		// TODO: Maybe increase heap size. Free when failure ?
-		k_task_cpu_info[i].ready = k_binary_heap_init(K_BINARY_HEAP_MAX, 0xff,
+		k_task_cpu_info[i].waiting = k_binary_heap_init(K_BINARY_HEAP_MAX, 0xff,
 			k_task_compare);
-		if (!k_task_cpu_info[i].ready)
+		if (!k_task_cpu_info[i].waiting)
 			return K_ERROR_FAILURE;
 	}
 
