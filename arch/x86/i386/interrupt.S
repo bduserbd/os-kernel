@@ -60,7 +60,12 @@ K_IDT_NO_ERROR_CODE 31
 
 1:
 	pusha
-	call k_int_handler
+
+	movl	%esp, %eax
+	pushl	%eax
+	call	k_int_handler
+	addl	$0x4, %esp
+
 	popa
 
 	addl	$0x8, %esp
@@ -97,7 +102,12 @@ K_IRQ_HANDLER 15 K_IRQ_SLAVE_START + 7
 
 2:
 	pusha
+
+	movl	%esp, %eax
+	pushl	%eax
 	call	k_irq_handler
+	addl	$0x4, %esp
+
 	popa
 
 	addl	$0x8, %esp

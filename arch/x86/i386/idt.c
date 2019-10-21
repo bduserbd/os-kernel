@@ -18,11 +18,11 @@ static void k_int_print_regs(struct k_int_registers *regs)
 			regs->interrupt, regs->error_code, regs->eip, regs->cs, regs->eflags);
 }
 
-void k_int_handler(struct k_int_registers regs)
+void k_int_handler(struct k_int_registers *regs)
 {
-	k_int_print_regs(&regs);
+	k_int_print_regs(regs);
 
-	if (regs.interrupt == 0xe) {
+	if (regs->interrupt == 0xe) {
 		k_printf("CR2: %x", k_paging_fault_address());
 
 		for (;;)
@@ -30,11 +30,11 @@ void k_int_handler(struct k_int_registers regs)
 	}
 }
 
-void k_irq_handler(struct k_int_registers regs)
+void k_irq_handler(struct k_int_registers *regs)
 {
 	unsigned int irq;
 
-	irq = k_irq_from_int(regs.interrupt);
+	irq = k_irq_from_int(regs->interrupt);
 	if (irq == K_INVALID_IRQ)
 		return;
 
