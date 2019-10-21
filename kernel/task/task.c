@@ -9,6 +9,8 @@ extern int k_cpus_count;
 bool k_task_is_init = false;
 
 struct k_task_cpu_info {
+	k_spin_lock_t k_task_lock;
+
 	struct k_task *current;
 
 	struct k_binary_heap *waiting;
@@ -16,7 +18,6 @@ struct k_task_cpu_info {
 
 static struct k_task_cpu_info *k_task_cpu_info = NULL;
 
-k_spin_lock_t k_task_lock;
 
 static k_pid_t k_task_get_free_pid(void)
 {
@@ -76,6 +77,11 @@ static void k_task_put_waiting(struct k_task *task)
 		return;
 }
 
+void k_task_spin_unlock(void)
+{
+	k_spin_unlock(&k_task_lock);
+}
+
 void k_task_arch_switch_context(struct k_task *, struct k_task *);
 
 void k_task_switch(void)
@@ -106,6 +112,8 @@ void k_task_switch(void)
 	k_task_cpu_info[k_get_cpu_number()].current = b;
 
 	k_task_arch_switch_context(a, b);
+
+	return;
 
 _exit:
 	k_spin_unlock(&k_task_lock);
@@ -188,35 +196,6 @@ void k_task_create(k_task_entry_point_t func, void *parameter)
 	k_spin_unlock(&k_task_lock);
 }
 
-extern __u8 __k_stack_start[];
-
-static struct k_task *k_task_first_alloc(void)
-{
-	struct k_task *task;
-
-	if (k_task_is_init)
-		return NULL;
-
-	task = k_malloc(sizeof(struct k_task));
-	if (!task)
-		return NULL;
-
-	task->pid = K_TASK_FIRST_PID;
-	task->state = K_TASK_STATE_RUNNING;
-
-	task->arch = k_task_arch_info_alloc(NULL, NULL, NULL);
-	if (!task->arch) {
-		k_free(task);
-
-		return NULL;
-	}
-
-	task->func = NULL;
-	task->stack = __k_stack_start; // Unneeded.
-
-	return task;
-}
-
 static int k_task_compare(void *ptr1, void *ptr2)
 {
 	struct k_task *task1, *task2;
@@ -259,22 +238,15 @@ static k_error_t k_task_info_alloc(void)
 void k_task_init(void)
 {
 	k_error_t error;
-	struct k_task *task;
 
 	if (k_task_is_init)
 		return;
 
 	k_spin_lock(&k_task_lock);
 
-	task = k_task_first_alloc();
-	if (!task)
-		return;
-
 	error = k_task_info_alloc();
 	if (error)
 		return;
-
-	k_task_cpu_info[k_get_cpu_number()].current = task;
 
 	k_task_is_init = true;
 

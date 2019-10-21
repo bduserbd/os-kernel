@@ -20,9 +20,10 @@ void *k_task_arch_info_alloc(k_task_entry_point_t func, void *stack, void *param
 
 		*(k_uint32_t *)(esp-=sizeof(k_uint32_t)) = (k_uint32_t)parameter;
 		*(k_uint32_t *)(esp-=sizeof(k_uint32_t)) = 0x0;
-		*(k_uint32_t *)(esp-=sizeof(k_uint32_t)) = regs->eip;
+		//*(k_uint32_t *)(esp-=sizeof(k_uint32_t)) = regs->eip;
 
-		regs->esp = esp - 8 * sizeof(k_uint32_t);
+		//regs->esp = esp - 8 * sizeof(k_uint32_t);
+		regs->esp = esp;
 	}
 
 	return regs;
@@ -36,13 +37,25 @@ void k_task_arch_info_free(void *arch)
 	}
 }
 
-void k_task_arch_set_new_context(void *, void *);
+void k_task_arch_set_new_context(k_uint32_t *, k_uint32_t *, k_uint32_t, k_uint32_t);
 
-void k_task_arch_switch_context(struct k_task *task, struct k_task *next_task)
+void k_task_arch_switch_context(struct k_task *a, struct k_task *b)
 {
-	if (task)
-		k_task_arch_set_new_context(task->arch, next_task->arch);
-	else
-		k_task_arch_set_new_context(NULL, next_task->arch);
+	struct k_registers *bregs;
+
+	bregs = b->arch;
+
+	if (a) {
+		struct k_registers *aregs;
+
+		aregs = a->arch;
+
+		k_task_arch_set_new_context(&aregs->eip, &aregs->esp, bregs->eip,
+			bregs->esp);
+	} else {
+		k_uint32_t dummy;
+
+		k_task_arch_set_new_context(&dummy, &dummy, bregs->eip, bregs->esp);
+	}
 }
 
